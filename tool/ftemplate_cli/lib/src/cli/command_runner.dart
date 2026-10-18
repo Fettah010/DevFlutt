@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 
 import 'command.dart';
@@ -16,34 +18,40 @@ class FtemplateCommandRunner {
   final ArgParser _parser = ArgParser();
 
   /// Runs the runner and returns the process exit code.
-  Future<int> run(List<String> arguments) async {
+  Future<int> run(
+    List<String> arguments, {
+    StringSink? out,
+    StringSink? err,
+  }) async {
+    final output = out ?? stdout;
+    final error = err ?? stderr;
+
     final ArgResults results;
     try {
       results = _parser.parse(arguments);
-    } on FormatException catch (error) {
-      writeErr('Error: ${error.message}');
-      _printUsage();
+    } on FormatException catch (parseError) {
+      error.writeln('Error: ${parseError.message}');
+      _printUsage(output);
       return 64;
     }
 
     final command = results.command;
     if (command == null) {
-      _printUsage();
+      _printUsage(output);
       return 64;
     }
 
     final handler = _commands.firstWhere(
       (candidate) => candidate.name == command.name,
-      orElse: () => throw StateError('Unknown command ${command.name}'),
     );
-    return handler.run(command, out: out, err: err);
+    return handler.run(command, out: output, err: error);
   }
 
-  void _printUsage() {
-    writeOut('Usage: ftemplate <command> [options]\n');
-    writeOut('Commands:');
+  void _printUsage(StringSink output) {
+    output.writeln('Usage: ftemplate <command> [options]\n');
+    output.writeln('Commands:');
     for (final command in _commands) {
-      writeOut('  ${command.name.padRight(16)} ${command.description}');
+      output.writeln('  ${command.name.padRight(16)} ${command.description}');
     }
   }
 }

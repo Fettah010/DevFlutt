@@ -20,9 +20,3 @@ abstract class FtemplateCommand {
   /// [out] and [err] default to stdout and stderr; tests inject their own sinks.
   Future<int> run(ArgResults results, {StringSink? out, StringSink? err});
 }
-
-/// The default output sink.
-StringSink get out => stdout;
-
-/// The default error sink.
-StringSink get err => stderr;

@@ -17,9 +17,7 @@ enum AppEnvironment {
       }
     }
     final allowed = AppEnvironment.values.map((e) => e.wireName).join(', ');
-    throw StateError(
-      'Invalid APP_ENV "$name". Expected one of: $allowed.',
-    );
+    throw StateError('Invalid APP_ENV "$name". Expected one of: $allowed.');
   }
 }
 
@@ -38,19 +36,10 @@ class AppConfig {
 
   /// Builds the configuration from compile-time environment defines.
   factory AppConfig.fromEnvironment() {
-    const appName = String.fromEnvironment(
-      'APP_NAME',
-      defaultValue: 'DevFlutt',
-    );
-    const envName = String.fromEnvironment(
-      'APP_ENV',
-      defaultValue: 'development',
-    );
+    const appName = String.fromEnvironment('APP_NAME', defaultValue: 'DevFlutt');
+    const envName = String.fromEnvironment('APP_ENV', defaultValue: 'development');
 
-    return AppConfig(
-      appName: appName,
-      environment: AppEnvironment.fromWire(envName),
-    );
+    return AppConfig(appName: appName, environment: AppEnvironment.fromWire(envName));
   }
 
   /// Whether the application is running against production infrastructure.

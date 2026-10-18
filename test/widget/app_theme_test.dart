@@ -12,8 +12,8 @@ void main() {
       expect(dark.useMaterial3, isTrue);
       expect(light.colorScheme.brightness, Brightness.light);
       expect(dark.colorScheme.brightness, Brightness.dark);
-      expect(light.colorScheme.primary.alpha, greaterThan(0));
-      expect(dark.colorScheme.primary.alpha, greaterThan(0));
+      expect((light.colorScheme.primary.a * 255.0).round().clamp(0, 255), greaterThan(0));
+      expect((dark.colorScheme.primary.a * 255.0).round().clamp(0, 255), greaterThan(0));
     });
 
     testWidgets('applies the light theme to a widget tree', (tester) async {

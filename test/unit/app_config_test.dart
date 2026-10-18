@@ -4,15 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AppEnvironment', () {
     test('parses known wire names', () {
-      expect(
-        AppEnvironment.fromWire('development'),
-        AppEnvironment.development,
-      );
+      expect(AppEnvironment.fromWire('development'), AppEnvironment.development);
       expect(AppEnvironment.fromWire('staging'), AppEnvironment.staging);
-      expect(
-        AppEnvironment.fromWire('production'),
-        AppEnvironment.production,
-      );
+      expect(AppEnvironment.fromWire('production'), AppEnvironment.production);
     });
 
     test('rejects unknown wire names with an actionable message', () {
@@ -50,14 +44,8 @@ void main() {
     });
 
     test('identifies the production environment', () {
-      const production = AppConfig(
-        appName: 'DevFlutt',
-        environment: AppEnvironment.production,
-      );
-      const development = AppConfig(
-        appName: 'DevFlutt',
-        environment: AppEnvironment.development,
-      );
+      const production = AppConfig(appName: 'DevFlutt', environment: AppEnvironment.production);
+      const development = AppConfig(appName: 'DevFlutt', environment: AppEnvironment.development);
 
       expect(production.isProduction, isTrue);
       expect(development.isProduction, isFalse);

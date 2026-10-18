@@ -4,9 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('HomePage', () {
-    testWidgets('renders the title and blank-app description', (
-      tester,
-    ) async {
+    testWidgets('renders the title and blank-app description', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomePage()));
 
       expect(find.text('DevFlutt'), findsOneWidget);
@@ -14,9 +12,7 @@ void main() {
       expect(find.byIcon(Icons.flutter_dash), findsOneWidget);
     });
 
-    testWidgets('exposes an accessible label for the example icon', (
-      tester,
-    ) async {
+    testWidgets('exposes an accessible label for the example icon', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: HomePage()));
 
       expect(find.bySemanticsLabel('Flutter logo'), findsOneWidget);

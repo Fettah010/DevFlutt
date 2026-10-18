@@ -41,9 +41,7 @@ class FtemplateCommandRunner {
       return 64;
     }
 
-    final handler = _commands.firstWhere(
-      (candidate) => candidate.name == command.name,
-    );
+    final handler = _commands.firstWhere((candidate) => candidate.name == command.name);
     return handler.run(command, out: output, err: error);
   }
 

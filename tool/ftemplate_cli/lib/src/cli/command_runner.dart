@@ -23,8 +23,8 @@ class FtemplateCommandRunner {
     void Function(String)? out,
     void Function(String)? err,
   }) async {
-    final output = out ?? stdout.writeln;
-    final error = err ?? stderr.writeln;
+    final output = out ?? (line) => stdout.writeln(line);
+    final error = err ?? (line) => stderr.writeln(line);
 
     final ArgResults results;
     try {

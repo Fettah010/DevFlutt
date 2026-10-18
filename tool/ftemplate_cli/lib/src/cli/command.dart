@@ -17,9 +17,5 @@ abstract class FtemplateCommand {
   ///
   /// [out] and [err] default to stdout and stderr; tests inject their own
   /// callbacks.
-  Future<int> run(
-    ArgResults results, {
-    void Function(String)? out,
-    void Function(String)? err,
-  });
+  Future<int> run(ArgResults results, {void Function(String)? out, void Function(String)? err});
 }

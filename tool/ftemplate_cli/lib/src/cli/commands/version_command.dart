@@ -24,7 +24,8 @@ class VersionCommand extends FtemplateCommand {
     void Function(String)? out,
     void Function(String)? err,
   }) async {
-    (out ?? stdout.writeln)('ftemplate $packageVersion');
+    final emit = out ?? (line) => stdout.writeln(line);
+    emit('ftemplate $packageVersion');
     return 0;
   }
 }

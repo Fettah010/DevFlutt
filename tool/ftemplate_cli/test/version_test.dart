@@ -1,29 +1,29 @@
-import 'dart:async';
-
 import 'package:ftemplate_cli/ftemplate_cli.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('version', () {
     test('prints the package version', () async {
-      final output = await _captureStdout(() async {
-        final code = await FtemplateCommandRunner().run(['version']);
-        expect(code, 0);
-      });
+      final out = StringBuffer();
+      final code = await FtemplateCommandRunner().run(['version'], out: out);
 
-      expect(output, contains(packageVersion));
+      expect(code, 0);
+      expect(out.toString(), contains(packageVersion));
     });
 
     test('usage is printed when no command is given', () async {
-      final code = await FtemplateCommandRunner().run([]);
+      final out = StringBuffer();
+      final code = await FtemplateCommandRunner().run([], out: out);
+
+      expect(code, 64);
+      expect(out.toString(), contains('Usage:'));
+    });
+
+    test('an unknown command returns a usage error', () async {
+      final out = StringBuffer();
+      final code = await FtemplateCommandRunner().run(['nope'], out: out);
+
       expect(code, 64);
     });
   });
-}
-
-Future<String> _captureStdout(Future<void> Function() body) async {
-  final buffer = StringBuffer();
-  final spec = ZoneSpecification(print: (self, parent, zone, line) => buffer.writeln(line));
-  await runZoned(body, zoneSpecification: spec);
-  return buffer.toString();
 }

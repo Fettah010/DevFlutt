@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 
 import '../command.dart';
@@ -17,8 +19,8 @@ class VersionCommand extends FtemplateCommand {
   ArgParser get parser => ArgParser();
 
   @override
-  Future<int> run(ArgResults results) async {
-    writeOut('ftemplate $packageVersion');
+  Future<int> run(ArgResults results, {StringSink? out, StringSink? err}) async {
+    (out ?? stdout).writeln('ftemplate $packageVersion');
     return 0;
   }
 }

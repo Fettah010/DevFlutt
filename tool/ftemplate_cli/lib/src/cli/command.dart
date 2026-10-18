@@ -16,11 +16,13 @@ abstract class FtemplateCommand {
   ArgParser get parser;
 
   /// Runs the command and returns a process exit code.
-  Future<int> run(ArgResults results);
+  ///
+  /// [out] and [err] default to stdout and stderr; tests inject their own sinks.
+  Future<int> run(ArgResults results, {StringSink? out, StringSink? err});
 }
 
-/// Writes a line to stdout.
-void writeOut(String message) => stdout.writeln(message);
+/// The default output sink.
+StringSink get out => stdout;
 
-/// Writes a line to stderr.
-void writeErr(String message) => stderr.writeln(message);
+/// The default error sink.
+StringSink get err => stderr;

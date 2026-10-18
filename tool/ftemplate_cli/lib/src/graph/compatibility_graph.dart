@@ -57,20 +57,20 @@ class CompatibilityGraph {
   ModuleManifest? manifestFor(String id) => _manifests[id];
 
   void _collectRequires(String id, Set<String> resolved, List<String> path) {
-    if (resolved.contains(id)) {
-      return;
-    }
     if (path.contains(id)) {
       throw CompatibilityException(
         'Circular dependency detected: ${[...path, id].join(' -> ')}. '
         'Fix the "requires" entries in the module manifests.',
       );
     }
+    if (resolved.contains(id)) {
+      return;
+    }
     final manifest = _manifests[id];
     if (manifest == null) {
       throw CompatibilityException(
-        'Module "$id" requires an unknown module "${path.isEmpty ? '' : path.last}". '
-        'Run `ftemplate list-modules` to see the available modules.',
+        'Unknown module "$id". Run `ftemplate list-modules` to see the '
+        'available modules.',
       );
     }
     resolved.add(id);

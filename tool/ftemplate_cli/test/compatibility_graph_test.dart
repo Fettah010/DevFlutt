@@ -63,7 +63,9 @@ void main() {
     });
 
     test('rejects a missing requirement', () {
-      final incomplete = CompatibilityGraph([manifest(id: 'navigation')]);
+      final incomplete = CompatibilityGraph([
+        manifest(id: 'navigation', requires: ['architecture-core']),
+      ]);
 
       expect(
         () => incomplete.resolve(['navigation']),

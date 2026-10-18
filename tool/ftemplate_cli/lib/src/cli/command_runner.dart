@@ -36,7 +36,7 @@ class FtemplateCommandRunner {
       (candidate) => candidate.name == command.name,
       orElse: () => throw StateError('Unknown command ${command.name}'),
     );
-    return handler.run(command);
+    return handler.run(command, out: out, err: err);
   }
 
   void _printUsage() {

@@ -44,7 +44,7 @@ class AppConfig {
     );
     const envName = String.fromEnvironment(
       'APP_ENV',
-      defaultValue: AppEnvironment.development.wireName,
+      defaultValue: 'development',
     );
 
     return AppConfig(

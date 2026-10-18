@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:ftemplate_cli/ftemplate_cli.dart';
 import 'package:test/test.dart';

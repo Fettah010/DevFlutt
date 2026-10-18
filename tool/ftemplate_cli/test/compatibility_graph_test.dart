@@ -21,7 +21,7 @@ void main() {
     permissions: const [],
     configKeys: const [],
     privacy: const ManifestPrivacy(network: false, telemetry: false),
-    outputs: const ['lib/$id.dart'],
+    outputs: ['lib/$id.dart'],
     requiredSetup: const [],
     tests: const ManifestTests(unit: true, widget: false, integration: 'none'),
   );

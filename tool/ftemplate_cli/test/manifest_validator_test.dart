@@ -85,5 +85,5 @@ tests:
 YamlMap _with(YamlMap original, String key, dynamic value) {
   final copy = Map<dynamic, dynamic>.from(original);
   copy[key] = value;
-  return copy;
+  return YamlMap.wrap(copy);
 }

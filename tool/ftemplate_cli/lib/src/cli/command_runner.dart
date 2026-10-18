@@ -18,15 +18,19 @@ class FtemplateCommandRunner {
   final ArgParser _parser = ArgParser();
 
   /// Runs the runner and returns the process exit code.
-  Future<int> run(List<String> arguments, {StringSink? out, StringSink? err}) async {
-    final output = out ?? stdout;
-    final error = err ?? stderr;
+  Future<int> run(
+    List<String> arguments, {
+    void Function(String)? out,
+    void Function(String)? err,
+  }) async {
+    final output = out ?? stdout.writeln;
+    final error = err ?? stderr.writeln;
 
     final ArgResults results;
     try {
       results = _parser.parse(arguments);
     } on FormatException catch (parseError) {
-      error.writeln('Error: ${parseError.message}');
+      error('Error: ${parseError.message}');
       _printUsage(output);
       return 64;
     }
@@ -41,11 +45,11 @@ class FtemplateCommandRunner {
     return handler.run(command, out: output, err: error);
   }
 
-  void _printUsage(StringSink output) {
-    output.writeln('Usage: ftemplate <command> [options]\n');
-    output.writeln('Commands:');
+  void _printUsage(void Function(String) output) {
+    output('Usage: ftemplate <command> [options]\n');
+    output('Commands:');
     for (final command in _commands) {
-      output.writeln('  ${command.name.padRight(16)} ${command.description}');
+      output('  ${command.name.padRight(16)} ${command.description}');
     }
   }
 }

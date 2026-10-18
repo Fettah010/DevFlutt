@@ -19,8 +19,12 @@ class VersionCommand extends FtemplateCommand {
   ArgParser get parser => ArgParser();
 
   @override
-  Future<int> run(ArgResults results, {StringSink? out, StringSink? err}) async {
-    (out ?? stdout).writeln('ftemplate $packageVersion');
+  Future<int> run(
+    ArgResults results, {
+    void Function(String)? out,
+    void Function(String)? err,
+  }) async {
+    (out ?? stdout.writeln)('ftemplate $packageVersion');
     return 0;
   }
 }

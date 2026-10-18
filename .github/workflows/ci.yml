@@ -54,6 +54,36 @@ jobs:
           path: build/verify-logs/
           if-no-files-found: ignore
 
+  generator:
+    name: Generator package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+
+      - name: Resolve generator dependencies
+        working-directory: tool/ftemplate_cli
+        run: dart pub get
+
+      - name: Check formatting
+        working-directory: tool/ftemplate_cli
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze generator
+        working-directory: tool/ftemplate_cli
+        run: dart analyze --fatal-infos
+
+      - name: Run generator tests
+        working-directory: tool/ftemplate_cli
+        run: dart test
+
   android-build:
     name: Android debug and release build
     runs-on: ubuntu-latest

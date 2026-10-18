@@ -18,13 +18,13 @@ void main() {
       expect(find.bySemanticsLabel('Flutter logo'), findsOneWidget);
     });
 
-    testWidgets('scales text without overflow', (tester) async {
-      tester.view.physicalSize = const Size(400, 900);
-      tester.view.devicePixelRatio = 3.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(const MaterialApp(home: HomePage()));
+    testWidgets('renders without overflow at double text scale', (tester) async {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: const MaterialApp(home: HomePage()),
+        ),
+      );
 
       expect(tester.takeException(), isNull);
     });

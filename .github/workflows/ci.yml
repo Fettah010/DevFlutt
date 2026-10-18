@@ -30,6 +30,13 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
+      - name: Upload lockfile
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pubspec-lock
+          path: pubspec.lock
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
 

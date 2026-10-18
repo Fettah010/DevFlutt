@@ -56,11 +56,7 @@ class CompatibilityGraph {
   /// Looks up a manifest by ID, or null when unknown.
   ModuleManifest? manifestFor(String id) => _manifests[id];
 
-  void _collectRequires(
-    String id,
-    Set<String> resolved,
-    List<String> path,
-  ) {
+  void _collectRequires(String id, Set<String> resolved, List<String> path) {
     if (resolved.contains(id)) {
       return;
     }

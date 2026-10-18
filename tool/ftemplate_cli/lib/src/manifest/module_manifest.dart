@@ -31,11 +31,7 @@ class ManifestPrivacy {
 
 /// Test declarations for a module.
 class ManifestTests {
-  const ManifestTests({
-    required this.unit,
-    required this.widget,
-    required this.integration,
-  });
+  const ManifestTests({required this.unit, required this.widget, required this.integration});
 
   final bool unit;
   final bool widget;
@@ -106,9 +102,7 @@ class ModuleManifest {
     conflictsWith: _stringList(map['conflictsWith'], 'conflictsWith'),
     platforms: _stringList(map['platforms'], 'platforms'),
     pubDependencies: _pubDependencies(map['pubDependencies']),
-    nativeChanges: NativeChanges.fromYaml(
-      _map(map['nativeChanges'], 'nativeChanges'),
-    ),
+    nativeChanges: NativeChanges.fromYaml(_map(map['nativeChanges'], 'nativeChanges')),
     permissions: _stringList(map['permissions'], 'permissions'),
     configKeys: _stringList(map['configKeys'], 'configKeys'),
     privacy: ManifestPrivacy.fromYaml(_map(map['privacy'], 'privacy')),
@@ -169,12 +163,14 @@ YamlMap _map(dynamic value, String path) {
 
 List<String> _stringList(dynamic value, String path) {
   if (value is YamlList) {
-    return value.map((entry) {
-      if (entry is! String) {
-        throw FormatException('$path entries must be strings.');
-      }
-      return entry;
-    }).toList(growable: false);
+    return value
+        .map((entry) {
+          if (entry is! String) {
+            throw FormatException('$path entries must be strings.');
+          }
+          return entry;
+        })
+        .toList(growable: false);
   }
   if (value == null) {
     return const <String>[];

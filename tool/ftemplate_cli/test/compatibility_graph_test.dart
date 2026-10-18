@@ -8,24 +8,23 @@ void main() {
     required String id,
     List<String> requires = const [],
     List<String> conflictsWith = const [],
-  }) =>
-      ModuleManifest(
-        id: id,
-        version: 1,
-        category: 'test',
-        summary: 'Test module.',
-        requires: requires,
-        conflictsWith: conflictsWith,
-        platforms: const ['android', 'ios'],
-        pubDependencies: const [],
-        nativeChanges: const NativeChanges(android: [], ios: []),
-        permissions: const [],
-        configKeys: const [],
-        privacy: const ManifestPrivacy(network: false, telemetry: false),
-        outputs: const ['lib/$id.dart'],
-        requiredSetup: const [],
-        tests: const ManifestTests(unit: true, widget: false, integration: 'none'),
-      );
+  }) => ModuleManifest(
+    id: id,
+    version: 1,
+    category: 'test',
+    summary: 'Test module.',
+    requires: requires,
+    conflictsWith: conflictsWith,
+    platforms: const ['android', 'ios'],
+    pubDependencies: const [],
+    nativeChanges: const NativeChanges(android: [], ios: []),
+    permissions: const [],
+    configKeys: const [],
+    privacy: const ManifestPrivacy(network: false, telemetry: false),
+    outputs: const ['lib/$id.dart'],
+    requiredSetup: const [],
+    tests: const ManifestTests(unit: true, widget: false, integration: 'none'),
+  );
 
   final graph = CompatibilityGraph([
     manifest(id: 'architecture-core'),
@@ -39,10 +38,11 @@ void main() {
     test('resolves a valid selection with transitive requirements', () {
       final resolved = graph.resolve(['navigation']);
 
-      expect(
-        resolved.map((module) => module.id),
-        ['architecture-core', 'state-riverpod', 'navigation'],
-      );
+      expect(resolved.map((module) => module.id), [
+        'architecture-core',
+        'state-riverpod',
+        'navigation',
+      ]);
     });
 
     test('resolves an empty selection', () {

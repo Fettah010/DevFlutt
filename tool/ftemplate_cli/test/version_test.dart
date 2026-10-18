@@ -24,9 +24,7 @@ void main() {
 
 Future<String> _captureStdout(Future<void> Function() body) async {
   final buffer = StringBuffer();
-  final spec = ZoneSpecification(
-    print: (self, parent, zone, line) => buffer.writeln(line),
-  );
+  final spec = ZoneSpecification(print: (self, parent, zone, line) => buffer.writeln(line));
   await runZoned(body, zoneSpecification: spec);
   return buffer.toString();
 }

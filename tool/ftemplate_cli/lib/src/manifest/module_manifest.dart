@@ -124,13 +124,30 @@ ModuleManifest loadModuleManifest(String yaml) {
   return ModuleManifest.fromYaml(decoded);
 }
 
-/// Loads a preset from a YAML string, returning the ordered module IDs.
-List<String> loadPreset(String yaml) {
+/// A named, versioned set of modules.
+class Preset {
+  const Preset({
+    required this.id,
+    required this.summary,
+    required this.modules,
+  });
+
+  final String id;
+  final String summary;
+  final List<String> modules;
+}
+
+/// Loads a preset from a YAML string.
+Preset loadPreset(String yaml) {
   final decoded = loadYaml(yaml);
   if (decoded is! YamlMap) {
     throw const FormatException('Preset must be a YAML mapping.');
   }
-  return _stringList(decoded['modules'], 'modules');
+  return Preset(
+    id: _string(decoded['id'], 'id'),
+    summary: _string(decoded['summary'], 'summary'),
+    modules: _stringList(decoded['modules'], 'modules'),
+  );
 }
 
 String _string(dynamic value, String path) {

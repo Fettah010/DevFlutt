@@ -3,17 +3,34 @@ import 'dart:io';
 import 'package:args/args.dart';
 
 import 'command.dart';
+import 'commands/create_command.dart';
+import 'commands/explain_module_command.dart';
+import 'commands/list_modules_command.dart';
+import 'commands/validate_command.dart';
 import 'commands/version_command.dart';
+import 'manifest/manifest_repository.dart';
 
 /// Parses the top-level `ftemplate` invocation and dispatches to a subcommand.
 class FtemplateCommandRunner {
-  FtemplateCommandRunner() {
+  FtemplateCommandRunner({String? manifestsDir})
+    : _repository = ManifestRepository(
+        manifestsDir: manifestsDir ?? 'manifests',
+      ) {
+    _commands = <FtemplateCommand>[
+      CreateCommand(_repository),
+      ListModulesCommand(_repository),
+      ExplainModuleCommand(_repository),
+      const ValidateCommand(),
+      const VersionCommand(),
+    ];
     for (final command in _commands) {
       _parser.addCommand(command.name, command.parser);
     }
   }
 
-  final List<FtemplateCommand> _commands = [const VersionCommand()];
+  final ManifestRepository _repository;
+
+  late final List<FtemplateCommand> _commands;
 
   final ArgParser _parser = ArgParser();
 

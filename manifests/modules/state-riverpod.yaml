@@ -1,0 +1,30 @@
+id: state-riverpod
+version: 1
+category: state
+summary: >-
+  Riverpod setup, provider organization, test overrides, and app lifecycle
+  patterns.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: flutter_riverpod
+    version: ^3.4.3
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/state/provider_scope.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: true
+  integration: none

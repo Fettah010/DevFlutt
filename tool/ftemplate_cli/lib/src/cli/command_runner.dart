@@ -18,11 +18,7 @@ class FtemplateCommandRunner {
   final ArgParser _parser = ArgParser();
 
   /// Runs the runner and returns the process exit code.
-  Future<int> run(
-    List<String> arguments, {
-    StringSink? out,
-    StringSink? err,
-  }) async {
+  Future<int> run(List<String> arguments, {StringSink? out, StringSink? err}) async {
     final output = out ?? stdout;
     final error = err ?? stderr;
 

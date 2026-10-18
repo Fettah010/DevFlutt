@@ -747,6 +747,8 @@ The release numbers define scope and exit gates, not calendar estimates. Reorder
 
 ## `v0.1.0` — Verified blank foundation
 
+**Status: Complete** (2026-10-18). Delivered and tagged as `v0.1.0`; see `docs/releases/v0.1.0-plan.md` and `docs/releases/v0.1.0-report.md`.
+
 **Outcome:** a small, clean Flutter starter that is pleasant to begin with and has a sound verification baseline. No optional product modules yet.
 
 ### Implement

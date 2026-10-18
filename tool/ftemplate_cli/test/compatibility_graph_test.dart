@@ -73,7 +73,7 @@ void main() {
           isA<CompatibilityException>().having(
             (error) => error.message,
             'message',
-            contains('unknown module'),
+            contains('Unknown module'),
           ),
         ),
       );

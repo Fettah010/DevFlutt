@@ -28,17 +28,17 @@ Install Flutter from the [official guide](https://docs.flutter.dev/install).
 
 ```bash
 # 1. Use this template (GitHub button) or clone
-git clone https://github.com/<owner>/DevFlutt.git
+git clone https://github.com/Fettah010/DevFlutt.git
 cd DevFlutt
 
 # 2. Resolve dependencies
 flutter pub get
 
-# 3. Run the app
-flutter run
-
-# 4. Run tests
+# 3. Run the tests
 flutter test
+
+# 4. Run the app (needs a connected device or a running emulator)
+flutter run
 ```
 
 ## Project structure

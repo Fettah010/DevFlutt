@@ -2,7 +2,8 @@
 
 ## Reporting a Vulnerability
 
-Report security vulnerabilities by opening a GitHub Security Advisory in this repository.
+Report security vulnerabilities by opening a GitHub Security Advisory at
+https://github.com/Fettah010/DevFlutt/security/advisories/new.
 
 Do not open a public issue for security vulnerabilities.
 

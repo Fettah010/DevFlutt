@@ -62,8 +62,6 @@ void main() {
     });
 
     test('generation is deterministic', () async {
-      final plan = planner.plan(spec(name: 'Det', org: 'com.example', preset: 'core'));
-
       final first = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));
       final second = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));
 

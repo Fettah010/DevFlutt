@@ -185,6 +185,8 @@ void main() {
         '--output',
         dir.path,
         '--force',
+        '--brick-dir',
+        '../../bricks/project',
       ], out: out.writeln);
 
       expect(code, 0);

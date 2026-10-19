@@ -5,7 +5,6 @@ import 'package:args/args.dart';
 import '../../graph/compatibility_exception.dart';
 import '../../graph/project_planner.dart';
 import '../../manifest/module_manifest.dart';
-import '../../models/generation_plan.dart';
 import '../../models/project_spec.dart';
 import '../command.dart';
 

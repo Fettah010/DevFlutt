@@ -1,4 +1,5 @@
 import '../manifest/module_manifest.dart';
+import 'project_spec.dart';
 
 /// The resolved, validated plan for a generation run.
 class GenerationPlan {

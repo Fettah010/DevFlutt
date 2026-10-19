@@ -37,6 +37,11 @@ jobs:
           name: pubspec-lock
           path: pubspec.lock
 
+      - name: Show formatting changes
+        run: |
+          dart format .
+          git --no-pager diff -- . || true
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
 

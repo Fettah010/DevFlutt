@@ -26,11 +26,7 @@ class CreateCommand extends FtemplateCommand {
   @override
   ArgParser get parser => ArgParser()
     ..addOption('name', abbr: 'n', help: 'Application name.')
-    ..addOption(
-      'org',
-      abbr: 'o',
-      help: 'Reverse-domain organization (for example com.example).',
-    )
+    ..addOption('org', abbr: 'o', help: 'Reverse-domain organization (for example com.example).')
     ..addOption('preset', abbr: 'p', defaultsTo: 'blank', help: 'Preset to use.')
     ..addOption('output', abbr: 'O', defaultsTo: '.', help: 'Output directory.')
     ..addOption('platforms', defaultsTo: 'android', help: 'Comma-separated target platforms.')

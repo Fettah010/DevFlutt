@@ -18,12 +18,8 @@ class ValidateCommand extends FtemplateCommand {
   String get description => 'Validate a module manifest file.';
 
   @override
-  ArgParser get parser => ArgParser()
-    ..addOption(
-      'manifest',
-      abbr: 'm',
-      help: 'Path to a module manifest YAML file.',
-    );
+  ArgParser get parser =>
+      ArgParser()..addOption('manifest', abbr: 'm', help: 'Path to a module manifest YAML file.');
 
   @override
   Future<int> run(

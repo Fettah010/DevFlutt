@@ -19,8 +19,7 @@ class ExplainModuleCommand extends FtemplateCommand {
   String get description => 'Show the details of a single module.';
 
   @override
-  ArgParser get parser =>
-      ArgParser()..addOption('id', abbr: 'i', mandatory: true, help: 'Module ID.');
+  ArgParser get parser => ArgParser()..addOption('id', abbr: 'i', help: 'Module ID.');
 
   @override
   Future<int> run(

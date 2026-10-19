@@ -25,11 +25,10 @@ class CreateCommand extends FtemplateCommand {
 
   @override
   ArgParser get parser => ArgParser()
-    ..addOption('name', abbr: 'n', mandatory: true, help: 'Application name.')
+    ..addOption('name', abbr: 'n', help: 'Application name.')
     ..addOption(
       'org',
       abbr: 'o',
-      mandatory: true,
       help: 'Reverse-domain organization (for example com.example).',
     )
     ..addOption('preset', abbr: 'p', defaultsTo: 'blank', help: 'Preset to use.')
@@ -58,10 +57,21 @@ class CreateCommand extends FtemplateCommand {
     final emit = out ?? (line) => stdout.writeln(line);
     final error = err ?? (line) => stderr.writeln(line);
 
+    final name = results.option('name');
+    final org = results.option('org');
+    if (name == null || name.isEmpty) {
+      error('Missing --name. Usage: ftemplate create --name <app> --org <org>.');
+      return 64;
+    }
+    if (org == null || org.isEmpty) {
+      error('Missing --org. Usage: ftemplate create --name <app> --org <org>.');
+      return 64;
+    }
+
     try {
       final spec = ProjectSpec(
-        name: results.option('name') as String,
-        org: results.option('org') as String,
+        name: name,
+        org: org,
         preset: results.option('preset') as String,
         output: results.option('output') as String,
         platforms: _parsePlatforms(results.option('platforms') as String),

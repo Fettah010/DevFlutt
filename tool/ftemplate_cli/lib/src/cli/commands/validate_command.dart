@@ -22,7 +22,6 @@ class ValidateCommand extends FtemplateCommand {
     ..addOption(
       'manifest',
       abbr: 'm',
-      mandatory: true,
       help: 'Path to a module manifest YAML file.',
     );
 

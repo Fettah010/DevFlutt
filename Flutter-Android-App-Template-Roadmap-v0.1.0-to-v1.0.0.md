@@ -776,6 +776,8 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 
 ## `v0.2.0` — Generator prototype and module-manifest contract
 
+**Status: Complete** (2026-10-19). Delivered and tagged as `v0.2.0`; see `docs/releases/v0.2.0-plan.md` and `docs/releases/v0.2.0-report.md`.
+
 **Outcome:** a validated generation pipeline for blank/core projects and a small initial module set.
 
 ### Implement

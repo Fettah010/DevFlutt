@@ -151,8 +151,7 @@ void main() {
     });
 
     test('refuses to overwrite a non-empty directory without --force', () async {
-      final dir = Directory('${Directory.systemTemp.path}/nonempty_test')
-        ..createSync();
+      final dir = Directory('${Directory.systemTemp.path}/nonempty_test')..createSync();
       File('${dir.path}/existing.txt').writeAsStringSync('keep me');
 
       final err = StringBuffer();
@@ -173,8 +172,7 @@ void main() {
     });
 
     test('overwrites a non-empty directory with --force', () async {
-      final dir = Directory('${Directory.systemTemp.path}/force_test')
-        ..createSync();
+      final dir = Directory('${Directory.systemTemp.path}/force_test')..createSync();
       File('${dir.path}/existing.txt').writeAsStringSync('delete me');
 
       final out = StringBuffer();

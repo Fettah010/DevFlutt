@@ -149,5 +149,49 @@ void main() {
       expect(code, 64);
       expect(err.toString(), contains('Unknown preset'));
     });
+
+    test('refuses to overwrite a non-empty directory without --force', () async {
+      final dir = Directory('${Directory.systemTemp.path}/nonempty_test')
+        ..createSync();
+      File('${dir.path}/existing.txt').writeAsStringSync('keep me');
+
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--output',
+        dir.path,
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('is not empty'));
+      expect(File('${dir.path}/existing.txt').existsSync(), isTrue);
+      dir.deleteSync(recursive: true);
+    });
+
+    test('overwrites a non-empty directory with --force', () async {
+      final dir = Directory('${Directory.systemTemp.path}/force_test')
+        ..createSync();
+      File('${dir.path}/existing.txt').writeAsStringSync('delete me');
+
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--output',
+        dir.path,
+        '--force',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(File('${dir.path}/pubspec.yaml').existsSync(), isTrue);
+      dir.deleteSync(recursive: true);
+    });
   });
 }

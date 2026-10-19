@@ -37,13 +37,8 @@ jobs:
           name: pubspec-lock
           path: pubspec.lock
 
-      - name: Show formatting changes
-        run: |
-          dart format .
-          git --no-pager diff -- . || true
-
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
         run: flutter analyze --fatal-infos
@@ -76,6 +71,12 @@ jobs:
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
         run: dart pub get
+
+      - name: Show formatting changes
+        working-directory: tool/ftemplate_cli
+        run: |
+          dart format .
+          git --no-pager diff -- . || true
 
       - name: Check formatting
         working-directory: tool/ftemplate_cli

@@ -58,7 +58,12 @@ class FtemplateCommandRunner {
     }
 
     final handler = _commands.firstWhere((candidate) => candidate.name == command.name);
-    return handler.run(command, out: output, err: error);
+    try {
+      return await handler.run(command, out: output, err: error);
+    } on ArgParserException catch (argError) {
+      error('Error: ${argError.message}');
+      return 64;
+    }
   }
 
   void _printUsage(void Function(String) output) {

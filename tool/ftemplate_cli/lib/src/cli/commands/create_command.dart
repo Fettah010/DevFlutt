@@ -59,9 +59,8 @@ class CreateCommand extends FtemplateCommand {
     final emit = out ?? (line) => stdout.writeln(line);
     final error = err ?? (line) => stderr.writeln(line);
 
-    ProjectSpec spec;
     try {
-      spec = ProjectSpec(
+      final spec = ProjectSpec(
         name: results.option('name') as String,
         org: results.option('org') as String,
         preset: results.option('preset') as String,
@@ -72,38 +71,33 @@ class CreateCommand extends FtemplateCommand {
         force: results.flag('force'),
         skipPub: results.flag('no-pub'),
       );
-    } on FormatException catch (nameError) {
-      error('Error: ${nameError.message}');
-      return 64;
-    }
+      final plan = _planner.plan(spec);
 
-    final GenerationPlan plan;
-    try {
-      plan = _planner.plan(spec);
+      emit('Project: ${spec.name}');
+      emit('Package: ${spec.projectName}');
+      emit('Application ID: ${spec.applicationId}');
+      emit('Preset: ${spec.preset}');
+      emit('Output: ${spec.output}');
+      emit('Platforms: ${spec.platforms.join(', ')}');
+      emit('Modules: ${_formatIds(plan.modules.map((module) => module.id))}');
+      emit('Dependencies: ${_formatDeps(plan.dependencies)}');
+      if (plan.permissions.isNotEmpty) {
+        emit('Permissions: ${plan.permissions.join(', ')}');
+      }
+      if (plan.configKeys.isNotEmpty) {
+        emit('Config keys: ${plan.configKeys.join(', ')}');
+      }
+      if (spec.dryRun) {
+        emit('Dry run — no files written.');
+      }
+      return 0;
     } on CompatibilityException catch (planError) {
       error('Error: ${planError.message}');
       return 64;
+    } on FormatException catch (specError) {
+      error('Error: ${specError.message}');
+      return 64;
     }
-
-    emit('Project: ${spec.name}');
-    emit('Package: ${spec.projectName}');
-    emit('Application ID: ${spec.applicationId}');
-    emit('Preset: ${spec.preset}');
-    emit('Output: ${spec.output}');
-    emit('Platforms: ${spec.platforms.join(', ')}');
-    emit('Modules: ${_formatIds(plan.modules.map((module) => module.id))}');
-    emit('Dependencies: ${_formatDeps(plan.dependencies)}');
-    if (plan.permissions.isNotEmpty) {
-      emit('Permissions: ${plan.permissions.join(', ')}');
-    }
-    if (plan.configKeys.isNotEmpty) {
-      emit('Config keys: ${plan.configKeys.join(', ')}');
-    }
-
-    if (spec.dryRun) {
-      emit('Dry run — no files written.');
-    }
-    return 0;
   }
 
   List<String> _parsePlatforms(String value) =>

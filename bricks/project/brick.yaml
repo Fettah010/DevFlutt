@@ -1,8 +1,6 @@
 name: project
 description: Base Flutter project scaffold for the DevFlutt template.
-version: 0.1.0
-environment:
-  mason: ^0.1.0
+version: 0.1.0+1
 vars:
   projectName:
     type: string

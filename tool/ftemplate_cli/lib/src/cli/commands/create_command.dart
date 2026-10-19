@@ -36,7 +36,7 @@ class CreateCommand extends FtemplateCommand {
     ..addOption('preset', abbr: 'p', defaultsTo: 'blank', help: 'Preset to use.')
     ..addOption('output', abbr: 'O', defaultsTo: '.', help: 'Output directory.')
     ..addOption('platforms', defaultsTo: 'android', help: 'Comma-separated target platforms.')
-    ..addOption('module', abbr: 'm', help: 'Additional module IDs (repeatable).')
+    ..addMultiOption('module', abbr: 'm', help: 'Additional module IDs (repeatable).')
     ..addOption('brick-dir', help: 'Override the path to the project brick.')
     ..addFlag(
       'dry-run',

@@ -13,29 +13,35 @@ import 'features/home/home_page.dart';
 class DevFluttApp extends StatelessWidget {
 {{#hasGoRouter}}
   DevFluttApp({super.key, required this.config});
+
+  final AppConfig config;
+  late final _router = buildAppRouter();
 {{/hasGoRouter}}
 {{^hasGoRouter}}
   const DevFluttApp({super.key, required this.config});
-{{/hasGoRouter}}
 
   final AppConfig config;
-{{#hasGoRouter}}
-  late final _router = buildAppRouter();
 {{/hasGoRouter}}
 
   @override
   Widget build(BuildContext context) {
+{{#hasGoRouter}}
+    return MaterialApp.router(
+      title: config.appName,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      routerConfig: _router,
+    );
+{{/hasGoRouter}}
+{{^hasGoRouter}}
     return MaterialApp(
       title: config.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-{{#hasGoRouter}}
-      routerConfig: _router,
-{{/hasGoRouter}}
-{{^hasGoRouter}}
       home: const HomePage(),
-{{/hasGoRouter}}
     );
+{{/hasGoRouter}}
   }
 }

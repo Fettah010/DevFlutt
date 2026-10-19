@@ -72,6 +72,13 @@ jobs:
         working-directory: tool/ftemplate_cli
         run: dart pub get
 
+      - name: Show formatting changes
+        working-directory: tool/ftemplate_cli
+        run: |
+          dart format .
+          git --no-pager diff -- . > /tmp/fmt.diff || true
+          cat /tmp/fmt.diff
+
       - name: Check formatting
         working-directory: tool/ftemplate_cli
         run: dart format --output=none --set-exit-if-changed .

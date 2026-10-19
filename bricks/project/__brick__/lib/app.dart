@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
-import 'features/home/home_page.dart';
 {{#hasGoRouter}}
-import 'app_router.dart';
+import 'app/app_router.dart';
+{{/hasGoRouter}}
+{{^hasGoRouter}}
+import 'features/home/home_page.dart';
 {{/hasGoRouter}}
 
 /// Root widget for the generated application.
 class DevFluttApp extends StatelessWidget {
-  const DevFluttApp({super.key, required this.config});
+  DevFluttApp({super.key, required this.config});
 
   final AppConfig config;
 {{#hasGoRouter}}

@@ -8,7 +8,6 @@ import 'commands/explain_module_command.dart';
 import 'commands/list_modules_command.dart';
 import 'commands/validate_command.dart';
 import 'commands/version_command.dart';
-import '../graph/project_planner.dart';
 import '../manifest/manifest_repository.dart';
 
 /// Parses the top-level `ftemplate` invocation and dispatches to a subcommand.

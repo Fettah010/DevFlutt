@@ -73,12 +73,12 @@ void main() {
   });
 }
 
-Map<String, String> _relativeContents(Directory root) {
-  final contents = <String, String>{};
+Map<String, List<int>> _relativeContents(Directory root) {
+  final contents = <String, List<int>>{};
   for (final entity in root.listSync(recursive: true)) {
     if (entity is File) {
       final relative = entity.path.substring(root.path.length + 1);
-      contents[relative] = entity.readAsStringSync();
+      contents[relative] = entity.readAsBytesSync();
     }
   }
   return contents;

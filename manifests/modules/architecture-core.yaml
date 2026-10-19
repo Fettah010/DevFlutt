@@ -1,0 +1,36 @@
+id: architecture-core
+version: 1
+category: core
+summary: >-
+  App bootstrap, error boundaries, configuration contract, project conventions,
+  and test structure.
+requires: []
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys:
+  - APP_NAME
+  - APP_ENV
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/main.dart
+  - lib/app.dart
+  - lib/core/config/app_config.dart
+  - lib/core/theme/app_theme.dart
+  - lib/features/home/home_page.dart
+  - test/unit/app_config_test.dart
+  - test/widget/app_theme_test.dart
+  - test/widget/home_page_test.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: true
+  integration: none

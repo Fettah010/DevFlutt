@@ -1,0 +1,7 @@
+id: core
+version: 1
+summary: A structured app foundation for a growing product.
+modules:
+  - architecture-core
+  - state-riverpod
+  - navigation

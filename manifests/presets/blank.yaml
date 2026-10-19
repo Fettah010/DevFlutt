@@ -1,0 +1,4 @@
+id: blank
+version: 1
+summary: Smallest sensible starting app. No optional modules.
+modules: []

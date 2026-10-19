@@ -3,15 +3,37 @@
 A blank-first Flutter starter and project generator for Android-first applications. Start with a
 clean, runnable app — or generate only the modules your product needs.
 
-> **Status:** v0.1.0 (verified blank foundation). The generator and optional modules are planned for
-> later releases.
+> **Status:** v0.2.0 (generator prototype and module-manifest contract). The generator produces
+> `blank` and `core` projects; later releases add networking, auth, persistence, and more.
 
 ## What this is
 
 - **A GitHub template repository** with a small, runnable Flutter app as the blank reference.
-- **A planned bundled generator** (v0.2.0+) that creates tailored projects from presets and
-  optional modules.
+- **A bundled generator** (`ftemplate`) that creates tailored projects from presets and optional
+  modules, with a versioned manifest schema and dependency/conflict graph.
 - **A documented architecture baseline** that grows module by module — never a giant example app.
+
+## Generate a project
+
+```bash
+# Resolve the generator's dependencies
+dart pub get
+
+# Generate a blank project into ./my_app
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset blank --output ./my_app
+
+# Generate a core project (adds Riverpod and go_router)
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset core --output ./my_app
+
+# Preview without writing files
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset core --dry-run
+```
+
+The generated project is independent of the generator at runtime. It carries a
+`.devflutt.yaml` origin marker with the template version and selected modules.
 
 ## Requirements
 
@@ -56,9 +78,13 @@ test/
   unit/                     # domain + config tests
   widget/                   # UI + theme tests
 android/                    # Android platform project
+tool/ftemplate_cli/         # bundled generator (Dart CLI)
+  bin/ lib/ test/
+bricks/project/            # Mason brick that scaffolds generated projects
+manifests/                  # module manifests, presets, schema
 tool/verify/                # local quality gate scripts
 .github/workflows/          # CI
-docs/releases/              # per-version plans and reports
+docs/                       # plans, reports, ADRs, modules
 ```
 
 ## Verifying
@@ -79,10 +105,18 @@ an unconditional success message.
 Individual commands:
 
 ```bash
-dart format --output=none --set-exit-if-changed .
+# Reference app
+dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 flutter build apk --debug
+
+# Generator package
+cd tool/ftemplate_cli
+dart pub get
+dart format --output=none --set-exit-if-changed .
+dart analyze --fatal-infos
+dart test
 ```
 
 ## Blank-first guarantees

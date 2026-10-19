@@ -38,7 +38,7 @@ jobs:
           path: pubspec.lock
 
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
         run: flutter analyze --fatal-infos
@@ -53,6 +53,89 @@ jobs:
           name: test-logs
           path: build/verify-logs/
           if-no-files-found: ignore
+
+  generator:
+    name: Generator package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+
+      - name: Resolve generator dependencies
+        working-directory: tool/ftemplate_cli
+        run: dart pub get
+
+      - name: Check formatting
+        working-directory: tool/ftemplate_cli
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze generator
+        working-directory: tool/ftemplate_cli
+        run: dart analyze --fatal-infos
+
+      - name: Run generator tests
+        working-directory: tool/ftemplate_cli
+        run: dart test
+
+  generated-projects:
+    name: Generated project matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [blank, core]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.6
+          cache: true
+
+      - name: Resolve generator dependencies
+        working-directory: tool/ftemplate_cli
+        run: dart pub get
+
+      - name: Generate ${{ matrix.preset }} project
+        run: |
+          dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+            --name "Generated App" \
+            --org com.example \
+            --preset ${{ matrix.preset }} \
+            --output /tmp/generated-${{ matrix.preset }} \
+            --force
+
+      - name: Resolve dependencies
+        working-directory: /tmp/generated-${{ matrix.preset }}
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: /tmp/generated-${{ matrix.preset }}
+        run: flutter analyze --fatal-infos
+
+      - name: Test
+        working-directory: /tmp/generated-${{ matrix.preset }}
+        run: flutter test
+
+      - name: Build debug APK
+        working-directory: /tmp/generated-${{ matrix.preset }}
+        run: flutter build apk --debug
 
   android-build:
     name: Android debug and release build

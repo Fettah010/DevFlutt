@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://devflutt.com/schemas/module.schema.json",
+  "title": "DevFlutt module manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "category",
+    "summary",
+    "requires",
+    "conflictsWith",
+    "platforms",
+    "pubDependencies",
+    "nativeChanges",
+    "permissions",
+    "configKeys",
+    "privacy",
+    "outputs",
+    "requiredSetup",
+    "tests"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "version": { "type": "integer", "minimum": 1 },
+    "category": { "type": "string" },
+    "summary": { "type": "string" },
+    "requires": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "conflictsWith": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "platforms": {
+      "type": "array",
+      "items": { "enum": ["android", "ios"] },
+      "uniqueItems": true
+    },
+    "pubDependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" }
+        }
+      }
+    },
+    "nativeChanges": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["android", "ios"],
+      "properties": {
+        "android": { "type": "array", "items": { "type": "string" } },
+        "ios": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "configKeys": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network", "telemetry"],
+      "properties": {
+        "network": { "type": "boolean" },
+        "telemetry": { "type": "boolean" }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "requiredSetup": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "widget", "integration"],
+      "properties": {
+        "unit": { "type": "boolean" },
+        "widget": { "type": "boolean" },
+        "integration": { "type": "string" }
+      }
+    }
+  }
+}

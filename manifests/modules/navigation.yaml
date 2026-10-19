@@ -1,0 +1,31 @@
+id: navigation
+version: 1
+category: routing
+summary: >-
+  Declarative routes, typed route helpers, deep-link examples, and guarded
+  destinations.
+requires:
+  - architecture-core
+  - state-riverpod
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: go_router
+    version: ^18.0.2
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/app/app_router.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: true
+  integration: none

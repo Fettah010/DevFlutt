@@ -8,7 +8,6 @@ import '../../graph/compatibility_exception.dart';
 import '../../graph/project_planner.dart';
 import '../../manifest/manifest_repository.dart';
 import '../../manifest/module_manifest.dart';
-import '../../models/generation_plan.dart';
 import '../../models/project_spec.dart';
 import '../command.dart';
 
@@ -101,7 +100,7 @@ class CreateCommand extends FtemplateCommand {
         return 0;
       }
 
-      final brickDir = results.option('brick-dir') as String?;
+      final brickDir = results.option('brick-dir');
       final engine = GenerationEngine(brickPath: p.absolute(brickDir ?? brickPath));
       final destination = Directory(spec.output);
 

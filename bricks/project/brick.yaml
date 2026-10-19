@@ -32,4 +32,3 @@ vars:
   extraDependencies:
     type: list
     description: Extra pub dependencies as "name: version" strings.
-    default: []

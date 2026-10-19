@@ -23,9 +23,7 @@ void main() {
 
   Future<GenerationResult> generate(ProjectSpec projectSpec) async {
     try {
-      return await GenerationEngine(brickPath: brickPath).generate(
-        planner.plan(projectSpec),
-      );
+      return await GenerationEngine(brickPath: brickPath).generate(planner.plan(projectSpec));
     } on Exception catch (error) {
       fail('Generation failed: $error');
     }
@@ -47,9 +45,7 @@ void main() {
     });
 
     test('generates a core project with Riverpod and go_router', () async {
-      final result = await generate(
-        spec(name: 'Core App', org: 'com.example', preset: 'core'),
-      );
+      final result = await generate(spec(name: 'Core App', org: 'com.example', preset: 'core'));
 
       final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
       expect(pubspec, contains('flutter_riverpod'));

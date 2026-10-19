@@ -31,4 +31,4 @@ vars:
     default: false
   extraDependencies:
     type: list
-    description: Extra pub dependencies as "name: version" strings.
+    description: Extra pub dependencies as strings.

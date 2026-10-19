@@ -23,10 +23,19 @@ void main() {
     modules: modules,
   );
 
+  Future<GenerationResult> generate(ProjectSpec projectSpec) async {
+    try {
+      return await GenerationEngine(brickPath: brickPath).generate(
+        planner.plan(projectSpec),
+      );
+    } on Exception catch (error) {
+      fail('Generation failed: $error');
+    }
+  }
+
   group('GenerationEngine', () {
     test('generates a blank project with no optional dependencies', () async {
-      final engine = GenerationEngine(brickPath: brickPath);
-      final result = await engine.generate(planner.plan(spec(name: 'Blank', org: 'com.example')));
+      final result = await generate(spec(name: 'Blank', org: 'com.example'));
 
       expect(result.projectDir.existsSync(), isTrue);
       expect(result.metadata['template_version'], packageVersion);
@@ -40,9 +49,8 @@ void main() {
     });
 
     test('generates a core project with Riverpod and go_router', () async {
-      final engine = GenerationEngine(brickPath: brickPath);
-      final result = await engine.generate(
-        planner.plan(spec(name: 'Core App', org: 'com.example', preset: 'core')),
+      final result = await generate(
+        spec(name: 'Core App', org: 'com.example', preset: 'core'),
       );
 
       final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
@@ -54,11 +62,10 @@ void main() {
     });
 
     test('generation is deterministic', () async {
-      final engine = GenerationEngine(brickPath: brickPath);
       final plan = planner.plan(spec(name: 'Det', org: 'com.example', preset: 'core'));
 
-      final first = await engine.generate(plan);
-      final second = await engine.generate(plan);
+      final first = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));
+      final second = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));
 
       expect(_relativeContents(first.projectDir), _relativeContents(second.projectDir));
 

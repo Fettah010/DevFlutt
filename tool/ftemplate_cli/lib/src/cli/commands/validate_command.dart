@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
+import 'package:yaml/yaml.dart';
 
 import '../../manifest/manifest_validator.dart';
 import '../../manifest/module_manifest.dart';
@@ -34,20 +35,15 @@ class ValidateCommand extends FtemplateCommand {
     final emit = out ?? (line) => stdout.writeln(line);
     final error = err ?? (line) => stderr.writeln(line);
 
-    final path = results.option('manifest') as String?;
+    final path = results.option('manifest');
     if (path == null || path.isEmpty) {
       error('Missing --manifest. Usage: ftemplate validate --manifest <file>.');
       return 64;
     }
 
-    final File file;
-    try {
-      file = File(path);
-      if (!file.existsSync()) {
-        throw FileSystemException('File not found', path);
-      }
-    } on FileSystemException catch (fileError) {
-      error('Cannot read "$path": ${fileError.message}');
+    final file = File(path);
+    if (!file.existsSync()) {
+      error('Cannot read "$path": file not found.');
       return 66;
     }
 

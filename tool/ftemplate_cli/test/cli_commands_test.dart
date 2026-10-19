@@ -24,10 +24,7 @@ void main() {
   group('explain-module', () {
     test('describes a known module', () async {
       final out = StringBuffer();
-      final code = await runner.run(
-        ['explain-module', '--id', 'state-riverpod'],
-        out: out.writeln,
-      );
+      final code = await runner.run(['explain-module', '--id', 'state-riverpod'], out: out.writeln);
 
       expect(code, 0);
       expect(out.toString(), contains('state-riverpod'));
@@ -50,10 +47,7 @@ void main() {
 
     test('requires --id', () async {
       final err = StringBuffer();
-      final code = await runner.run(
-        ['explain-module'],
-        err: err.writeln,
-      );
+      final code = await runner.run(['explain-module'], err: err.writeln);
 
       expect(code, 64);
       expect(err.toString(), contains('Missing --id'));
@@ -77,9 +71,8 @@ void main() {
       final invalid = File('${Directory.systemTemp.path}/invalid_module.yaml')
         ..writeAsStringSync('id: 123\n');
       final err = StringBuffer();
-      final code = await FtemplateCommandRunner(
-        manifestsDir: '../../manifests',
-      ).run(['validate', '--manifest', invalid.path], err: err.writeln);
+      final code = await FtemplateCommandRunner(manifestsDir: '../../manifests')
+          .run(['validate', '--manifest', invalid.path], err: err.writeln);
 
       expect(code, 65);
       expect(err.toString(), contains('Invalid manifest'));
@@ -91,9 +84,12 @@ void main() {
       final out = StringBuffer();
       final code = await runner.run([
         'create',
-        '--name', 'My App',
-        '--org', 'com.example',
-        '--preset', 'blank',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
         '--dry-run',
       ], out: out.writeln);
 
@@ -109,9 +105,12 @@ void main() {
       final out = StringBuffer();
       final code = await runner.run([
         'create',
-        '--name', 'Shop App',
-        '--org', 'com.example',
-        '--preset', 'core',
+        '--name',
+        'Shop App',
+        '--org',
+        'com.example',
+        '--preset',
+        'core',
         '--dry-run',
       ], out: out.writeln);
 
@@ -125,8 +124,10 @@ void main() {
       final err = StringBuffer();
       final code = await runner.run([
         'create',
-        '--name', '123',
-        '--org', 'com.example',
+        '--name',
+        '123',
+        '--org',
+        'com.example',
       ], err: err.writeln);
 
       expect(code, 64);
@@ -137,9 +138,12 @@ void main() {
       final err = StringBuffer();
       final code = await runner.run([
         'create',
-        '--name', 'My App',
-        '--org', 'com.example',
-        '--preset', 'does-not-exist',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'does-not-exist',
       ], err: err.writeln);
 
       expect(code, 64);

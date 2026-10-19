@@ -22,19 +22,17 @@ class ManifestRepository {
       ..sort((a, b) => a.path.compareTo(b.path));
   }
 
-  /// Loads every module manifest, sorted by ID.
-  List<ModuleManifest> loadModules() => _yamlFiles(Directory(
-    p.join(manifestsDir, 'modules'),
-  ))
-      .map((file) => loadModuleManifest(file.readAsStringSync()))
-      .toList();
+  /// Loads every module manifest, sorted by path.
+  List<ModuleManifest> loadModules() =>
+      _yamlFiles(Directory(p.join(manifestsDir, 'modules')))
+          .map((file) => loadModuleManifest(file.readAsStringSync()))
+          .toList();
 
-  /// Loads every preset, sorted by ID.
-  List<Preset> loadPresets() => _yamlFiles(Directory(
-    p.join(manifestsDir, 'presets'),
-  ))
-      .map((file) => loadPreset(file.readAsStringSync()))
-      .toList();
+  /// Loads every preset, sorted by path.
+  List<Preset> loadPresets() =>
+      _yamlFiles(Directory(p.join(manifestsDir, 'presets')))
+          .map((file) => loadPreset(file.readAsStringSync()))
+          .toList();
 
   /// Loads a single module manifest from an arbitrary path.
   ModuleManifest loadModuleFromFile(String path) =>

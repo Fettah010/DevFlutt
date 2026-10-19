@@ -27,6 +27,9 @@ class ProjectSpec {
   /// Target platforms.
   final List<String> platforms;
 
+  /// Explicitly added module IDs, on top of the preset.
+  final List<String> modules;
+
   /// When true, report the plan without writing files.
   final bool dryRun;
 
@@ -50,7 +53,7 @@ class ProjectSpec {
         .toLowerCase();
     if (normalized.isEmpty || !RegExp(r'^[a-z]').hasMatch(normalized)) {
       throw FormatException(
-        'Invalid project name "$name". Use letters, digits, spaces, or '
+        'Invalid project name "$value". Use letters, digits, spaces, or '
         'hyphens, starting with a letter.',
       );
     }

@@ -8,16 +8,14 @@ import 'commands/explain_module_command.dart';
 import 'commands/list_modules_command.dart';
 import 'commands/validate_command.dart';
 import 'commands/version_command.dart';
-import 'manifest/manifest_repository.dart';
+import '../manifest/manifest_repository.dart';
 
 /// Parses the top-level `ftemplate` invocation and dispatches to a subcommand.
 class FtemplateCommandRunner {
   FtemplateCommandRunner({String? manifestsDir})
-    : _repository = ManifestRepository(
-        manifestsDir: manifestsDir ?? 'manifests',
-      ) {
+    : _repository = ManifestRepository(manifestsDir: manifestsDir ?? 'manifests') {
     _commands = <FtemplateCommand>[
-      CreateCommand(_repository),
+      CreateCommand(ProjectPlanner(_repository)),
       ListModulesCommand(_repository),
       ExplainModuleCommand(_repository),
       const ValidateCommand(),

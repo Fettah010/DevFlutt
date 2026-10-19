@@ -4,7 +4,6 @@ import 'package:args/args.dart';
 
 import '../../graph/compatibility_exception.dart';
 import '../../graph/project_planner.dart';
-import '../../manifest/manifest_repository.dart';
 import '../../manifest/module_manifest.dart';
 import '../../models/generation_plan.dart';
 import '../../models/project_spec.dart';
@@ -15,10 +14,8 @@ import '../command.dart';
 /// File generation is performed by the generation engine; this command owns
 /// argument parsing, selection resolution, and the plan summary.
 class CreateCommand extends FtemplateCommand {
-  CreateCommand(this._repository)
-    : _planner = ProjectPlanner(_repository);
+  CreateCommand(this._planner);
 
-  final ManifestRepository _repository;
   final ProjectPlanner _planner;
 
   @override
@@ -38,15 +35,10 @@ class CreateCommand extends FtemplateCommand {
     )
     ..addOption('preset', abbr: 'p', defaultsTo: 'blank', help: 'Preset to use.')
     ..addOption('output', abbr: 'O', defaultsTo: '.', help: 'Output directory.')
-    ..addOption(
-      'platforms',
-      defaultsTo: 'android',
-      help: 'Comma-separated target platforms.',
-    )
-    ..addOption(
+    ..addOption('platforms', defaultsTo: 'android', help: 'Comma-separated target platforms.')
+    ..addMultiOption(
       'module',
       abbr: 'm',
-      allowMultiple: true,
       help: 'Additional module IDs (repeatable).',
     )
     ..addFlag(
@@ -55,12 +47,7 @@ class CreateCommand extends FtemplateCommand {
       defaultsTo: false,
       help: 'Print the plan without writing files.',
     )
-    ..addFlag(
-      'force',
-      abbr: 'f',
-      defaultsTo: false,
-      help: 'Overwrite a non-empty destination.',
-    )
+    ..addFlag('force', abbr: 'f', defaultsTo: false, help: 'Overwrite a non-empty destination.')
     ..addFlag(
       'no-pub',
       defaultsTo: false,
@@ -123,15 +110,12 @@ class CreateCommand extends FtemplateCommand {
     return 0;
   }
 
-  List<String> _parsePlatforms(String value) => value
-      .split(',')
-      .map((entry) => entry.trim())
-      .where((entry) => entry.isNotEmpty)
-      .toList();
+  List<String> _parsePlatforms(String value) =>
+      value.split(',').map((entry) => entry.trim()).where((entry) => entry.isNotEmpty).toList();
 
-  String _formatIds(Iterable<String> values) =>
-      values.isEmpty ? 'none' : values.join(', ');
+  String _formatIds(Iterable<String> values) => values.isEmpty ? 'none' : values.join(', ');
 
-  String _formatDeps(List<PubDependency> values) =>
-      values.isEmpty ? 'none' : values.map((d) => d.toString()).join(', ');
+  String _formatDeps(List<PubDependency> values) => values.isEmpty
+      ? 'none'
+      : values.map((dependency) => dependency.toString()).join(', ');
 }

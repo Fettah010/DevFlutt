@@ -126,11 +126,7 @@ ModuleManifest loadModuleManifest(String yaml) {
 
 /// A named, versioned set of modules.
 class Preset {
-  const Preset({
-    required this.id,
-    required this.summary,
-    required this.modules,
-  });
+  const Preset({required this.id, required this.summary, required this.modules});
 
   final String id;
   final String summary;

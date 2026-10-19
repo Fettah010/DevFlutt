@@ -19,8 +19,8 @@ class ExplainModuleCommand extends FtemplateCommand {
   String get description => 'Show the details of a single module.';
 
   @override
-  ArgParser get parser => ArgParser()
-    ..addOption('id', abbr: 'i', mandatory: true, help: 'Module ID.');
+  ArgParser get parser =>
+      ArgParser()..addOption('id', abbr: 'i', mandatory: true, help: 'Module ID.');
 
   @override
   Future<int> run(
@@ -31,7 +31,7 @@ class ExplainModuleCommand extends FtemplateCommand {
     final emit = out ?? (line) => stdout.writeln(line);
     final error = err ?? (line) => stderr.writeln(line);
 
-    final id = results.option('id') as String?;
+    final id = results.option('id');
     if (id == null || id.isEmpty) {
       error('Missing --id. Usage: ftemplate explain-module --id <module>.');
       return 64;

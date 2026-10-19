@@ -133,15 +133,11 @@ class CreateCommand extends FtemplateCommand {
     }
   }
 
-  List<String> _parsePlatforms(String value) => value
-      .split(',')
-      .map((entry) => entry.trim())
-      .where((entry) => entry.isNotEmpty)
-      .toList();
+  List<String> _parsePlatforms(String value) =>
+      value.split(',').map((entry) => entry.trim()).where((entry) => entry.isNotEmpty).toList();
 
   String _formatIds(Iterable<String> values) => values.isEmpty ? 'none' : values.join(', ');
 
-  String _formatDeps(List<PubDependency> values) => values.isEmpty
-      ? 'none'
-      : values.map((dependency) => dependency.toString()).join(', ');
+  String _formatDeps(List<PubDependency> values) =>
+      values.isEmpty ? 'none' : values.map((dependency) => dependency.toString()).join(', ');
 }

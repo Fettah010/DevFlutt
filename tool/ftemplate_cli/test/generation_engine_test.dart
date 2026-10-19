@@ -5,9 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   const brickPath = '../../bricks/project';
-  final planner = ProjectPlanner(
-    ManifestRepository(manifestsDir: '../../manifests'),
-  );
+  final planner = ProjectPlanner(ManifestRepository(manifestsDir: '../../manifests'));
 
   ProjectSpec spec({
     required String name,

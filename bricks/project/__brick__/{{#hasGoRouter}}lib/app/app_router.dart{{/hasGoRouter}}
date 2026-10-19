@@ -1,0 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../features/home/home_page.dart';
+
+/// Builds the application router.
+GoRouter buildAppRouter() => GoRouter(
+  initialLocation: '/',
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const HomePage(),
+    ),
+  ],
+);

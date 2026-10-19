@@ -16,7 +16,7 @@ class FtemplateCommandRunner {
   FtemplateCommandRunner({String? manifestsDir})
     : _repository = ManifestRepository(manifestsDir: manifestsDir ?? 'manifests') {
     _commands = <FtemplateCommand>[
-      CreateCommand(ProjectPlanner(_repository)),
+      CreateCommand(repository: _repository),
       ListModulesCommand(_repository),
       ExplainModuleCommand(_repository),
       const ValidateCommand(),

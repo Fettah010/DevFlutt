@@ -1,0 +1,37 @@
+name: project
+description: Base Flutter project scaffold for the DevFlutt template.
+version: 0.1.0
+environment:
+  mason: ^0.1.0
+vars:
+  projectName:
+    type: string
+    description: Dart package identifier.
+  projectDescription:
+    type: string
+    description: Human-facing application description.
+  org:
+    type: string
+    description: Reverse-domain organization.
+  applicationId:
+    type: string
+    description: Android application ID.
+  packagePath:
+    type: string
+    description: Application ID with dots replaced by slashes.
+  hasArchitectureCore:
+    type: boolean
+    description: Include the core architecture (config, theme, bootstrap).
+    default: true
+  hasStateRiverpod:
+    type: boolean
+    description: Include the Riverpod provider scope.
+    default: false
+  hasGoRouter:
+    type: boolean
+    description: Include the go_router router.
+    default: false
+  extraDependencies:
+    type: list
+    description: Extra pub dependencies as "name: version" strings.
+    default: []

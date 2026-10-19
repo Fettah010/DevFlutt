@@ -1,0 +1,18 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Shared application state container.
+///
+/// Lives above [MaterialApp] (or [MaterialApp.router]) so every widget can
+/// read it. Feature providers are registered in feature folders, not here.
+final appStateProvider = Provider<AppState>((ref) => const AppState());
+
+/// Immutable application state shared across features.
+@immutable
+class AppState {
+  const AppState({this.loaded = false});
+
+  final bool loaded;
+
+  AppState copyWith({bool? loaded}) => AppState(loaded: loaded ?? this.loaded);
+}

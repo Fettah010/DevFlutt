@@ -11,7 +11,12 @@ import 'features/home/home_page.dart';
 
 /// Root widget for the generated application.
 class DevFluttApp extends StatelessWidget {
+{{#hasGoRouter}}
   DevFluttApp({super.key, required this.config});
+{{/hasGoRouter}}
+{{^hasGoRouter}}
+  const DevFluttApp({super.key, required this.config});
+{{/hasGoRouter}}
 
   final AppConfig config;
 {{#hasGoRouter}}

@@ -36,11 +36,7 @@ class CreateCommand extends FtemplateCommand {
     ..addOption('preset', abbr: 'p', defaultsTo: 'blank', help: 'Preset to use.')
     ..addOption('output', abbr: 'O', defaultsTo: '.', help: 'Output directory.')
     ..addOption('platforms', defaultsTo: 'android', help: 'Comma-separated target platforms.')
-    ..addMultiOption(
-      'module',
-      abbr: 'm',
-      help: 'Additional module IDs (repeatable).',
-    )
+    ..addMultiOption('module', abbr: 'm', help: 'Additional module IDs (repeatable).')
     ..addFlag(
       'dry-run',
       abbr: 'd',
@@ -115,7 +111,6 @@ class CreateCommand extends FtemplateCommand {
 
   String _formatIds(Iterable<String> values) => values.isEmpty ? 'none' : values.join(', ');
 
-  String _formatDeps(List<PubDependency> values) => values.isEmpty
-      ? 'none'
-      : values.map((dependency) => dependency.toString()).join(', ');
+  String _formatDeps(List<PubDependency> values) =>
+      values.isEmpty ? 'none' : values.map((dependency) => dependency.toString()).join(', ');
 }

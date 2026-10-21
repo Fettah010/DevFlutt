@@ -6,24 +6,15 @@
 abstract final class AppRoutes {
   /// The application root.
   static const String home = '/';
-
-{{#hasFeatureExample}}
-  /// The counter feature example.
+{{#hasFeatureExample}}  /// The counter feature example.
   static const String counter = '/counter';
-{{/hasFeatureExample}}
-{{#hasShowcase}}
-  /// The component showcase.
+{{/hasFeatureExample}}{{#hasShowcase}}  /// The component showcase.
   static const String showcase = '/showcase';
 {{/hasShowcase}}
-
   /// Every declared route path.
   static const List<String> all = <String>[
     home,
-{{#hasFeatureExample}}
-    counter,
-{{/hasFeatureExample}}
-{{#hasShowcase}}
-    showcase,
-{{/hasShowcase}}
-  ];
+{{#hasFeatureExample}}    counter,
+{{/hasFeatureExample}}{{#hasShowcase}}    showcase,
+{{/hasShowcase}}  ];
 }

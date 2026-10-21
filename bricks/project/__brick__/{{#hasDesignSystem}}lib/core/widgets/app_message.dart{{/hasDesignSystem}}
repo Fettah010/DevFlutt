@@ -59,7 +59,7 @@ class AppMessage extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: const BorderRadius.circular(AppRadius.md),
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.md)),
       ),
       child: Row(
         children: [

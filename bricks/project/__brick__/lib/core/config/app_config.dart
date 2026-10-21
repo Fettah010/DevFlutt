@@ -48,7 +48,7 @@ class AppConfig {
   });
 
   /// The base URL used when no API base URL is configured.
-  static const Uri defaultApiBaseUrl = Uri(scheme: 'https', host: 'api.example.com');
+  static const String defaultApiBaseUrl = 'https://api.example.com';
 
   /// Human-facing application name.
   final String appName;
@@ -57,7 +57,7 @@ class AppConfig {
   final AppEnvironment environment;
 
   /// Base URL of the backend API.
-  final Uri apiBaseUrl;
+  final String apiBaseUrl;
 
   /// Feature flags enabled for this build.
   final Set<String> featureFlags;
@@ -88,7 +88,7 @@ class AppConfig {
 
   static final RegExp _flagPattern = RegExp(r'^[A-Za-z0-9_-]+$');
 
-  static Uri _parseApiBaseUrl(String value) {
+  static String _parseApiBaseUrl(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) {
       return defaultApiBaseUrl;
@@ -102,16 +102,12 @@ class AppConfig {
     }
 
     if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
-      throw StateError(
-        'Invalid API_BASE_URL value. Expected an absolute http or https URL.',
-      );
+      throw StateError('Invalid API_BASE_URL value. Expected an absolute http or https URL.');
     }
     if (parsed.scheme != 'http' && parsed.scheme != 'https') {
-      throw StateError(
-        'Invalid API_BASE_URL value. Expected an http or https URL.',
-      );
+      throw StateError('Invalid API_BASE_URL value. Expected an http or https URL.');
     }
-    return parsed;
+    return trimmed;
   }
 
   static Set<String> _parseFeatureFlags(String value) {

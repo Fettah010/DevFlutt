@@ -125,6 +125,10 @@ jobs:
         working-directory: /tmp/generated-${{ matrix.preset }}
         run: flutter pub get
 
+      - name: Check formatting
+        working-directory: /tmp/generated-${{ matrix.preset }}
+        run: dart format --output=none --set-exit-if-changed lib test
+
       - name: Analyze
         working-directory: /tmp/generated-${{ matrix.preset }}
         run: flutter analyze --fatal-infos

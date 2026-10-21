@@ -4,6 +4,8 @@ analyzer:
   exclude:
     - tool/**
     - bricks/**
+    - build/**
+    - android/**
   language:
     strict-casts: true
     strict-inference: true

@@ -3,8 +3,9 @@
 A blank-first Flutter starter and project generator for Android-first applications. Start with a
 clean, runnable app — or generate only the modules your product needs.
 
-> **Status:** v0.2.0 (generator prototype and module-manifest contract). The generator produces
-> `blank` and `core` projects; later releases add networking, auth, persistence, and more.
+> **Status:** v0.3.0 (production architecture, themes, navigation, and environments). The generator
+> produces `blank`, `core`, and `demo` projects; later releases add networking, auth, persistence,
+> and more.
 
 ## What this is
 
@@ -23,9 +24,13 @@ dart pub get
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
   --name "My App" --org com.example --preset blank --output ./my_app
 
-# Generate a core project (adds Riverpod and go_router)
+# Generate a core project (adds Riverpod, go_router, the design system, and the counter example)
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
   --name "My App" --org com.example --preset core --output ./my_app
+
+# Generate a demo project (adds the component showcase)
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset demo --output ./my_app
 
 # Preview without writing files
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
@@ -33,7 +38,9 @@ dart run tool/ftemplate_cli/bin/ftemplate.dart create \
 ```
 
 The generated project is independent of the generator at runtime. It carries a
-`.devflutt.yaml` origin marker with the template version and selected modules.
+`.devflutt.yaml` origin marker with the template version and selected modules. The
+generator runs the canonical Dart formatter over the generated files, so a generated
+project is format-clean out of the box.
 
 ## Requirements
 
@@ -60,7 +67,7 @@ flutter pub get
 flutter test
 
 # 4. Run the app (needs a connected device or a running emulator)
-flutter run
+flutter run --flavor dev
 ```
 
 ## Project structure
@@ -68,16 +75,18 @@ flutter run
 ```
 lib/
   main.dart                 # entry point
+  bootstrap/bootstrap.dart  # single startup path
   app.dart                  # MaterialApp root
   core/
     config/app_config.dart  # typed, validated configuration boundary
-    theme/app_theme.dart    # minimal light/dark theme tokens
+    theme/app_tokens.dart   # spacing, radius, and motion tokens
+    theme/app_theme.dart    # Material 3 light/dark themes
   features/
     home/home_page.dart     # example screen
 test/
   unit/                     # domain + config tests
   widget/                   # UI + theme tests
-android/                    # Android platform project
+android/                    # Android platform project (dev/staging/prod flavors)
 tool/ftemplate_cli/         # bundled generator (Dart CLI)
   bin/ lib/ test/
 bricks/project/            # Mason brick that scaffolds generated projects
@@ -109,7 +118,7 @@ Individual commands:
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
-flutter build apk --debug
+flutter build apk --debug --flavor dev
 
 # Generator package
 cd tool/ftemplate_cli

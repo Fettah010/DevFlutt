@@ -11,6 +11,5 @@ Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final config = AppConfig.fromEnvironment();
-
   runApp(DevFluttApp(config: config));
 }

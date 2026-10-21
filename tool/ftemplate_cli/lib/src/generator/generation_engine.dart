@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 
 import '../models/generation_plan.dart';
 import '../metadata/template_metadata.dart';
+import 'generated_dart_formatter.dart';
 
 /// The outcome of a generation run.
 class GenerationResult {
@@ -40,6 +41,8 @@ class GenerationEngine {
       final generator = await MasonGenerator.fromBrick(Brick.path(brickPath));
       final target = DirectoryGeneratorTarget(tempDir);
       final files = await generator.generate(target, vars: _vars(plan));
+
+      GeneratedDartFormatter().format(tempDir);
 
       await metadata.write(tempDir, plan);
       final loaded = readMetadata(tempDir) ?? <String, dynamic>{};

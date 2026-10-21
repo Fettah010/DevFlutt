@@ -1,11 +1,8 @@
 import 'package:go_router/go_router.dart';
-{{#hasFeatureExample}}
-import '../features/counter/presentation/counter_page.dart';
-{{/hasFeatureExample}}
-{{#hasShowcase}}
-import '../features/showcase/presentation/showcase_page.dart';
-{{/hasShowcase}}
-import '../features/home/home_page.dart';
+
+{{#hasFeatureExample}}import '../features/counter/presentation/counter_page.dart';
+{{/hasFeatureExample}}{{#hasShowcase}}import '../features/showcase/presentation/showcase_page.dart';
+{{/hasShowcase}}import '../features/home/home_page.dart';
 import 'app_routes.dart';
 import 'not_found_page.dart';
 import 'route_guard.dart';
@@ -24,19 +21,15 @@ GoRouter buildAppRouter({RouteRedirect redirect = routeGuard}) {
         path: AppRoutes.home,
         builder: (context, state) => const HomePage(),
       ),
-{{#hasFeatureExample}}
-      GoRoute(
+{{#hasFeatureExample}}      GoRoute(
         path: AppRoutes.counter,
         builder: (context, state) => const CounterPage(),
       ),
-{{/hasFeatureExample}}
-{{#hasShowcase}}
-      GoRoute(
+{{/hasFeatureExample}}{{#hasShowcase}}      GoRoute(
         path: AppRoutes.showcase,
         builder: (context, state) => const ShowcasePage(),
       ),
-{{/hasShowcase}}
-    ],
+{{/hasShowcase}}    ],
     errorBuilder: (context, state) => NotFoundPage(location: state.uri.toString()),
   );
 }

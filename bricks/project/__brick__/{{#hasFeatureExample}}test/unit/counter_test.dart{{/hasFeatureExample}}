@@ -22,14 +22,14 @@ void main() {
     test('starts at zero', () {
       const repository = InMemoryCounterRepository();
 
-      expect(repository.initialValue, 0);
+      expect(repository.initialValue, const Counter(value: 0));
     });
 
-    test('increments and decrements a value', () {
+    test('increments and decrements a counter', () {
       const repository = InMemoryCounterRepository();
 
-      expect(repository.increment(1), 2);
-      expect(repository.decrement(1), 0);
+      expect(repository.increment(const Counter(value: 1)), const Counter(value: 2));
+      expect(repository.decrement(const Counter(value: 1)), const Counter(value: 0));
     });
   });
 }

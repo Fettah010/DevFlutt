@@ -72,10 +72,10 @@ class _ShowcasePageState extends State<ShowcasePage> {
               title: 'States',
               child: Column(
                 children: [
-                  const SizedBox(height: 200, child: AppLoadingView()),
-                  const SizedBox(height: 200, child: AppEmptyView()),
+                  const SizedBox(height: 260, child: AppLoadingView()),
+                  const SizedBox(height: 260, child: AppEmptyView()),
                   SizedBox(
-                    height: 200,
+                    height: 260,
                     child: AppErrorView(onRetry: () => _show('Retry pressed.')),
                   ),
                 ],

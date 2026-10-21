@@ -21,7 +21,7 @@ void main() {
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
       await tester.pumpAndSettle();
 
-      await router.go('/does-not-exist');
+      router.go('/does-not-exist');
       await tester.pumpAndSettle();
 
       expect(find.text('Page not found'), findsOneWidget);
@@ -35,7 +35,7 @@ void main() {
       await tester.pumpWidget(MaterialApp.router(routerConfig: router));
       await tester.pumpAndSettle();
 
-      await router.go('/blocked');
+      router.go('/blocked');
       await tester.pumpAndSettle();
 
       expect(find.text('Home'), findsOneWidget);

@@ -7,7 +7,7 @@ void main() {
   group('ShowcasePage', () {
     testWidgets('renders the shared components', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: ShowcasePage()));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.text('Showcase'), findsOneWidget);
       expect(find.text('Message'), findsOneWidget);
@@ -19,10 +19,10 @@ void main() {
 
     testWidgets('updates the message when a button is pressed', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: ShowcasePage()));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       await tester.tap(find.text('Primary action'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       expect(find.text('Primary action pressed.'), findsOneWidget);
     });

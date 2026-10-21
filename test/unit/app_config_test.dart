@@ -45,14 +45,8 @@ void main() {
     });
 
     test('identifies the production environment', () {
-      const production = AppConfig(
-        appName: 'DevFlutt',
-        environment: AppEnvironment.production,
-      );
-      const development = AppConfig(
-        appName: 'DevFlutt',
-        environment: AppEnvironment.development,
-      );
+      const production = AppConfig(appName: 'DevFlutt', environment: AppEnvironment.production);
+      const development = AppConfig(appName: 'DevFlutt', environment: AppEnvironment.development);
 
       expect(production.isProduction, isTrue);
       expect(development.isProduction, isFalse);

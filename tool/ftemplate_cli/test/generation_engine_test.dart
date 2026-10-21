@@ -86,6 +86,21 @@ void main() {
       await result.projectDir.delete(recursive: true);
     });
 
+    test('generates format-clean Dart files', () async {
+      final result = await generate(
+        spec(name: 'Formatted', org: 'com.example', preset: 'core'),
+      );
+
+      final config = File(
+        '${result.projectDir.path}/lib/core/config/app_config.dart',
+      ).readAsStringSync();
+
+      expect(config, contains("throw StateError('Invalid API_BASE_URL value."));
+      expect(config, isNot(contains('\n\n\n')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
     test('generation is deterministic', () async {
       final first = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));
       final second = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));

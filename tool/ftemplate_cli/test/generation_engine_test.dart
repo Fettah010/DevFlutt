@@ -87,13 +87,10 @@ void main() {
     });
 
     test('generates format-clean Dart files', () async {
-      final result = await generate(
-        spec(name: 'Formatted', org: 'com.example', preset: 'core'),
-      );
+      final result = await generate(spec(name: 'Formatted', org: 'com.example', preset: 'core'));
 
-      final config = File(
-        '${result.projectDir.path}/lib/core/config/app_config.dart',
-      ).readAsStringSync();
+      final config = File('${result.projectDir.path}/lib/core/config/app_config.dart')
+          .readAsStringSync();
 
       expect(config, contains("throw StateError('Invalid API_BASE_URL value."));
       expect(config, isNot(contains('\n\n\n')));

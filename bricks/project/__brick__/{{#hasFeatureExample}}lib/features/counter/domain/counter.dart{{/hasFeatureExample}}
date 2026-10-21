@@ -1,0 +1,24 @@
+/// A counter value.
+///
+/// The domain layer stays free of Flutter and Riverpod imports, so the rules
+/// encoded here can be tested without a widget tree.
+class Counter {
+  const Counter({required this.value});
+
+  /// The current count.
+  final int value;
+
+  /// Returns a copy of this counter with the given value.
+  Counter copyWith({int? value}) => Counter(value: value ?? this.value);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) || other is Counter && other.value == value;
+  }
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => 'Counter($value)';
+}

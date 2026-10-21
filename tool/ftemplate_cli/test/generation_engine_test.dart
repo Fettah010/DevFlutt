@@ -55,6 +55,49 @@ void main() {
       await result.projectDir.delete(recursive: true);
     });
 
+    test('generates a demo project with the showcase feature', () async {
+      final result = await generate(spec(name: 'Demo App', org: 'com.example', preset: 'demo'));
+
+      final showcase = File(
+        '${result.projectDir.path}/lib/features/showcase/presentation/showcase_page.dart',
+      );
+      expect(showcase.existsSync(), isTrue);
+
+      final routes = File('${result.projectDir.path}/lib/app/app_routes.dart').readAsStringSync();
+      expect(routes, contains('/showcase'));
+
+      final router = File('${result.projectDir.path}/lib/app/app_router.dart').readAsStringSync();
+      expect(router, contains('AppRoutes.showcase'));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('the blank project contains no optional module files', () async {
+      final result = await generate(spec(name: 'Blank', org: 'com.example'));
+
+      final router = File('${result.projectDir.path}/lib/app/app_router.dart');
+      final button = File('${result.projectDir.path}/lib/core/widgets/app_button.dart');
+      final counter = Directory('${result.projectDir.path}/lib/features/counter');
+
+      expect(router.existsSync(), isFalse);
+      expect(button.existsSync(), isFalse);
+      expect(counter.existsSync(), isFalse);
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('generates format-clean Dart files', () async {
+      final result = await generate(spec(name: 'Formatted', org: 'com.example', preset: 'core'));
+
+      final config = File('${result.projectDir.path}/lib/core/config/app_config.dart')
+          .readAsStringSync();
+
+      expect(config, contains("throw StateError('Invalid API_BASE_URL value."));
+      expect(config, isNot(contains('\n\n\n')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
     test('generation is deterministic', () async {
       final first = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));
       final second = await generate(spec(name: 'Det', org: 'com.example', preset: 'core'));

@@ -1,5 +1,5 @@
 id: state-riverpod
-version: 1
+version: 2
 category: state
 summary: >-
   Riverpod setup, provider organization, test overrides, and app lifecycle
@@ -23,6 +23,7 @@ privacy:
   telemetry: false
 outputs:
   - lib/core/state/provider_scope.dart
+  - lib/core/state/app_state.dart
 requiredSetup: []
 tests:
   unit: true

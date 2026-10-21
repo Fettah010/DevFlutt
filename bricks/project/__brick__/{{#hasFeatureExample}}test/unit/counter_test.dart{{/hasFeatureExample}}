@@ -1,0 +1,35 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/features/counter/data/counter_repository.dart';
+import 'package:{{projectName}}/features/counter/domain/counter.dart';
+
+void main() {
+  group('Counter', () {
+    test('compares by value', () {
+      expect(const Counter(value: 1), const Counter(value: 1));
+      expect(const Counter(value: 1), isNot(const Counter(value: 2)));
+    });
+
+    test('copies with a replaced value', () {
+      const counter = Counter(value: 1);
+
+      expect(counter.copyWith(value: 2), const Counter(value: 2));
+      expect(counter.copyWith(), counter);
+    });
+  });
+
+  group('InMemoryCounterRepository', () {
+    test('starts at zero', () {
+      const repository = InMemoryCounterRepository();
+
+      expect(repository.initialValue, const Counter(value: 0));
+    });
+
+    test('increments and decrements a counter', () {
+      const repository = InMemoryCounterRepository();
+
+      expect(repository.increment(const Counter(value: 1)), const Counter(value: 2));
+      expect(repository.decrement(const Counter(value: 1)), const Counter(value: 0));
+    });
+  });
+}

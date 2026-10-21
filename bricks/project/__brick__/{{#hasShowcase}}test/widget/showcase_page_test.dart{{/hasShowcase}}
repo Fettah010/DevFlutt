@@ -1,0 +1,30 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/features/showcase/presentation/showcase_page.dart';
+
+void main() {
+  group('ShowcasePage', () {
+    testWidgets('renders the shared components', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: ShowcasePage()));
+      await tester.pump();
+
+      expect(find.text('Showcase'), findsOneWidget);
+      expect(find.text('Message'), findsOneWidget);
+      expect(
+        find.text('Shared components render with the application theme.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('updates the message when a button is pressed', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: ShowcasePage()));
+      await tester.pump();
+
+      await tester.tap(find.text('Primary action'));
+      await tester.pump();
+
+      expect(find.text('Primary action pressed.'), findsOneWidget);
+    });
+  });
+}

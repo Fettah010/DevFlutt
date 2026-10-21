@@ -1,22 +1,10 @@
-import 'package:flutter/material.dart';
-{{#hasStateRiverpod}}
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-{{/hasStateRiverpod}}
+import 'bootstrap/bootstrap.dart';
 
-import 'app.dart';
-import 'core/config/app_config.dart';
-
+/// Starts the application.
+///
+/// The single startup path lives in `bootstrap/bootstrap.dart` so that
+/// configuration, the provider scope, and `runApp` are configured in one
+/// place.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final config = AppConfig.fromEnvironment();
-{{#hasStateRiverpod}}
-  runApp(
-    ProviderScope(
-      child: DevFluttApp(config: config),
-    ),
-  );
-{{/hasStateRiverpod}}
-{{^hasStateRiverpod}}
-  runApp(DevFluttApp(config: config));
-{{/hasStateRiverpod}}
+  await bootstrap();
 }

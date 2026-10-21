@@ -1,14 +1,35 @@
 import 'package:go_router/go_router.dart';
 
-import '../features/home/home_page.dart';
+{{#hasFeatureExample}}import '../features/counter/presentation/counter_page.dart';
+{{/hasFeatureExample}}{{#hasShowcase}}import '../features/showcase/presentation/showcase_page.dart';
+{{/hasShowcase}}import '../features/home/home_page.dart';
+import 'app_routes.dart';
+import 'not_found_page.dart';
+import 'route_guard.dart';
 
 /// Builds the application router.
-GoRouter buildAppRouter() => GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const HomePage(),
-    ),
-  ],
-);
+///
+/// Every route path comes from [AppRoutes], so navigation never uses a raw
+/// string literal. The redirect hook is [routeGuard]; pass a different
+/// [RouteRedirect] to add authentication or feature-flag redirects.
+GoRouter buildAppRouter({RouteRedirect redirect = routeGuard}) {
+  return GoRouter(
+    initialLocation: AppRoutes.home,
+    redirect: (context, state) => redirect(state),
+    routes: [
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) => const HomePage(),
+      ),
+{{#hasFeatureExample}}      GoRoute(
+        path: AppRoutes.counter,
+        builder: (context, state) => const CounterPage(),
+      ),
+{{/hasFeatureExample}}{{#hasShowcase}}      GoRoute(
+        path: AppRoutes.showcase,
+        builder: (context, state) => const ShowcasePage(),
+      ),
+{{/hasShowcase}}    ],
+    errorBuilder: (context, state) => NotFoundPage(location: state.uri.toString()),
+  );
+}

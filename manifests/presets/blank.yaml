@@ -1,4 +1,5 @@
 id: blank
-version: 1
+version: 2
 summary: Smallest sensible starting app. No optional modules.
-modules: []
+modules:
+  - architecture-core

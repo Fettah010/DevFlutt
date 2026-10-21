@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 
 import '../models/generation_plan.dart';
 import '../metadata/template_metadata.dart';
+import 'generated_dart_formatter.dart';
 
 /// The outcome of a generation run.
 class GenerationResult {
@@ -41,6 +42,8 @@ class GenerationEngine {
       final target = DirectoryGeneratorTarget(tempDir);
       final files = await generator.generate(target, vars: _vars(plan));
 
+      GeneratedDartFormatter().format(tempDir);
+
       await metadata.write(tempDir, plan);
       final loaded = readMetadata(tempDir) ?? <String, dynamic>{};
 
@@ -60,6 +63,9 @@ class GenerationEngine {
     'hasArchitectureCore': plan.modules.any((module) => module.id == 'architecture-core'),
     'hasStateRiverpod': plan.modules.any((module) => module.id == 'state-riverpod'),
     'hasGoRouter': plan.modules.any((module) => module.id == 'navigation'),
+    'hasDesignSystem': plan.modules.any((module) => module.id == 'design-system'),
+    'hasFeatureExample': plan.modules.any((module) => module.id == 'feature-example'),
+    'hasShowcase': plan.modules.any((module) => module.id == 'showcase'),
     'extraDependencies': plan.dependencies
         .map((dependency) => '${dependency.name}: ${dependency.version}')
         .toList(),

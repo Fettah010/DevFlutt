@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+
+/// The screen shown when a location does not match any declared route.
+class NotFoundPage extends StatelessWidget {
+  const NotFoundPage({super.key, required this.location});
+
+  /// The location that could not be resolved.
+  final String location;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Page not found')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: theme.colorScheme.error,
+                semanticLabel: 'Page not found',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No screen matches this location.',
+                style: theme.textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                location,
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

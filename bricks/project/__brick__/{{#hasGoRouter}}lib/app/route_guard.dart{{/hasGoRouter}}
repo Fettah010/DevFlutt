@@ -1,0 +1,14 @@
+import 'package:go_router/go_router.dart';
+
+/// Decides whether a navigation may proceed.
+///
+/// Returning `null` keeps the requested location. Returning another location
+/// redirects the navigation.
+typedef RouteRedirect = String? Function(GoRouterState state);
+
+/// The default redirect hook applied to every route.
+///
+/// The template ships the extension point only. Replace the body of this
+/// function, or pass a different [RouteRedirect] to `buildAppRouter`, to add
+/// authentication or feature-flag redirects.
+String? routeGuard(GoRouterState state) => null;

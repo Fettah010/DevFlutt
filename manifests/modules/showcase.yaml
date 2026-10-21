@@ -1,0 +1,31 @@
+id: showcase
+version: 1
+category: feature
+summary: >-
+  Component showcase page that demonstrates the design system, the theme, and
+  the route registry.
+requires:
+  - architecture-core
+  - state-riverpod
+  - navigation
+  - design-system
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/features/showcase/presentation/showcase_page.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: true
+  integration: none

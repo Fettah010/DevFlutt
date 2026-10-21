@@ -1,0 +1,20 @@
+/// The route paths declared by the application.
+///
+/// Every route path lives here so that navigation never uses a raw string
+/// literal. A feature adds its own constant and registers it in
+/// `buildAppRouter`.
+abstract final class AppRoutes {
+  /// The application root.
+  static const String home = '/';
+{{#hasFeatureExample}}  /// The counter feature example.
+  static const String counter = '/counter';
+{{/hasFeatureExample}}{{#hasShowcase}}  /// The component showcase.
+  static const String showcase = '/showcase';
+{{/hasShowcase}}
+  /// Every declared route path.
+  static const List<String> all = <String>[
+    home,
+{{#hasFeatureExample}}    counter,
+{{/hasFeatureExample}}{{#hasShowcase}}    showcase,
+{{/hasShowcase}}  ];
+}

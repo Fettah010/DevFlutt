@@ -32,11 +32,11 @@ run_check pub_get flutter pub get
 run_check format dart format --output=none --set-exit-if-changed .
 run_check analyze flutter analyze --fatal-infos
 run_check test flutter test
-run_check apk_debug flutter build apk --debug
-run_check apk_release flutter build apk --release
+run_check apk_debug flutter build apk --debug --flavor dev
+run_check apk_release flutter build apk --release --flavor prod
 
 echo "==> release_permissions"
-RELEASE_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-release.apk"
+RELEASE_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-prod-release.apk"
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 AAPT2="$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)aapt2"
 if [ -z "$AAPT2" ] || [ ! -x "$AAPT2" ]; then

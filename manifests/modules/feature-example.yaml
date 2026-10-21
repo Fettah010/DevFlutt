@@ -1,0 +1,33 @@
+id: feature-example
+version: 1
+category: feature
+summary: >-
+  Counter feature that demonstrates the domain, data, application, and
+  presentation layer placement.
+requires:
+  - architecture-core
+  - state-riverpod
+  - navigation
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/features/counter/domain/counter.dart
+  - lib/features/counter/data/counter_repository.dart
+  - lib/features/counter/application/counter_controller.dart
+  - lib/features/counter/presentation/counter_page.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: true
+  integration: none

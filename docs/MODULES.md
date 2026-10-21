@@ -8,16 +8,25 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 
 | Module | Category | Requires | Conflicts with | Adds |
 |---|---|---|---|---|
-| `architecture-core` | core | — | — | App bootstrap, config boundary, theme tokens, test structure |
-| `state-riverpod` | state | `architecture-core` | — | `flutter_riverpod`, provider scope, app state |
-| `navigation` | routing | `architecture-core`, `state-riverpod` | — | `go_router`, declarative routes, deep links |
+| `architecture-core` | core | — | — | Bootstrap, config boundary, design tokens, theme, test structure |
+| `state-riverpod` | state | `architecture-core` | — | `flutter_riverpod`, provider scope, shared app state |
+| `navigation` | routing | `architecture-core`, `state-riverpod` | — | `go_router`, route registry, redirect hook, unknown-route screen |
+| `design-system` | ui | `architecture-core` | — | Reusable buttons, text field, card, message, and state views |
+| `feature-example` | feature | `architecture-core`, `state-riverpod`, `navigation` | — | Counter feature across domain, data, application, and presentation |
+| `showcase` | feature | `architecture-core`, `state-riverpod`, `navigation`, `design-system` | — | Component showcase page |
 
 ## Presets
 
 | Preset | Modules |
 |---|---|
-| `blank` | none |
-| `core` | `architecture-core`, `state-riverpod`, `navigation` |
+| `blank` | `architecture-core` |
+| `core` | `architecture-core`, `state-riverpod`, `navigation`, `design-system`, `feature-example` |
+| `demo` | `core` plus `showcase` |
+
+`architecture-core` is the base scaffold of every generated project, so `blank` is the
+architecture without any optional module. `core` is the recommended starting point for a
+product. `demo` adds a showcase page that renders every shared widget; it exists to review
+the design system and is not part of `core`.
 
 ## Adding modules
 
@@ -25,10 +34,17 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 ftemplate create --name MyApp --org com.example --preset blank --module state-riverpod
 ```
 
+Modules that depend on other modules pull them in automatically: asking for
+`--module feature-example` also installs `architecture-core`, `state-riverpod`, and
+`navigation`.
+
 ## Module manifest
 
 See `manifests/schema/module.schema.json` for the contract. Every manifest is
 validated by `ftemplate validate --manifest <file>` before any files are written.
+
+The `outputs` list is the contract between a module and the generator: it names every file
+the module contributes to a generated project.
 
 ## Removal
 

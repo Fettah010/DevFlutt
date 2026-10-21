@@ -1,0 +1,32 @@
+import '../domain/counter.dart';
+
+/// Reads and writes the counter value.
+///
+/// The generated example keeps the value in memory. Replace the
+/// implementation with a remote or persisted source when the feature needs
+/// one.
+abstract interface class CounterRepository {
+  /// The counter a freshly created feature starts from.
+  Counter get initialValue;
+
+  /// Returns the counter that follows [counter].
+  Counter increment(Counter counter);
+
+  /// Returns the counter that precedes [counter].
+  Counter decrement(Counter counter);
+}
+
+/// An in-memory [CounterRepository].
+class InMemoryCounterRepository implements CounterRepository {
+  /// Creates a repository whose counters start from [initialValue].
+  const InMemoryCounterRepository({this.initialValue = const Counter(value: 0)});
+
+  @override
+  final Counter initialValue;
+
+  @override
+  Counter increment(Counter counter) => Counter(value: counter.value + 1);
+
+  @override
+  Counter decrement(Counter counter) => Counter(value: counter.value - 1);
+}

@@ -18,6 +18,10 @@ void main() {
       expect(out.toString(), contains('Presets:'));
       expect(out.toString(), contains('blank'));
       expect(out.toString(), contains('core'));
+      expect(out.toString(), contains('demo'));
+      expect(out.toString(), contains('design-system'));
+      expect(out.toString(), contains('feature-example'));
+      expect(out.toString(), contains('showcase'));
     });
   });
 
@@ -97,7 +101,7 @@ void main() {
       expect(out.toString(), contains('Project: My App'));
       expect(out.toString(), contains('Package: my_app'));
       expect(out.toString(), contains('Application ID: com.example.my_app'));
-      expect(out.toString(), contains('Modules: none'));
+      expect(out.toString(), contains('Modules: architecture-core'));
       expect(out.toString(), contains('Dry run'));
     });
 
@@ -115,9 +119,32 @@ void main() {
       ], out: out.writeln);
 
       expect(code, 0);
-      expect(out.toString(), contains('Modules: architecture-core, state-riverpod, navigation'));
+      expect(
+        out.toString(),
+        contains(
+          'Modules: architecture-core, state-riverpod, navigation, '
+          'design-system, feature-example',
+        ),
+      );
       expect(out.toString(), contains('flutter_riverpod'));
       expect(out.toString(), contains('go_router'));
+    });
+
+    test('plans a demo project with the showcase feature', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'Demo App',
+        '--org',
+        'com.example',
+        '--preset',
+        'demo',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('showcase'));
     });
 
     test('rejects an invalid project name', () async {

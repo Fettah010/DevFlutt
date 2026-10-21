@@ -1,0 +1,32 @@
+id: design-system
+version: 1
+category: ui
+summary: >-
+  Reusable core widgets built on the Material 3 theme and the shared design
+  tokens.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/widgets/app_button.dart
+  - lib/core/widgets/app_text_field.dart
+  - lib/core/widgets/app_card.dart
+  - lib/core/widgets/app_message.dart
+  - lib/core/widgets/app_state_view.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: true
+  integration: none

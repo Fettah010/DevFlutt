@@ -1,0 +1,38 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_tokens.dart';
+
+/// A surface that groups related content.
+class AppCard extends StatelessWidget {
+  const AppCard({super.key, required this.child, this.title});
+
+  /// The card content.
+  final Widget child;
+
+  /// Optional heading shown above the content.
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final heading = title;
+
+    return Card(
+      margin: const EdgeInsets.all(AppSpacing.md),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (heading != null) ...[
+              Text(heading, style: theme.textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}

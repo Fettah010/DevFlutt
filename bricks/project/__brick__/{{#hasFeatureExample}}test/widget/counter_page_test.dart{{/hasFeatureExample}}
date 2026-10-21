@@ -1,0 +1,28 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/features/counter/presentation/counter_page.dart';
+
+void main() {
+  group('CounterPage', () {
+    testWidgets('increments and decrements the counter', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: MaterialApp(home: CounterPage())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('0'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Increment'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Decrement'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0'), findsOneWidget);
+    });
+  });
+}

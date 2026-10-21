@@ -10,7 +10,12 @@ const _config = AppConfig(
 
 void main() {
   testWidgets('renders the home screen', (tester) async {
+{{#hasGoRouter}}
     await tester.pumpWidget(DevFluttApp(config: _config));
+{{/hasGoRouter}}
+{{^hasGoRouter}}
+    await tester.pumpWidget(const DevFluttApp(config: _config));
+{{/hasGoRouter}}
     await tester.pumpAndSettle();
 
     expect(find.text('Home'), findsOneWidget);

@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
+import 'bootstrap/bootstrap.dart';
 
-import 'app.dart';
-import 'core/config/app_config.dart';
-
+/// Starts the application.
+///
+/// The single startup path lives in `bootstrap/bootstrap.dart` so that
+/// configuration, the provider scope, and `runApp` are configured in one
+/// place.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  final config = AppConfig.fromEnvironment();
-  runApp(DevFluttApp(config: config));
+  await bootstrap();
 }

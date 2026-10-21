@@ -4,7 +4,7 @@ import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/home/home_page.dart';
 
-/// Root widget for the blank application.
+/// Root widget for the generated application.
 class DevFluttApp extends StatelessWidget {
   const DevFluttApp({super.key, required this.config});
 

@@ -1,5 +1,5 @@
 id: navigation
-version: 1
+version: 2
 category: routing
 summary: >-
   Declarative routes, typed route helpers, deep-link examples, and guarded
@@ -23,7 +23,9 @@ privacy:
   network: false
   telemetry: false
 outputs:
+  - lib/app/app_routes.dart
   - lib/app/app_router.dart
+  - lib/app/route_guard.dart
 requiredSetup: []
 tests:
   unit: true

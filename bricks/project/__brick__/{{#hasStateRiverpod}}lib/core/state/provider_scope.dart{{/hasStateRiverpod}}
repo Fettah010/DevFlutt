@@ -1,18 +1,19 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Shared application state container.
+/// Wraps [child] in the application's provider scope.
 ///
-/// Lives above [MaterialApp] (or [MaterialApp.router]) so every widget can
-/// read it. Feature providers are registered in feature folders, not here.
-final appStateProvider = Provider<AppState>((ref) => const AppState());
+/// Every generated project uses a single root scope. A feature that needs its
+/// own scope creates it inside the feature folder instead of adding another
+/// scope at the application root.
+class AppProviderScope extends StatelessWidget {
+  const AppProviderScope({super.key, required this.child});
 
-/// Immutable application state shared across features.
-@immutable
-class AppState {
-  const AppState({this.loaded = false});
+  /// The widget below the scope.
+  final Widget child;
 
-  final bool loaded;
-
-  AppState copyWith({bool? loaded}) => AppState(loaded: loaded ?? this.loaded);
+  @override
+  Widget build(BuildContext context) {
+    return ProviderScope(child: child);
+  }
 }

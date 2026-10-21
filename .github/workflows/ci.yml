@@ -24,7 +24,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.6
+          flutter-version: 3.47.7
           cache: true
 
       - name: Resolve dependencies
@@ -65,7 +65,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.6
+          flutter-version: 3.47.7
           cache: true
 
       - name: Resolve generator dependencies
@@ -90,7 +90,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [blank, core]
+        preset: [blank, core, demo]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -105,7 +105,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.6
+          flutter-version: 3.47.7
           cache: true
 
       - name: Resolve generator dependencies
@@ -135,7 +135,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: /tmp/generated-${{ matrix.preset }}
-        run: flutter build apk --debug
+        run: flutter build apk --debug --flavor dev
 
   android-build:
     name: Android debug and release build
@@ -154,26 +154,26 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.47.6
+          flutter-version: 3.47.7
           cache: true
 
       - name: Resolve dependencies
         run: flutter pub get
 
       - name: Build debug APK
-        run: flutter build apk --debug
+        run: flutter build apk --debug --flavor dev
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --flavor prod
 
       - name: Verify release permissions are blank
         run: |
           mkdir -p build/verify-logs
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
           AAPT2="$(ls -d "$SDK"/build-tools/*/ | sort -V | tail -1)aapt2"
-          "$AAPT2" dump permissions build/app/outputs/flutter-apk/app-release.apk \
+          "$AAPT2" dump permissions build/app/outputs/flutter-apk/app-prod-release.apk \
             | tee build/verify-logs/release-permissions.txt
-          if "$AAPT2" dump permissions build/app/outputs/flutter-apk/app-release.apk \
+          if "$AAPT2" dump permissions build/app/outputs/flutter-apk/app-prod-release.apk \
             | grep -q "android.permission.INTERNET"; then
             echo "ERROR: release APK must not request INTERNET" >&2
             exit 1
@@ -183,13 +183,13 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: app-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-dev-debug.apk
 
       - name: Upload release APK
         uses: actions/upload-artifact@v7
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-prod-release.apk
 
       - name: Upload permission report
         if: always()

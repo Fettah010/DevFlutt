@@ -1,0 +1,39 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_tokens.dart';
+
+/// A labelled text field that follows the application theme.
+class AppTextField extends StatelessWidget {
+  const AppTextField({
+    super.key,
+    required this.label,
+    this.controller,
+    this.onChanged,
+    this.keyboardType,
+  });
+
+  /// The field label.
+  final String label;
+
+  /// The controller that holds the field value.
+  final TextEditingController? controller;
+
+  /// Called whenever the value changes.
+  final ValueChanged<String>? onChanged;
+
+  /// The keyboard type shown for this field.
+  final TextInputType? keyboardType;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        contentPadding: const EdgeInsets.all(AppSpacing.md),
+      ),
+    );
+  }
+}

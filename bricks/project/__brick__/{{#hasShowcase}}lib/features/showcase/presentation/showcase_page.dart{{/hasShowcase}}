@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_message.dart';
+import '../../../core/widgets/app_state_view.dart';
+import '../../../core/widgets/app_text_field.dart';
+
+/// The component showcase screen.
+///
+/// It renders every shared widget so that a project can review the look and
+/// feel of the design system in one place.
+class ShowcasePage extends StatefulWidget {
+  const ShowcasePage({super.key});
+
+  @override
+  State<ShowcasePage> createState() => _ShowcasePageState();
+}
+
+class _ShowcasePageState extends State<ShowcasePage> {
+  final TextEditingController _controller = TextEditingController();
+
+  String _message = 'Shared components render with the application theme.';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _show(String message) {
+    setState(() {
+      _message = message;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Showcase')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            AppCard(title: 'Message', child: AppMessage(text: _message)),
+            AppCard(
+              title: 'Buttons',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppPrimaryButton(
+                    label: 'Primary action',
+                    onPressed: () => _show('Primary action pressed.'),
+                  ),
+                  const SizedBox(height: 8),
+                  AppSecondaryButton(
+                    label: 'Secondary action',
+                    onPressed: () => _show('Secondary action pressed.'),
+                  ),
+                ],
+              ),
+            ),
+            AppCard(
+              title: 'Text field',
+              child: AppTextField(
+                label: 'Your name',
+                controller: _controller,
+                onChanged: (value) => _show('Typed: $value'),
+              ),
+            ),
+            AppCard(
+              title: 'States',
+              child: Column(
+                children: [
+                  const SizedBox(height: 200, child: AppLoadingView()),
+                  const SizedBox(height: 200, child: AppEmptyView()),
+                  SizedBox(
+                    height: 200,
+                    child: AppErrorView(onRetry: () => _show('Retry pressed.')),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

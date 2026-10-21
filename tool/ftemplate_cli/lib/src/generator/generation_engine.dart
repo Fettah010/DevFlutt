@@ -60,6 +60,9 @@ class GenerationEngine {
     'hasArchitectureCore': plan.modules.any((module) => module.id == 'architecture-core'),
     'hasStateRiverpod': plan.modules.any((module) => module.id == 'state-riverpod'),
     'hasGoRouter': plan.modules.any((module) => module.id == 'navigation'),
+    'hasDesignSystem': plan.modules.any((module) => module.id == 'design-system'),
+    'hasFeatureExample': plan.modules.any((module) => module.id == 'feature-example'),
+    'hasShowcase': plan.modules.any((module) => module.id == 'showcase'),
     'extraDependencies': plan.dependencies
         .map((dependency) => '${dependency.name}: ${dependency.version}')
         .toList(),

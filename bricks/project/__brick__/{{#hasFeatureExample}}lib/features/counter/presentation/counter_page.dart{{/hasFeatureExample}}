@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../application/counter_controller.dart';
+
+/// The counter feature example screen.
+///
+/// The screen shows how a feature is split into a domain value, a data
+/// source, an application controller, and a presentation widget.
+class CounterPage extends ConsumerWidget {
+  const CounterPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final counter = ref.watch(counterControllerProvider);
+    final controller = ref.read(counterControllerProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Counter')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${counter.value}',
+              style: theme.textTheme.displayMedium,
+              semanticsLabel: 'Counter value',
+            ),
+            Text('Current value', style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: controller.decrement,
+                  icon: const Icon(Icons.remove),
+                  tooltip: 'Decrement',
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  onPressed: controller.increment,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Increment',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

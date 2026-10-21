@@ -1,9 +1,9 @@
 id: architecture-core
-version: 1
+version: 2
 category: core
 summary: >-
-  App bootstrap, error boundaries, configuration contract, project conventions,
-  and test structure.
+  App bootstrap, error boundaries, configuration contract, design tokens,
+  theme, project conventions, and test structure.
 requires: []
 conflictsWith: []
 platforms:
@@ -17,13 +17,17 @@ permissions: []
 configKeys:
   - APP_NAME
   - APP_ENV
+  - API_BASE_URL
+  - FEATURE_FLAGS
 privacy:
   network: false
   telemetry: false
 outputs:
   - lib/main.dart
+  - lib/bootstrap/bootstrap.dart
   - lib/app.dart
   - lib/core/config/app_config.dart
+  - lib/core/theme/app_tokens.dart
   - lib/core/theme/app_theme.dart
   - lib/features/home/home_page.dart
   - test/unit/app_config_test.dart

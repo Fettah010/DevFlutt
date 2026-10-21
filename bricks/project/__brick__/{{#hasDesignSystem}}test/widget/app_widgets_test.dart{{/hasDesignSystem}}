@@ -1,0 +1,158 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/widgets/app_button.dart';
+import 'package:{{projectName}}/core/widgets/app_card.dart';
+import 'package:{{projectName}}/core/widgets/app_message.dart';
+import 'package:{{projectName}}/core/widgets/app_state_view.dart';
+import 'package:{{projectName}}/core/widgets/app_text_field.dart';
+
+void _noop() {}
+
+void main() {
+  group('AppPrimaryButton', () {
+    testWidgets('calls the action when pressed', (tester) async {
+      var pressed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AppPrimaryButton(
+              label: 'Press me',
+              onPressed: () => pressed = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Press me'));
+      await tester.pumpAndSettle();
+
+      expect(pressed, isTrue);
+    });
+  });
+
+  group('AppSecondaryButton', () {
+    testWidgets('renders its label', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AppSecondaryButton(label: 'Cancel', onPressed: () {}),
+          ),
+        ),
+      );
+
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+  });
+
+  group('AppTextField', () {
+    testWidgets('reports every change', (tester) async {
+      String? value;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AppTextField(
+              label: 'Name',
+              onChanged: (text) => value = text,
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), 'Ada');
+      await tester.pumpAndSettle();
+
+      expect(value, 'Ada');
+    });
+  });
+
+  group('AppCard', () {
+    testWidgets('renders its title and its content', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AppCard(title: 'Section', child: Text('Body')),
+          ),
+        ),
+      );
+
+      expect(find.text('Section'), findsOneWidget);
+      expect(find.text('Body'), findsOneWidget);
+    });
+  });
+
+  group('AppMessage', () {
+    testWidgets('renders its text', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AppMessage(text: 'Saved', severity: AppMessageSeverity.success),
+          ),
+        ),
+      );
+
+      expect(find.text('Saved'), findsOneWidget);
+    });
+
+    testWidgets('renders a dismiss action', (tester) async {
+      var dismissed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AppMessage(
+              text: 'Saved',
+              onDismiss: () => dismissed = true,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.pumpAndSettle();
+
+      expect(dismissed, isTrue);
+    });
+  });
+
+  group('App state views', () {
+    testWidgets('render their default content', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: AppLoadingView())),
+      );
+
+      expect(find.text('Loading'), findsOneWidget);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: AppEmptyView())),
+      );
+
+      expect(find.text('Nothing here yet'), findsOneWidget);
+
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: AppErrorView(onRetry: _noop))),
+      );
+
+      expect(find.text('Something went wrong'), findsOneWidget);
+    });
+
+    testWidgets('the error view reports a retry', (tester) async {
+      var retried = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AppErrorView(onRetry: () => retried = true),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+
+      expect(retried, isTrue);
+    });
+  });
+}

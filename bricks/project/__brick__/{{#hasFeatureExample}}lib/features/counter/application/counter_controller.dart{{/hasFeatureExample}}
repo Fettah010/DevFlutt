@@ -1,0 +1,46 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../data/counter_repository.dart';
+import '../domain/counter.dart';
+
+/// The repository the counter feature reads from.
+///
+/// Replace the provider body to point the feature at another repository.
+final counterRepositoryProvider = Provider<CounterRepository>(
+  (ref) => const InMemoryCounterRepository(),
+);
+
+/// Controls the counter feature.
+///
+/// The controller is the only place that knows how the domain value and the
+/// repository fit together. The presentation layer only calls its methods.
+class CounterController extends Notifier<Counter> {
+  @override
+  Counter build() {
+    final repository = ref.watch(counterRepositoryProvider);
+    return Counter(value: repository.initialValue);
+  }
+
+  /// Increases the counter by one.
+  void increment() {
+    final repository = ref.read(counterRepositoryProvider);
+    state = Counter(value: repository.increment(state.value));
+  }
+
+  /// Decreases the counter by one.
+  void decrement() {
+    final repository = ref.read(counterRepositoryProvider);
+    state = Counter(value: repository.decrement(state.value));
+  }
+
+  /// Resets the counter to its initial value.
+  void reset() {
+    final repository = ref.read(counterRepositoryProvider);
+    state = Counter(value: repository.initialValue);
+  }
+}
+
+/// The provider that exposes the counter controller.
+final counterControllerProvider = NotifierProvider<CounterController, Counter>(
+  CounterController.new,
+);

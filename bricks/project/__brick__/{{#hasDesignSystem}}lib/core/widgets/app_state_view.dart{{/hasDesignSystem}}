@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_tokens.dart';
+
+/// The state shown while content is loading.
+class AppLoadingView extends StatelessWidget {
+  const AppLoadingView({super.key, this.message = 'Loading'});
+
+  /// The text shown below the progress indicator.
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: AppSpacing.md),
+          Text(message, style: theme.textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+/// The state shown when a collection has no items.
+class AppEmptyView extends StatelessWidget {
+  const AppEmptyView({
+    super.key,
+    this.title = 'Nothing here yet',
+    this.message = 'There is nothing to show.',
+  });
+
+  /// The heading of the empty state.
+  final String title;
+
+  /// The supporting text of the empty state.
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 56,
+              color: theme.colorScheme.outline,
+              semanticLabel: 'Empty',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(title, style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.xs),
+            Text(message, style: theme.textTheme.bodyMedium),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The state shown when an operation failed.
+class AppErrorView extends StatelessWidget {
+  const AppErrorView({
+    super.key,
+    required this.onRetry,
+    this.title = 'Something went wrong',
+    this.message = 'The request could not be completed.',
+  });
+
+  /// Called when the retry button is pressed.
+  final VoidCallback onRetry;
+
+  /// The heading of the error state.
+  final String title;
+
+  /// The supporting text of the error state.
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 56,
+              color: theme.colorScheme.error,
+              semanticLabel: 'Error',
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(title, style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.xs),
+            Text(message, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+          ],
+        ),
+      ),
+    );
+  }
+}

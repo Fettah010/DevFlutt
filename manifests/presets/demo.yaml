@@ -1,0 +1,10 @@
+id: demo
+version: 1
+summary: The core project plus a component showcase page.
+modules:
+  - architecture-core
+  - state-riverpod
+  - navigation
+  - design-system
+  - feature-example
+  - showcase

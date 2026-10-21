@@ -1,0 +1,34 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Immutable application-wide state.
+///
+/// The template keeps this state deliberately small. Add feature state to the
+/// feature that owns it instead of growing this object.
+@immutable
+class AppState {
+  const AppState({this.lastVisitedRoute = '/'});
+
+  /// The route that was visited last.
+  final String lastVisitedRoute;
+
+  /// Returns a copy of this state with the given fields replaced.
+  AppState copyWith({String? lastVisitedRoute}) {
+    return AppState(lastVisitedRoute: lastVisitedRoute ?? this.lastVisitedRoute);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is AppState && other.lastVisitedRoute == lastVisitedRoute;
+  }
+
+  @override
+  int get hashCode => lastVisitedRoute.hashCode;
+}
+
+/// The provider that exposes the application-wide state.
+///
+/// The template ships an empty state. Override this provider in a test to
+/// start from a known state.
+final appStateProvider = Provider<AppState>((ref) => const AppState());

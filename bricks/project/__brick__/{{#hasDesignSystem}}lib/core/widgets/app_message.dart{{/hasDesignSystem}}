@@ -1,0 +1,83 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_tokens.dart';
+
+/// The severity of an [AppMessage].
+enum AppMessageSeverity {
+  /// Neutral information.
+  info,
+
+  /// A successful outcome.
+  success,
+
+  /// Something the user should look at.
+  warning,
+
+  /// A failure.
+  error,
+}
+
+/// An inline message that communicates the state of an operation.
+class AppMessage extends StatelessWidget {
+  const AppMessage({
+    super.key,
+    required this.text,
+    this.severity = AppMessageSeverity.info,
+    this.onDismiss,
+  });
+
+  /// The message body.
+  final String text;
+
+  /// The severity that decides the colours.
+  final AppMessageSeverity severity;
+
+  /// Called when the dismiss button is pressed.
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dismiss = onDismiss;
+
+    final background = switch (severity) {
+      AppMessageSeverity.info => scheme.secondaryContainer,
+      AppMessageSeverity.success => scheme.tertiaryContainer,
+      AppMessageSeverity.warning => scheme.primaryContainer,
+      AppMessageSeverity.error => scheme.errorContainer,
+    };
+    final foreground = switch (severity) {
+      AppMessageSeverity.info => scheme.onSecondaryContainer,
+      AppMessageSeverity.success => scheme.onTertiaryContainer,
+      AppMessageSeverity.warning => scheme.onPrimaryContainer,
+      AppMessageSeverity.error => scheme.onErrorContainer,
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: const BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(color: foreground),
+            ),
+          ),
+          if (dismiss != null)
+            IconButton(
+              onPressed: dismiss,
+              icon: const Icon(Icons.close),
+              color: foreground,
+              tooltip: 'Dismiss',
+            ),
+        ],
+      ),
+    );
+  }
+}

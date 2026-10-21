@@ -1,0 +1,57 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/app/app_router.dart';
+import 'package:{{projectName}}/app/app_routes.dart';
+
+void main() {
+  group('buildAppRouter', () {
+    testWidgets('renders the home screen for the initial location', (tester) async {
+      final router = buildAppRouter();
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home'), findsOneWidget);
+    });
+
+    testWidgets('renders the not-found screen for an unknown location', (tester) async {
+      final router = buildAppRouter();
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await router.go('/does-not-exist');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Page not found'), findsOneWidget);
+    });
+
+    testWidgets('applies the redirect hook to a location', (tester) async {
+      final router = buildAppRouter(
+        redirect: (state) => state.uri.path == '/blocked' ? AppRoutes.home : null,
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      await router.go('/blocked');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home'), findsOneWidget);
+    });
+  });
+
+  group('AppRoutes', () {
+    test('declares the home route', () {
+      expect(AppRoutes.home, '/');
+      expect(AppRoutes.all, contains(AppRoutes.home));
+    });
+
+    test('declares every route as an absolute path', () {
+      for (final route in AppRoutes.all) {
+        expect(route.startsWith('/'), isTrue);
+      }
+    });
+  });
+}

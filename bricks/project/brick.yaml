@@ -1,6 +1,6 @@
 name: project
 description: Base Flutter project scaffold for the DevFlutt template.
-version: 0.1.0+1
+version: 0.3.0+1
 vars:
   projectName:
     type: string
@@ -28,6 +28,18 @@ vars:
   hasGoRouter:
     type: boolean
     description: Include the go_router router.
+    default: false
+  hasDesignSystem:
+    type: boolean
+    description: Include the reusable core widgets.
+    default: false
+  hasFeatureExample:
+    type: boolean
+    description: Include the counter feature example.
+    default: false
+  hasShowcase:
+    type: boolean
+    description: Include the component showcase page.
     default: false
   extraDependencies:
     type: list

@@ -802,6 +802,8 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 
 ## `v0.3.0` — Production architecture, themes, navigation and environments
 
+**Status: Complete** (2026-10-21). Delivered and tagged as `v0.3.0`; see `docs/releases/v0.3.0-plan.md` and `docs/releases/v0.3.0-report.md`.
+
 **Outcome:** a stable, documented foundation for app features with consistent state, routing, layout, and configuration patterns.
 
 ### Implement

@@ -827,6 +827,8 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 
 ## `v0.4.0` — Networking, diagnostics, logging and secure-storage baseline
 
+**Status: Complete** (2026-10-22). Delivered and tagged as `v0.4.0`; see `docs/releases/v0.4.0-plan.md` and `docs/releases/v0.4.0-report.md`.
+
 **Outcome:** networked applications gain reliable infrastructure without leaking transport details or secrets into the UI.
 
 ### Implement

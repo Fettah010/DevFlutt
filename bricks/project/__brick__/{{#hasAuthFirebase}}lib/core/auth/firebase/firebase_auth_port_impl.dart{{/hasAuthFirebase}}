@@ -1,0 +1,161 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+import '../../../firebase_options.dart';
+import '../auth_error.dart';
+import '../auth_session.dart';
+import 'firebase_auth_port.dart';
+
+/// The project identifier of the placeholder configuration the template ships.
+///
+/// The application refuses to start while the configuration still carries it.
+const String placeholderFirebaseProjectId = 'devflutt-placeholder-project';
+
+/// Prepares Firebase for use.
+///
+/// The call is idempotent: a second call in the same process does nothing.
+/// It throws a [StateError] with an actionable message when the project's
+/// configuration file is still the placeholder the template ships.
+Future<void> initializeFirebaseAuth() async {
+  final options = DefaultFirebaseOptions.currentPlatform;
+  if (options.projectId == placeholderFirebaseProjectId) {
+    throw StateError(
+      'Firebase is not configured. Run "flutterfire configure" in this '
+      'project to replace lib/firebase_options.dart with your own '
+      'configuration.',
+    );
+  }
+  if (Firebase.apps.isNotEmpty) {
+    return;
+  }
+  await Firebase.initializeApp(options: options);
+}
+
+/// The [FirebaseAuthPort] that talks to Firebase Authentication.
+///
+/// This is the only file in the module that imports `firebase_auth`.
+class FirebaseAuthPortImpl implements FirebaseAuthPort {
+  /// Creates a port that talks through [auth].
+  FirebaseAuthPortImpl({FirebaseAuth? auth})
+      : _auth = auth ?? FirebaseAuth.instance;
+
+  final FirebaseAuth _auth;
+
+  @override
+  AuthUser? get currentUser => _toUser(_auth.currentUser);
+
+  @override
+  Stream<AuthUser?> get userChanges =>
+      _auth.userChanges().map((User? user) => _toUser(user));
+
+  @override
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return _requireUser(credential.user);
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<AuthUser> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return _requireUser(credential.user);
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<AuthUser> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  }) async {
+    try {
+      final credential = await _auth.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+      return _requireUser(credential.user);
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<void> signOut() async {
+    try {
+      await _auth.signOut();
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<String?> idToken({required bool forceRefresh}) async {
+    try {
+      return await _auth.currentUser?.getIdToken(forceRefresh);
+    } on FirebaseAuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  static AuthUser _requireUser(User? user) {
+    final mapped = _toUser(user);
+    if (mapped == null) {
+      throw const ProviderFailureError(
+        message: 'The provider did not return a user.',
+      );
+    }
+    return mapped;
+  }
+
+  static AuthUser? _toUser(User? user) {
+    if (user == null) {
+      return null;
+    }
+    return AuthUser(
+      id: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      isEmailVerified: user.emailVerified,
+    );
+  }
+
+  /// Maps a Firebase failure onto an app-owned authentication error.
+  static AuthError _mapError(FirebaseAuthException error) => switch (error.code) {
+    'invalid-email' ||
+    'invalid-credential' ||
+    'user-not-found' ||
+    'user-disabled' ||
+    'wrong-password' =>
+      const InvalidCredentialsError(),
+    'network-request-failed' || 'too-many-requests' => const AuthNetworkError(),
+    'requires-recent-login' || 'user-token-expired' =>
+      const SessionExpiredError(),
+    _ => ProviderFailureError(providerCode: error.code),
+  };
+}

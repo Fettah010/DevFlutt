@@ -1,0 +1,52 @@
+import '../auth_session.dart';
+
+/// The provider boundary of the Firebase authentication adapter.
+///
+/// The adapter depends on this interface, never on the Firebase SDK. The real
+/// implementation wraps `firebase_auth`; the fake implementation is used by
+/// the tests.
+///
+/// Every method throws an [AuthError] on failure. A Firebase exception never
+/// reaches the caller.
+abstract interface class FirebaseAuthPort {
+  /// The signed-in user, or `null` when there is none.
+  AuthUser? get currentUser;
+
+  /// The user changes, as they happen.
+  Stream<AuthUser?> get userChanges;
+
+  /// Signs in with an email address and a password.
+  ///
+  /// Throws [InvalidCredentialsError] when Firebase rejects them.
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  });
+
+  /// Creates an account with an email address and a password.
+  Future<AuthUser> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  });
+
+  /// Signs in with the email link the provider sent.
+  ///
+  /// The link carries the one-time code; [email] is the address the code was
+  /// sent to.
+  Future<AuthUser> signInWithEmailLink({
+    required String email,
+    required String emailLink,
+  });
+
+  /// Ends the session.
+  Future<void> signOut();
+
+  /// Asks Firebase to send a password-reset message to [email].
+  Future<void> sendPasswordResetEmail(String email);
+
+  /// The current ID token, or `null` when there is none.
+  ///
+  /// [forceRefresh] asks Firebase for a new token even when the cached one is
+  /// still valid.
+  Future<String?> idToken({required bool forceRefresh});
+}

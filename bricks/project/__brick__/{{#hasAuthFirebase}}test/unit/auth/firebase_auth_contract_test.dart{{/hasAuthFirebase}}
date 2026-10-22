@@ -1,0 +1,118 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/auth/auth_adapter.dart';
+import 'package:{{projectName}}/core/auth/auth_error.dart';
+import 'package:{{projectName}}/core/auth/auth_session.dart';
+import 'package:{{projectName}}/core/auth/firebase/fake_firebase_auth_port.dart';
+import 'package:{{projectName}}/core/auth/firebase/firebase_auth_adapter.dart';
+
+import 'auth_contract_suite.dart';
+
+class _FirebaseAuthHarness implements AuthContractHarness {
+  FakeFirebaseAuthPort? lastPort;
+
+  @override
+  AuthAdapter createAdapter({
+    AuthContractFailure failure = AuthContractFailure.none,
+  }) {
+    final port = FakeFirebaseAuthPort();
+    lastPort = port;
+    switch (failure) {
+      case AuthContractFailure.none:
+        break;
+      case AuthContractFailure.invalidCredentials:
+        port.nextSignInFailure = const InvalidCredentialsError();
+      case AuthContractFailure.network:
+        port.nextSignInFailure = const AuthNetworkError();
+    }
+    return FirebaseAuthAdapter(port: port);
+  }
+}
+
+void main() {
+  final harness = _FirebaseAuthHarness();
+  runAuthContractTests(name: 'firebase', harness: harness);
+
+  group('FirebaseAuthAdapter', () {
+    test('restores a session the provider already has', () async {
+      final port = FakeFirebaseAuthPort(
+        user: const AuthUser(id: 'u1', email: 'user@example.com'),
+      );
+      final adapter = FirebaseAuthAdapter(port: port);
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isTrue);
+      expect(state.session!.user.id, 'u1');
+      expect(state.session!.accessToken, 'id-token');
+    });
+
+    test('restores no session when the provider has none', () async {
+      final adapter = FirebaseAuthAdapter(port: FakeFirebaseAuthPort());
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isFalse);
+    });
+
+    test('a forced refresh asks the provider for a new token', () async {
+      final port = FakeFirebaseAuthPort(
+        user: const AuthUser(id: 'u1', email: 'user@example.com'),
+      );
+      final adapter = FirebaseAuthAdapter(port: port);
+      await adapter.restoreSession();
+
+      await adapter.refreshSession();
+
+      expect(port.forceRefreshCount, 1);
+    });
+
+    test('a token the provider refuses ends the session', () async {
+      final port = FakeFirebaseAuthPort(
+        user: const AuthUser(id: 'u1', email: 'user@example.com'),
+      );
+      final adapter = FirebaseAuthAdapter(port: port);
+      await adapter.restoreSession();
+      port.nextIdTokenFailure = const SessionExpiredError();
+
+      await expectLater(
+        () => adapter.refreshSession(),
+        throwsA(isA<SessionExpiredError>()),
+      );
+    });
+
+    test('an email link signs the user in', () async {
+      final port = FakeFirebaseAuthPort();
+      final adapter = FirebaseAuthAdapter(port: port);
+
+      final state = await adapter.signInWithOneTimePassword(
+        'https://example.test/sign-in?email=user@example.com&oobCode=abc',
+      );
+
+      expect(state.isAuthenticated, isTrue);
+      expect(port.emailLinkCount, 1);
+    });
+
+    test('an email link without an address is rejected', () async {
+      final port = FakeFirebaseAuthPort();
+      final adapter = FirebaseAuthAdapter(port: port);
+
+      await expectLater(
+        () => adapter.signInWithOneTimePassword(
+          'https://example.test/sign-in?oobCode=abc',
+        ),
+        throwsA(isA<ProviderFailureError>()),
+      );
+      expect(port.emailLinkCount, 0);
+    });
+
+    test('a password reset reaches the provider', () async {
+      final port = FakeFirebaseAuthPort();
+      final adapter = FirebaseAuthAdapter(port: port);
+
+      await adapter.requestPasswordReset('user@example.com');
+
+      expect(port.passwordResetCount, 1);
+    });
+  });
+}

@@ -1,0 +1,150 @@
+﻿import 'dart:async';
+
+import '../auth_error.dart';
+import '../auth_session.dart';
+import 'firebase_auth_port.dart';
+
+/// A deterministic [FirebaseAuthPort] for tests.
+///
+/// The port never touches Firebase. It records the calls it received, so a
+/// test can assert how many times the provider was asked to do something.
+class FakeFirebaseAuthPort implements FirebaseAuthPort {
+  /// Creates a port that signs in [user].
+  FakeFirebaseAuthPort({this.user, this.token = 'id-token'})
+      : _controller = StreamController<AuthUser?>.broadcast();
+
+  /// The token the port hands out.
+  String token;
+
+  /// The signed-in user, or `null` when there is none.
+  AuthUser? user;
+
+  final StreamController<AuthUser?> _controller;
+
+  /// The failure the next sign-in reports.
+  AuthError? nextSignInFailure;
+
+  /// The failure the next registration reports.
+  AuthError? nextRegisterFailure;
+
+  /// The failure the next email-link sign-in reports.
+  AuthError? nextEmailLinkFailure;
+
+  /// The failure the next sign-out reports.
+  AuthError? nextSignOutFailure;
+
+  /// The failure the next password reset reports.
+  AuthError? nextPasswordResetFailure;
+
+  /// The failure the next token request reports.
+  AuthError? nextIdTokenFailure;
+
+  /// The number of sign-in calls received.
+  int signInCount = 0;
+
+  /// The number of registration calls received.
+  int registerCount = 0;
+
+  /// The number of email-link sign-in calls received.
+  int emailLinkCount = 0;
+
+  /// The number of sign-out calls received.
+  int signOutCount = 0;
+
+  /// The number of password-reset calls received.
+  int passwordResetCount = 0;
+
+  /// The number of forced token refreshes requested.
+  int forceRefreshCount = 0;
+
+  @override
+  AuthUser? get currentUser => user;
+
+  @override
+  Stream<AuthUser?> get userChanges => _controller.stream;
+
+  @override
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    signInCount += 1;
+    final failure = nextSignInFailure;
+    if (failure != null) {
+      nextSignInFailure = null;
+      throw failure;
+    }
+    return _signIn();
+  }
+
+  @override
+  Future<AuthUser> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    registerCount += 1;
+    final failure = nextRegisterFailure;
+    if (failure != null) {
+      nextRegisterFailure = null;
+      throw failure;
+    }
+    return _signIn();
+  }
+
+  @override
+  Future<AuthUser> signInWithEmailLink({required String email, required String emailLink}) async {
+    emailLinkCount += 1;
+    final failure = nextEmailLinkFailure;
+    if (failure != null) {
+      nextEmailLinkFailure = null;
+      throw failure;
+    }
+    return _signIn();
+  }
+
+  @override
+  Future<void> signOut() async {
+    signOutCount += 1;
+    final failure = nextSignOutFailure;
+    if (failure != null) {
+      nextSignOutFailure = null;
+      throw failure;
+    }
+    user = null;
+    _controller.add(null);
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    passwordResetCount += 1;
+    final failure = nextPasswordResetFailure;
+    if (failure != null) {
+      nextPasswordResetFailure = null;
+      throw failure;
+    }
+  }
+
+  @override
+  Future<String?> idToken({required bool forceRefresh}) async {
+    if (forceRefresh) {
+      forceRefreshCount += 1;
+    }
+    final failure = nextIdTokenFailure;
+    if (failure != null) {
+      nextIdTokenFailure = null;
+      throw failure;
+    }
+    return user == null ? null : token;
+  }
+
+  AuthUser _signIn() {
+    final signedIn =
+        user ?? const AuthUser(id: 'u1', email: 'user@example.com');
+    user = signedIn;
+    _controller.add(signedIn);
+    return signedIn;
+  }
+
+  /// Releases the change stream.
+  Future<void> dispose() => _controller.close();
+}

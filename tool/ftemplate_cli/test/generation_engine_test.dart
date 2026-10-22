@@ -30,6 +30,21 @@ void main() {
   }
 
   group('GenerationEngine', () {
+    test('the brick declares every known capability identifier', () {
+      const brickFile =
+          '$brickPath/__brick__/{{#hasAuthCore}}lib/core/auth/'
+          'auth_capabilities.dart{{/hasAuthCore}}';
+      final source = File(brickFile).readAsStringSync();
+
+      for (final capability in knownAuthCapabilities) {
+        expect(
+          source,
+          contains("'$capability'"),
+          reason: 'the brick is missing the capability $capability',
+        );
+      }
+    });
+
     test('generates a blank project with no optional dependencies', () async {
       final result = await generate(spec(name: 'Blank', org: 'com.example'));
 

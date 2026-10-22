@@ -78,8 +78,7 @@ class GenerationEngine {
       'hasAuthSupabase': moduleIds.contains('auth-supabase'),
       'hasAuth': _authAdapterModuleIds.any(moduleIds.contains),
       'hasAuthRouter':
-          _authAdapterModuleIds.any(moduleIds.contains) &&
-          moduleIds.contains('navigation'),
+          _authAdapterModuleIds.any(moduleIds.contains) && moduleIds.contains('navigation'),
       'hasServices': _serviceModuleIds.any(moduleIds.contains),
       'extraDependencies': plan.dependencies
           .map((dependency) => '${dependency.name}: ${dependency.version}')

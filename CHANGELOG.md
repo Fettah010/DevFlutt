@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-22
+
+### Added
+
+- ADR-006 (auth and backend adapters, capability descriptors, and token-refresh
+  serialization), with dated evidence and revisit triggers.
+- New modules: `auth-core`, `auth-rest`, `auth-firebase`, and `auth-supabase`. The three
+  adapters are mutually exclusive.
+- A provider-neutral authentication contract: `AuthAdapter`, `AuthSession`, `AuthUser`,
+  `AuthState`, a sealed `AuthError`, and an `AuthCapability` descriptor. No provider SDK
+  type appears in a signature.
+- A shared contract-test suite, run against every adapter over the capabilities that
+  adapter implements.
+- A single-flight `TokenRefreshCoordinator`: concurrent expired-token requests cause
+  exactly one refresh, and a refresh that fails signs the user out instead of being
+  retried.
+- A router redirect that sends an unauthenticated user to the login location and preserves
+  the intended destination of a protected deep link, without looping.
+- New generator options: `--auth none|rest|firebase|supabase` selects a provider, and
+  `--auth-capability` declares a capability the application needs. A selection whose
+  provider cannot satisfy a declared capability is refused before anything is written.
+- An optional `capabilities` field in the module manifest schema.
+- A `FakeAuthAdapter`, so an application can test its own features without a provider.
+- Documentation: `docs/modules/auth-core.md`, `docs/modules/auth-rest.md`,
+  `docs/modules/auth-firebase.md`, `docs/modules/auth-supabase.md`, and `docs/DEFERRED.md`.
+
+### Changed
+
+- The Supabase adapter persists the session through the template's secure store rather
+  than the package's `shared_preferences` default, so the refresh token is not written to
+  an unencrypted, auto-backed-up file.
+- The `verify` script resolves `aapt2.exe` on Windows. The release-permission check
+  previously always skipped locally, so it never ran outside CI.
+
+### Fixed
+
+- The Firebase configuration placeholder is no longer shaped like an API key, so a secret
+  scanner cannot mistake it for a credential.
+
+### Notes
+
+- No preset changes. The provider is chosen explicitly, never guessed.
+- The live Firebase and Supabase flows are not verified: no provider project was available.
+  Every provider behaviour in this release is contract-tested against a fake.
+
 ## [0.4.0] - 2026-10-22
 
 ### Added

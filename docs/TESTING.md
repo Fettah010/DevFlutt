@@ -71,8 +71,10 @@ The generated projects carry their own tests. The `blank` preset ships the confi
 theme, and home-screen tests; `core` adds the router tests (deep link, unknown route, and
 redirect), the counter tests, and the logger tests; `demo` adds the showcase test;
 `recommended` adds the networking tests, the secure-store tests, and the error-reporter
-tests. The generator runs the canonical Dart formatter over the generated files, so CI
-can format-check every generated project as well.
+tests. An authentication preset adds the authentication contract tests, the shared
+contract suite run against the selected adapter, and the router tests for the
+authentication redirect. The generator runs the canonical Dart formatter over the
+generated files, so CI can format-check every generated project as well.
 
 The service modules are tested against fakes, never against a live service. The
 `networking` module's retry, cancellation, timeout, and correlation rules are exercised
@@ -80,6 +82,15 @@ through `FakeApiClient`, so the suite needs no network. The `secure-storage` mod
 plugin is not exercised in a unit test — the plugin needs a device — so the module's
 tests use `InMemorySecureStore` and the platform requirement is checked by inspecting
 the merged Android manifest.
+
+The authentication modules are tested the same way. One shared contract-test suite,
+`test/unit/auth/auth_contract_suite.dart`, is run against every adapter over the
+capabilities that adapter implements, so the three providers are verified against one
+definition of correct behaviour. Each adapter's own test adds the cases that only it
+has: the session store and the refresh coordinator for `auth-rest`, the forced refresh
+and the email link for `auth-firebase`, and the forced refresh and the one-time
+password for `auth-supabase`. No provider SDK is contacted, and no provider project is
+needed to run the suite.
 
 ## CI evidence
 

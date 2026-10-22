@@ -36,6 +36,16 @@ dart run tool/ftemplate_cli/bin/ftemplate.dart create \
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
   --name "My App" --org com.example --preset recommended --output ./my_app
 
+# Generate a project with an authentication provider (adds the auth contract and one adapter)
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset core --auth firebase --output ./my_app
+
+# The provider can also be rest (a custom REST/JWT backend) or supabase.
+# The generator refuses a selection whose provider cannot satisfy a declared capability.
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset core --auth rest \
+  --auth-capability one-time-password-sign-in --output ./my_app
+
 # Preview without writing files
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
   --name "My App" --org com.example --preset core --dry-run

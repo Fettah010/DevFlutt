@@ -1,5 +1,5 @@
 id: core
-version: 2
+version: 3
 summary: A structured app foundation for a growing product.
 modules:
   - architecture-core
@@ -7,3 +7,4 @@ modules:
   - navigation
   - design-system
   - feature-example
+  - logging

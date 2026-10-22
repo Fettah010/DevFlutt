@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The secure storage plugin keeps encrypted values in SharedPreferences.
+    Restoring them without the Android Keystore key that wrapped them makes
+    them unreadable and fails the app on start, so the file is excluded from
+    the backup. Excluding the file keeps the rest of the application data
+    backed up, which disabling android:allowBackup would not.
+-->
+<full-backup-content>
+    <exclude
+        domain="sharedpref"
+        path="FlutterSecureStorage.xml" />
+</full-backup-content>

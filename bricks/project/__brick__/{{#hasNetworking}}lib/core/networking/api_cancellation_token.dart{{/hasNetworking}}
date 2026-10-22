@@ -1,0 +1,31 @@
+/// A token that cancels an in-flight request.
+class ApiCancellationToken {
+  final List<void Function()> _listeners = <void Function()>[];
+  bool _isCancelled = false;
+
+  /// Whether the request was cancelled.
+  bool get isCancelled => _isCancelled;
+
+  /// Cancels the request. Calling this more than once has no extra effect.
+  void cancel() {
+    if (_isCancelled) {
+      return;
+    }
+    _isCancelled = true;
+    for (final listener in List<void Function()>.of(_listeners)) {
+      listener();
+    }
+    _listeners.clear();
+  }
+
+  /// Registers [listener], which runs when the token is cancelled.
+  ///
+  /// A listener registered after cancellation runs immediately.
+  void addListener(void Function() listener) {
+    if (_isCancelled) {
+      listener();
+      return;
+    }
+    _listeners.add(listener);
+  }
+}

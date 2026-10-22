@@ -1,0 +1,15 @@
+id: recommended
+version: 1
+summary: >-
+  A typical networked app foundation: the core architecture plus the HTTP,
+  diagnostic, logging, and secure-storage plumbing.
+modules:
+  - architecture-core
+  - state-riverpod
+  - navigation
+  - design-system
+  - feature-example
+  - logging
+  - diagnostics
+  - networking
+  - secure-storage

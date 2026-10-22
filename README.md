@@ -32,6 +32,10 @@ dart run tool/ftemplate_cli/bin/ftemplate.dart create \
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
   --name "My App" --org com.example --preset demo --output ./my_app
 
+# Generate a recommended project (adds the HTTP, diagnostic, and secure-storage plumbing)
+dart run tool/ftemplate_cli/bin/ftemplate.dart create \
+  --name "My App" --org com.example --preset recommended --output ./my_app
+
 # Preview without writing files
 dart run tool/ftemplate_cli/bin/ftemplate.dart create \
   --name "My App" --org com.example --preset core --dry-run
@@ -136,10 +140,20 @@ The blank app:
 - includes **no** auth, HTTP client, database, analytics, crash reporting, or background work;
 - has **zero third-party runtime dependencies** beyond the Flutter SDK and `cupertino_icons`.
 
+The `core` preset adds the logger, which adds no dependency either. The HTTP client, the
+secure store, and the error reporter arrive only when the `networking`, `secure-storage`,
+and `diagnostics` modules are selected.
+
 ## Documentation
 
 - [Roadmap](Flutter-Android-App-Template-Roadmap-v0.1.0-to-v1.0.0.md)
 - [Execution protocol](FLUTTER-AGENT-EXECUTION-PROTOCOL.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Modules](docs/MODULES.md)
+- [Compatibility](docs/COMPATIBILITY.md)
+- [Security baseline](docs/SECURITY-BASELINE.md)
+- [Testing](docs/TESTING.md)
+- [Upgrading](docs/UPGRADING.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)

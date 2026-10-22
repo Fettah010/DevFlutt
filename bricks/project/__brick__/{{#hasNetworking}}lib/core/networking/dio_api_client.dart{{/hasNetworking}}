@@ -1,0 +1,144 @@
+import 'package:dio/dio.dart';
+
+import '../logging/app_logger.dart';
+import 'api_cancellation_token.dart';
+import 'api_client.dart';
+import 'api_error.dart';
+import 'api_request.dart';
+import 'api_result.dart';
+import 'request_id_factory.dart';
+
+/// The Dio-backed [ApiClient].
+///
+/// This is the only file in the module that imports `dio`. Every other file
+/// works with the app-owned types, so the transport can be replaced without
+/// touching a feature.
+class DioApiClient implements ApiClient {
+  /// Creates a client that talks to [baseUrl].
+  ///
+  /// When [client] is supplied, its base URL and timeouts are replaced. The
+  /// override exists for tests that inject a stubbed HTTP adapter.
+  factory DioApiClient({
+    required String baseUrl,
+    required AppLogger logger,
+    Dio? client,
+    Duration connectTimeout = const Duration(seconds: 15),
+    Duration sendTimeout = const Duration(seconds: 30),
+    Duration receiveTimeout = const Duration(seconds: 30),
+    RequestIdFactory? requestIdFactory,
+  }) {
+    final dio = client ?? Dio();
+    dio.options.baseUrl = baseUrl;
+    dio.options.connectTimeout = connectTimeout;
+    dio.options.sendTimeout = sendTimeout;
+    dio.options.receiveTimeout = receiveTimeout;
+    return DioApiClient._(
+      dio,
+      logger,
+      requestIdFactory ?? RequestIdFactory(),
+    );
+  }
+
+  DioApiClient._(this._dio, this._logger, this._requestIdFactory);
+
+  final Dio _dio;
+  final AppLogger _logger;
+  final RequestIdFactory _requestIdFactory;
+
+  @override
+  Future<ApiResult<T>> send<T>(
+    ApiRequest request, {
+    required T Function(Object? json) decode,
+    ApiCancellationToken? cancellationToken,
+    String? requestId,
+  }) async {
+    final correlationId = requestId ?? _requestIdFactory.next();
+    if (cancellationToken?.isCancelled ?? false) {
+      return ApiFailure<T>(const ApiCancelledError(), requestId: correlationId);
+    }
+
+    try {
+      final response = await _send(request, correlationId, cancellationToken);
+      try {
+        return ApiSuccess<T>(decode(response.data), requestId: correlationId);
+      } on Object {
+        _logger.warning(
+          'Response could not be decoded',
+          category: 'networking',
+          fields: <String, Object?>{
+            'method': request.method.wireName,
+            'path': request.path,
+          },
+        );
+        return ApiFailure<T>(
+          const ApiMalformedError(),
+          requestId: correlationId,
+        );
+      }
+    } on DioException catch (error) {
+      _logger.warning(
+        'Request failed',
+        category: 'networking',
+        fields: <String, Object?>{
+          'method': request.method.wireName,
+          'path': request.path,
+          'type': error.type.name,
+          'status': error.response?.statusCode,
+        },
+      );
+      return ApiFailure<T>(_mapError(error), requestId: correlationId);
+    } on Object {
+      _logger.error(
+        'Request failed',
+        category: 'networking',
+        fields: <String, Object?>{
+          'method': request.method.wireName,
+          'path': request.path,
+        },
+      );
+      return ApiFailure<T>(const ApiUnknownError(), requestId: correlationId);
+    }
+  }
+
+  Future<Response<Object?>> _send(
+    ApiRequest request,
+    String requestId,
+    ApiCancellationToken? cancellationToken,
+  ) {
+    final cancelToken = CancelToken();
+    cancellationToken?.addListener(
+      () => cancelToken.cancel('cancelled by the caller'),
+    );
+    return _dio.request<Object?>(
+      request.path,
+      data: request.body,
+      queryParameters: request.query.isEmpty ? null : request.query,
+      options: Options(
+        method: request.method.wireName,
+        headers: <String, dynamic>{
+          ...request.headers,
+          'X-Request-Id': requestId,
+        },
+      ),
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Maps a transport failure onto an app-owned error.
+  static ApiError _mapError(DioException error) => switch (error.type) {
+    DioExceptionType.connectionTimeout ||
+    DioExceptionType.sendTimeout ||
+    DioExceptionType.receiveTimeout ||
+    DioExceptionType.transformTimeout => const ApiTimeoutError(),
+    DioExceptionType.cancel => const ApiCancelledError(),
+    DioExceptionType.connectionError || DioExceptionType.badCertificate =>
+      const ApiNetworkError(),
+    DioExceptionType.badResponse => ApiHttpError(
+      statusCode: error.response?.statusCode ?? 0,
+    ),
+    DioExceptionType.unknown => const ApiUnknownError(),
+  };
+
+  @override
+  void close() => _dio.close(force: true);
+}

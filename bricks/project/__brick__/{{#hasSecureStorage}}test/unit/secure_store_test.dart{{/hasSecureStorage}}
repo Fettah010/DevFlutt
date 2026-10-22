@@ -1,0 +1,59 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/secure_storage/in_memory_secure_store.dart';
+
+void main() {
+  group('InMemorySecureStore', () {
+    test('reads a value that was written', () async {
+      final store = InMemorySecureStore();
+
+      await store.write('access_token', 'value');
+
+      expect(await store.read('access_token'), 'value');
+    });
+
+    test('reads null for a key that was never written', () async {
+      final store = InMemorySecureStore();
+
+      expect(await store.read('missing'), isNull);
+    });
+
+    test('replaces a previous value', () async {
+      final store = InMemorySecureStore();
+
+      await store.write('access_token', 'first');
+      await store.write('access_token', 'second');
+
+      expect(await store.read('access_token'), 'second');
+    });
+
+    test('deletes a value', () async {
+      final store = InMemorySecureStore();
+      await store.write('access_token', 'value');
+
+      await store.delete('access_token');
+
+      expect(await store.read('access_token'), isNull);
+      expect(await store.containsKey('access_token'), isFalse);
+    });
+
+    test('deletes every value', () async {
+      final store = InMemorySecureStore();
+      await store.write('access_token', 'value');
+      await store.write('refresh_token', 'other');
+
+      await store.deleteAll();
+
+      expect(await store.containsKey('access_token'), isFalse);
+      expect(await store.containsKey('refresh_token'), isFalse);
+    });
+
+    test('reports whether a key exists', () async {
+      final store = InMemorySecureStore();
+      await store.write('access_token', 'value');
+
+      expect(await store.containsKey('access_token'), isTrue);
+      expect(await store.containsKey('missing'), isFalse);
+    });
+  });
+}

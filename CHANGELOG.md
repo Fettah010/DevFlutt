@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-22
+
+### Added
+
+- ADR-004 (HTTP client, typed error model, retry policy, cache policy, and token-refresh
+  serialization) and ADR-007 (logging, crash-reporting, and analytics adapters with their privacy
+  defaults), both with dated evidence and revisit triggers.
+- New modules: `logging`, `networking`, `secure-storage`, and `diagnostics`.
+- New `recommended` preset: the core project plus the HTTP, diagnostic, and secure-storage
+  plumbing.
+- A structured logger with severity, category context, a debug/release verbosity policy, and a
+  redactor that runs before any sink, so a sink cannot leak a sensitive value by omission.
+- A typed HTTP layer behind an app-owned `ApiClient`: timeouts, cancellation, request
+  correlation, typed error mapping, and a bounded retry that never replays a non-idempotent
+  request. Only one file imports `dio`.
+- A `FakeApiClient`, so every transport rule is tested with no live service.
+- Secure key-value storage behind a `SecureStore` interface, backed by
+  `flutter_secure_storage`, with the Android backup exclusion generated so encrypted values are
+  never restored without their Keystore key.
+- An app-owned `ErrorReporter` interface with a local, in-memory adapter. No provider SDK, no
+  analytics, and no telemetry.
+- A generated composition root, `lib/app/app_services.dart`, that wires the selected services
+  once at startup.
+- Three supply-chain gates in CI: a pinned `gitleaks` secret scan, a pinned `osv-scanner`
+  dependency audit, and a licence-inventory check.
+- `THIRD-PARTY-NOTICES.md`, generated from the lockfiles with each licence read from the
+  resolved package's `LICENSE` file.
+- `docs/SECURITY-BASELINE.md`, the threat-model boundary, and a mapping of the relevant OWASP
+  MASVS areas to the checks that verify them.
+
+### Changed
+
+- The `core` preset now includes `logging`, so a core project has a baseline logging interface
+  with no extra dependency.
+- The generated root widget gains a nullable `services` field when a service module is selected.
+  The constructor stays `const` when no service module is installed.
+- The local verify script now runs the generator checks and the licence-inventory check, and its
+  format check scopes to `lib` and `test` — the brick templates are not parseable Dart.
+- CI adds the `recommended` preset to the generated-project matrix.
+
+### Fixed
+
+- The local verify script formatted the whole repository, which always failed on the Mason
+  brick templates. It now formats `lib` and `test`, exactly as CI does.
+
 ## [0.3.0] - 2026-10-21
 
 ### Added

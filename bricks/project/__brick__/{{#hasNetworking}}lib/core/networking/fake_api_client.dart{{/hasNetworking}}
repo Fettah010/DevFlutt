@@ -1,0 +1,56 @@
+import 'api_cancellation_token.dart';
+import 'api_client.dart';
+import 'api_error.dart';
+import 'api_request.dart';
+import 'api_result.dart';
+
+/// Answers a request in a test.
+///
+/// Throw an [ApiError] to make the request fail with that error.
+typedef FakeApiResponder = Future<Object?> Function(ApiRequest request);
+
+/// A deterministic [ApiClient] for tests.
+///
+/// The client never touches the network. It records the requests it received,
+/// so a test can assert how many attempts a request made.
+class FakeApiClient implements ApiClient {
+  /// Creates a client that answers with [responder].
+  FakeApiClient(this.responder);
+
+  /// The responder that produces each response.
+  final FakeApiResponder responder;
+
+  /// The requests received so far, in order.
+  final List<ApiRequest> requests = <ApiRequest>[];
+
+  /// The correlation identifiers received so far, in order.
+  final List<String?> requestIds = <String?>[];
+
+  /// Whether [close] was called.
+  bool isClosed = false;
+
+  @override
+  Future<ApiResult<T>> send<T>(
+    ApiRequest request, {
+    required T Function(Object? json) decode,
+    ApiCancellationToken? cancellationToken,
+    String? requestId,
+  }) async {
+    requests.add(request);
+    requestIds.add(requestId);
+    if (cancellationToken?.isCancelled ?? false) {
+      return ApiFailure<T>(const ApiCancelledError(), requestId: requestId);
+    }
+    try {
+      final body = await responder(request);
+      return ApiSuccess<T>(decode(body), requestId: requestId);
+    } on ApiError catch (error) {
+      return ApiFailure<T>(error, requestId: requestId);
+    } on Object {
+      return ApiFailure<T>(const ApiMalformedError(), requestId: requestId);
+    }
+  }
+
+  @override
+  void close() => isClosed = true;
+}

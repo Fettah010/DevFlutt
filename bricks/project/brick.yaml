@@ -41,6 +41,26 @@ vars:
     type: boolean
     description: Include the component showcase page.
     default: false
+  hasLogging:
+    type: boolean
+    description: Include the structured, redacted logger.
+    default: false
+  hasNetworking:
+    type: boolean
+    description: Include the typed HTTP client and its fake adapter.
+    default: false
+  hasSecureStorage:
+    type: boolean
+    description: Include the secure key-value store and its Android backup rules.
+    default: false
+  hasDiagnostics:
+    type: boolean
+    description: Include the app-owned error reporter and its local adapter.
+    default: false
+  hasServices:
+    type: boolean
+    description: Include the generated composition root for the selected services.
+    default: false
   extraDependencies:
     type: list
     description: Extra pub dependencies as strings.

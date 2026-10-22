@@ -1,0 +1,40 @@
+import 'api_request.dart';
+
+/// The retry behaviour applied to a request.
+class RetryPolicy {
+  const RetryPolicy({
+    this.maxAttempts = 1,
+    this.initialBackoff = const Duration(milliseconds: 200),
+    this.maxBackoff = const Duration(seconds: 30),
+    this.totalTimeout = const Duration(seconds: 60),
+  });
+
+  /// The policy that never retries a request.
+  static const RetryPolicy none = RetryPolicy();
+
+  /// The total number of attempts, including the first one.
+  final int maxAttempts;
+
+  /// The delay before the second attempt.
+  final Duration initialBackoff;
+
+  /// The longest delay between two attempts.
+  final Duration maxBackoff;
+
+  /// The longest total time the request may take, backoff included.
+  final Duration totalTimeout;
+
+  /// Whether a request using [method] may be retried under this policy.
+  bool canRetry(ApiMethod method) => maxAttempts > 1 && method.isRetryable;
+
+  /// The delay to wait before [attempt], counted from one.
+  ///
+  /// The delay grows exponentially and is capped by [maxBackoff].
+  Duration backoffFor(int attempt) {
+    if (attempt < 1) {
+      return Duration.zero;
+    }
+    final scaled = initialBackoff * (1 << (attempt - 1));
+    return scaled > maxBackoff ? maxBackoff : scaled;
+  }
+}

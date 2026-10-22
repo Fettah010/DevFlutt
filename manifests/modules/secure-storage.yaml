@@ -1,0 +1,40 @@
+id: secure-storage
+version: 1
+category: persistence
+summary: >-
+  Secure key-value storage behind a small interface, with the platform
+  requirements generated rather than left to the developer.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: flutter_secure_storage
+    version: ^11.2.0
+nativeChanges:
+  android:
+    - android/app/src/main/res/xml/backup_rules.xml
+    - android/app/src/main/res/xml/data_extraction_rules.xml
+    - android/app/src/main/AndroidManifest.xml (android:fullBackupContent, android:dataExtractionRules)
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/secure_storage/secure_store.dart
+  - lib/core/secure_storage/flutter_secure_store.dart
+  - lib/core/secure_storage/in_memory_secure_store.dart
+requiredSetup:
+  - Minimum Android API 23, which is the plugin's floor. The generated template uses minSdk 24.
+  - The Android backup exclusion is generated, so the plugin's SharedPreferences file is never
+    restored without its Keystore key. Disabling android:allowBackup is not required.
+  - No Android permission is added. Biometric storage is opt-in and needs android.permission.USE_BIOMETRIC
+    plus API 28 or newer if it is enabled.
+tests:
+  unit: true
+  widget: false
+  integration: none

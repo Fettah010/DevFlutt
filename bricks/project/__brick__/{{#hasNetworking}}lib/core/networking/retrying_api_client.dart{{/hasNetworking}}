@@ -1,0 +1,101 @@
+import '../logging/app_logger.dart';
+import 'api_cancellation_token.dart';
+import 'api_client.dart';
+import 'api_error.dart';
+import 'api_request.dart';
+import 'api_result.dart';
+import 'request_id_factory.dart';
+import 'retry_policy.dart';
+
+/// An [ApiClient] that retries a failed request according to a policy.
+///
+/// The decorator sits above the transport, so the retry rules are exercised
+/// with a fake client and never need a network.
+class RetryingApiClient implements ApiClient {
+  /// Creates a client that delegates to [inner].
+  const RetryingApiClient({
+    required this.inner,
+    this.policy = RetryPolicy.none,
+    this.logger,
+    this.requestIdFactory,
+  });
+
+  /// The transport that performs a single attempt.
+  final ApiClient inner;
+
+  /// The retry behaviour applied to each request.
+  final RetryPolicy policy;
+
+  /// The logger that records retry attempts. Optional.
+  final AppLogger? logger;
+
+  /// The factory that assigns the correlation identifier. Optional.
+  final RequestIdFactory? requestIdFactory;
+
+  @override
+  Future<ApiResult<T>> send<T>(
+    ApiRequest request, {
+    required T Function(Object? json) decode,
+    ApiCancellationToken? cancellationToken,
+    String? requestId,
+  }) async {
+    final correlationId = requestId ?? requestIdFactory?.next();
+    final maxAttempts = policy.canRetry(request.method) ? policy.maxAttempts : 1;
+    var attempt = 0;
+    var elapsed = Duration.zero;
+
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      if (cancellationToken?.isCancelled ?? false) {
+        return ApiFailure<T>(
+          const ApiCancelledError(),
+          requestId: correlationId,
+        );
+      }
+
+      final result = await inner.send<T>(
+        request,
+        decode: decode,
+        cancellationToken: cancellationToken,
+        requestId: correlationId,
+      );
+      if (result.isSuccess) {
+        return result;
+      }
+
+      final error = result.errorOrNull ?? const ApiUnknownError();
+      final isLastAttempt = attempt >= maxAttempts;
+      logger?.warning(
+        'Request attempt failed',
+        category: 'networking',
+        fields: <String, Object?>{
+          'method': request.method.wireName,
+          'path': request.path,
+          'attempt': attempt,
+          'maxAttempts': maxAttempts,
+          'error': error.message,
+        },
+      );
+      if (isLastAttempt || !_isRetryable(error)) {
+        return ApiFailure<T>(error, requestId: correlationId);
+      }
+
+      final backoff = policy.backoffFor(attempt);
+      if (elapsed + backoff > policy.totalTimeout) {
+        return ApiFailure<T>(error, requestId: correlationId);
+      }
+      elapsed += backoff;
+      await Future<void>.delayed(backoff);
+    }
+
+    return ApiFailure<T>(const ApiUnknownError(), requestId: correlationId);
+  }
+
+  /// Whether a failure of [error] may be retried.
+  ///
+  /// A cancellation is never retried: the caller asked for it to stop.
+  static bool _isRetryable(ApiError error) => error is! ApiCancelledError;
+
+  @override
+  void close() => inner.close();
+}

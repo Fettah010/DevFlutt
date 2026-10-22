@@ -1,0 +1,12 @@
+import 'app_error.dart';
+
+/// The application's error reporting contract.
+///
+/// The interface is owned by the application. A provider adapter — a crash
+/// reporter, for example — is a separate module that is never selected by
+/// default, so a generated project never sends diagnostics anywhere unless the
+/// developer asks for it.
+abstract interface class ErrorReporter {
+  /// Reports [error].
+  void report(AppError error);
+}

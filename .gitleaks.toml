@@ -1,0 +1,19 @@
+# Gitleaks configuration for the DevFlutt repository.
+#
+# The default rule set is used unchanged. The only allowlist entry covers the
+# redaction corpus in the logging test, whose values must look like real
+# credentials or the redaction test would no longer prove anything. The
+# patterns are deliberately narrow: they match one file path.
+#
+# The allowlist is reviewed with any change to the redaction corpus.
+
+title = "DevFlutt gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Deliberate credential fixtures in the redaction corpus"
+paths = [
+  '''test/unit/logging_test\.dart\{\{.*\}\}$''',
+]

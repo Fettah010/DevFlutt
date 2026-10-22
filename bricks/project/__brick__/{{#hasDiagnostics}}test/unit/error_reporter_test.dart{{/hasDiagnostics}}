@@ -1,0 +1,71 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/diagnostics/app_error.dart';
+import 'package:{{projectName}}/core/diagnostics/local_error_reporter.dart';
+import 'package:{{projectName}}/core/logging/memory_logger.dart';
+
+void main() {
+  group('LocalErrorReporter', () {
+    test('keeps the reported error', () {
+      final reporter = LocalErrorReporter();
+
+      reporter.report(const AppError(message: 'Request failed'));
+
+      expect(reporter.records, hasLength(1));
+      expect(reporter.records.single.message, 'Request failed');
+    });
+
+    test('keeps the severity and the context', () {
+      final reporter = LocalErrorReporter();
+
+      reporter.report(
+        const AppError(
+          message: 'Request failed',
+          severity: AppErrorSeverity.fatal,
+          context: <String, Object?>{'endpoint': '/v1/users'},
+        ),
+      );
+
+      final record = reporter.records.single;
+      expect(record.severity, AppErrorSeverity.fatal);
+      expect(record.context['endpoint'], '/v1/users');
+    });
+
+    test('drops the oldest error when the limit is reached', () {
+      final reporter = LocalErrorReporter(maxRecords: 2);
+
+      reporter.report(const AppError(message: 'first'));
+      reporter.report(const AppError(message: 'second'));
+      reporter.report(const AppError(message: 'third'));
+
+      expect(reporter.records, hasLength(2));
+      expect(reporter.records.first.message, 'second');
+      expect(reporter.records.last.message, 'third');
+    });
+
+    test('logs a redacted copy of the error', () {
+      final logger = MemoryLogger();
+      final reporter = LocalErrorReporter(logger: logger);
+
+      reporter.report(
+        const AppError(
+          message: 'Request failed',
+          context: <String, Object?>{'authorization': 'Bearer secret-value'},
+        ),
+      );
+
+      expect(logger.records, hasLength(1));
+      expect(logger.records.single.category, 'diagnostics');
+      expect(logger.records.single.fields['authorization'], '<redacted>');
+    });
+
+    test('clears the recorded errors', () {
+      final reporter = LocalErrorReporter();
+      reporter.report(const AppError(message: 'Request failed'));
+
+      reporter.clear();
+
+      expect(reporter.records, isEmpty);
+    });
+  });
+}

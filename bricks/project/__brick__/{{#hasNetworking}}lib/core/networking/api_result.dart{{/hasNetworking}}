@@ -1,0 +1,51 @@
+import 'api_error.dart';
+
+/// The outcome of a request.
+sealed class ApiResult<T> {
+  const ApiResult();
+
+  /// Whether the request succeeded.
+  bool get isSuccess => this is ApiSuccess<T>;
+
+  /// The value, when the request succeeded.
+  T? get valueOrNull => switch (this) {
+    ApiSuccess<T>(:final value) => value,
+    ApiFailure<T>() => null,
+  };
+
+  /// The error, when the request failed.
+  ApiError? get errorOrNull => switch (this) {
+    ApiSuccess<T>() => null,
+    ApiFailure<T>(:final error) => error,
+  };
+
+  /// The correlation identifier of the request, when one was assigned.
+  String? get requestId => switch (this) {
+    ApiSuccess<T>(:final requestId) => requestId,
+    ApiFailure<T>(:final requestId) => requestId,
+  };
+}
+
+/// A request that completed successfully.
+final class ApiSuccess<T> extends ApiResult<T> {
+  const ApiSuccess(this.value, {this.requestId});
+
+  /// The decoded response body.
+  final T value;
+
+  /// The correlation identifier of the request.
+  @override
+  final String? requestId;
+}
+
+/// A request that failed.
+final class ApiFailure<T> extends ApiResult<T> {
+  const ApiFailure(this.error, {this.requestId});
+
+  /// The reason the request failed.
+  final ApiError error;
+
+  /// The correlation identifier of the request.
+  @override
+  final String? requestId;
+}

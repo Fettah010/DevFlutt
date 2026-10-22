@@ -1,0 +1,324 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/networking/api_cancellation_token.dart';
+import 'package:{{projectName}}/core/networking/api_error.dart';
+import 'package:{{projectName}}/core/networking/api_request.dart';
+import 'package:{{projectName}}/core/networking/api_result.dart';
+import 'package:{{projectName}}/core/networking/fake_api_client.dart';
+import 'package:{{projectName}}/core/networking/request_id_factory.dart';
+import 'package:{{projectName}}/core/networking/retry_policy.dart';
+import 'package:{{projectName}}/core/networking/retrying_api_client.dart';
+
+const ApiRequest _getRequest = ApiRequest(
+  method: ApiMethod.get,
+  path: '/v1/users',
+);
+
+const ApiRequest _postRequest = ApiRequest(
+  method: ApiMethod.post,
+  path: '/v1/orders',
+);
+
+Map<String, Object?> _decodeMap(Object? json) =>
+    (json! as Map<String, Object?>).cast<String, Object?>();
+
+void main() {
+  group('ApiResult', () {
+    test('exposes the value of a success', () {
+      const result = ApiSuccess<String>('ok', requestId: 'r1');
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull, 'ok');
+      expect(result.errorOrNull, isNull);
+      expect(result.requestId, 'r1');
+    });
+
+    test('exposes the error of a failure', () {
+      const result = ApiFailure<String>(ApiTimeoutError(), requestId: 'r1');
+
+      expect(result.isSuccess, isFalse);
+      expect(result.valueOrNull, isNull);
+      expect(result.errorOrNull, isA<ApiTimeoutError>());
+      expect(result.requestId, 'r1');
+    });
+  });
+
+  group('ApiMethod', () {
+    test('marks only the safe methods as retryable', () {
+      expect(ApiMethod.get.isRetryable, isTrue);
+      expect(ApiMethod.head.isRetryable, isTrue);
+      expect(ApiMethod.options.isRetryable, isTrue);
+      expect(ApiMethod.post.isRetryable, isFalse);
+      expect(ApiMethod.put.isRetryable, isFalse);
+      expect(ApiMethod.patch.isRetryable, isFalse);
+      expect(ApiMethod.delete.isRetryable, isFalse);
+    });
+  });
+
+  group('RetryPolicy', () {
+    test('never retries by default', () {
+      expect(RetryPolicy.none.maxAttempts, 1);
+      expect(RetryPolicy.none.canRetry(ApiMethod.get), isFalse);
+    });
+
+    test('refuses to retry a non-idempotent method', () {
+      const policy = RetryPolicy(maxAttempts: 3);
+
+      expect(policy.canRetry(ApiMethod.get), isTrue);
+      expect(policy.canRetry(ApiMethod.post), isFalse);
+    });
+
+    test('grows the backoff and caps it', () {
+      const policy = RetryPolicy(
+        maxAttempts: 5,
+        initialBackoff: Duration(milliseconds: 100),
+        maxBackoff: Duration(milliseconds: 250),
+      );
+
+      expect(policy.backoffFor(1), const Duration(milliseconds: 100));
+      expect(policy.backoffFor(2), const Duration(milliseconds: 200));
+      expect(policy.backoffFor(3), const Duration(milliseconds: 250));
+    });
+  });
+
+  group('FakeApiClient', () {
+    test('answers with the decoded body', () async {
+      final client = FakeApiClient((request) async => <String, Object?>{'id': 1});
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull?['id'], 1);
+    });
+
+    test('records the requests it received', () async {
+      final client = FakeApiClient((request) async => <String, Object?>{});
+
+      await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(client.requests, hasLength(1));
+      expect(client.requests.single.path, '/v1/users');
+    });
+
+    test('reports a timeout as a typed error', () async {
+      final client = FakeApiClient((request) async => throw const ApiTimeoutError());
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errorOrNull, isA<ApiTimeoutError>());
+    });
+
+    test('reports a cancelled request as a typed error', () async {
+      final client = FakeApiClient((request) async => <String, Object?>{});
+      final token = ApiCancellationToken()..cancel();
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+        cancellationToken: token,
+      );
+
+      expect(result.errorOrNull, isA<ApiCancelledError>());
+    });
+
+    test('reports an undecodable body as a malformed response', () async {
+      final client = FakeApiClient((request) async => 'not a map');
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.errorOrNull, isA<ApiMalformedError>());
+    });
+  });
+
+  group('RetryingApiClient', () {
+    test('retries an idempotent request until it succeeds', () async {
+      var attempts = 0;
+      final inner = FakeApiClient((request) async {
+        attempts += 1;
+        if (attempts < 3) {
+          throw const ApiNetworkError();
+        }
+        return <String, Object?>{'ok': true};
+      });
+      final client = RetryingApiClient(
+        inner: inner,
+        policy: const RetryPolicy(
+          maxAttempts: 3,
+          initialBackoff: Duration(milliseconds: 1),
+        ),
+      );
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(attempts, 3);
+    });
+
+    test('never replays a non-idempotent request', () async {
+      var attempts = 0;
+      final inner = FakeApiClient((request) async {
+        attempts += 1;
+        throw const ApiNetworkError();
+      });
+      final client = RetryingApiClient(
+        inner: inner,
+        policy: const RetryPolicy(
+          maxAttempts: 3,
+          initialBackoff: Duration(milliseconds: 1),
+        ),
+      );
+
+      final result = await client.send<Map<String, Object?>>(
+        _postRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(attempts, 1);
+    });
+
+    test('gives up after the bounded number of attempts', () async {
+      var attempts = 0;
+      final inner = FakeApiClient((request) async {
+        attempts += 1;
+        throw const ApiNetworkError();
+      });
+      final client = RetryingApiClient(
+        inner: inner,
+        policy: const RetryPolicy(
+          maxAttempts: 3,
+          initialBackoff: Duration(milliseconds: 1),
+        ),
+      );
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(result.errorOrNull, isA<ApiNetworkError>());
+      expect(attempts, 3);
+    });
+
+    test('does not retry a cancelled request', () async {
+      var attempts = 0;
+      final inner = FakeApiClient((request) async {
+        attempts += 1;
+        throw const ApiNetworkError();
+      });
+      final client = RetryingApiClient(
+        inner: inner,
+        policy: const RetryPolicy(
+          maxAttempts: 3,
+          initialBackoff: Duration(milliseconds: 1),
+        ),
+      );
+      final token = ApiCancellationToken()..cancel();
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+        cancellationToken: token,
+      );
+
+      expect(result.errorOrNull, isA<ApiCancelledError>());
+      expect(attempts, 0);
+    });
+
+    test('reuses one correlation identifier across attempts', () async {
+      final inner = FakeApiClient((request) async => throw const ApiNetworkError());
+      final client = RetryingApiClient(
+        inner: inner,
+        policy: const RetryPolicy(
+          maxAttempts: 2,
+          initialBackoff: Duration(milliseconds: 1),
+        ),
+        requestIdFactory: RequestIdFactory(clock: () => DateTime.utc(2026, 1, 1)),
+      );
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(inner.requestIds, hasLength(2));
+      expect(inner.requestIds.first, isNotNull);
+      expect(inner.requestIds.last, inner.requestIds.first);
+      expect(result.requestId, inner.requestIds.first);
+    });
+
+    test('stops when the total timeout would be exceeded', () async {
+      var attempts = 0;
+      final inner = FakeApiClient((request) async {
+        attempts += 1;
+        throw const ApiNetworkError();
+      });
+      final client = RetryingApiClient(
+        inner: inner,
+        policy: const RetryPolicy(
+          maxAttempts: 5,
+          initialBackoff: Duration(seconds: 5),
+          totalTimeout: Duration(milliseconds: 1),
+        ),
+      );
+
+      final result = await client.send<Map<String, Object?>>(
+        _getRequest,
+        decode: _decodeMap,
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(attempts, 1);
+    });
+  });
+
+  group('RequestIdFactory', () {
+    test('produces a different identifier every time', () {
+      final factory = RequestIdFactory(clock: () => DateTime.utc(2026, 1, 1));
+
+      final first = factory.next();
+      final second = factory.next();
+
+      expect(first, isNot(second));
+    });
+  });
+
+  group('ApiCancellationToken', () {
+    test('runs a listener registered after cancellation', () {
+      final token = ApiCancellationToken()..cancel();
+      var called = false;
+
+      token.addListener(() => called = true);
+
+      expect(called, isTrue);
+    });
+
+    test('runs a listener when the token is cancelled', () {
+      final token = ApiCancellationToken();
+      var called = false;
+
+      token.addListener(() => called = true);
+      token.cancel();
+
+      expect(called, isTrue);
+      expect(token.isCancelled, isTrue);
+    });
+  });
+}

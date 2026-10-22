@@ -1,0 +1,218 @@
+import 'dart:async';
+
+import '../auth_adapter.dart';
+import '../auth_capabilities.dart';
+import '../auth_error.dart';
+import '../auth_session.dart';
+import '../auth_state.dart';
+import '../session_store.dart';
+import '../token_refresh_coordinator.dart';
+import 'rest_auth_config.dart';
+import 'rest_auth_port.dart';
+import 'rest_session_codec.dart';
+
+/// The authentication adapter for a custom REST backend.
+///
+/// The adapter owns the provider-neutral behaviour: the state machine, the
+/// persisted session, and the serialized token refresh. Everything the backend
+/// does goes through [port], so the behaviour is testable with a fake and no
+/// network.
+class RestAuthAdapter implements AuthAdapter {
+  /// Creates an adapter that talks to the backend through [port].
+  ///
+  /// [config] declares the backend's endpoints and payload shapes, and
+  /// [sessionStore] keeps the session. [clock] exists so that a test can
+  /// control expiry.
+  RestAuthAdapter({
+    required this.port,
+    required this.config,
+    required this.sessionStore,
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
+
+  /// The provider boundary.
+  final RestAuthPort port;
+
+  /// The backend's endpoints and payload shapes.
+  final RestAuthConfig config;
+
+  /// Where the session is kept.
+  final SessionStore sessionStore;
+
+  final DateTime Function() _clock;
+
+  final StreamController<AuthState> _states =
+      StreamController<AuthState>.broadcast();
+
+  AuthState _state = const AuthState.unknown();
+
+  late final TokenRefreshCoordinator _refreshCoordinator =
+      TokenRefreshCoordinator(
+        refresh: _performRefresh,
+        onFailure: _clearSession,
+      );
+
+  @override
+  AuthCapabilities get capabilities {
+    final available = <AuthCapability>{
+      AuthCapability.emailPasswordSignIn,
+      AuthCapability.sessionRestoration,
+      AuthCapability.logout,
+    };
+    if (config.registerPath != null) {
+      available.add(AuthCapability.emailPasswordRegistration);
+    }
+    if (config.passwordResetPath != null) {
+      available.add(AuthCapability.passwordReset);
+    }
+    if (config.refreshPath != null) {
+      available.add(AuthCapability.tokenRefresh);
+    }
+    return AuthCapabilities(available);
+  }
+
+  @override
+  AuthState get currentState => _state;
+
+  @override
+  Stream<AuthState> get authStateChanges => _states.stream;
+
+  @override
+  Future<AuthState> restoreSession() async {
+    final session = decodeRestAuthSession(await sessionStore.read());
+    if (session == null) {
+      await sessionStore.clear();
+      return _publish(const AuthState.unauthenticated());
+    }
+
+    if (session.isExpiredAt(_clock())) {
+      final refreshToken = session.refreshToken;
+      if (refreshToken == null || config.refreshPath == null) {
+        await sessionStore.clear();
+        return _publish(const AuthState.unauthenticated());
+      }
+      try {
+        final refreshed = await port.refresh(refreshToken);
+        await _persist(refreshed);
+        return _publish(AuthState.authenticated(refreshed));
+      } on AuthError {
+        await sessionStore.clear();
+        return _publish(const AuthState.unauthenticated());
+      }
+    }
+
+    return _publish(AuthState.authenticated(session));
+  }
+
+  @override
+  Future<AuthState> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final session = await port.signIn(email: email, password: password);
+    await _persist(session);
+    return _publish(AuthState.authenticated(session));
+  }
+
+  @override
+  Future<AuthState> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (config.registerPath == null) {
+      throw UnsupportedCapabilityError(
+        AuthCapability.emailPasswordRegistration.id,
+      );
+    }
+    final session = await port.register(email: email, password: password);
+    await _persist(session);
+    return _publish(AuthState.authenticated(session));
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    if (config.passwordResetPath == null) {
+      throw UnsupportedCapabilityError(AuthCapability.passwordReset.id);
+    }
+    await port.requestPasswordReset(email);
+  }
+
+  @override
+  Future<AuthState> signInWithOneTimePassword(String token) async {
+    throw UnsupportedCapabilityError(
+      AuthCapability.oneTimePasswordSignIn.id,
+    );
+  }
+
+  @override
+  Future<void> signOut() async {
+    final session = _state.session;
+    if (session == null) {
+      throw const NotSignedInError();
+    }
+
+    AuthError? backendFailure;
+    final refreshToken = session.refreshToken;
+    if (config.logoutPath != null && refreshToken != null) {
+      try {
+        await port.logout(refreshToken);
+      } on AuthError catch (error) {
+        backendFailure = error;
+      }
+    }
+
+    await _clearSession();
+    if (backendFailure != null) {
+      throw backendFailure;
+    }
+  }
+
+  @override
+  Future<AuthState> refreshSession() async {
+    final session = _state.session;
+    if (session == null) {
+      throw const NotSignedInError();
+    }
+    if (config.refreshPath == null) {
+      throw UnsupportedCapabilityError(AuthCapability.tokenRefresh.id);
+    }
+    if (session.refreshToken == null) {
+      throw const NotSignedInError(
+        message: 'The session has no refresh token.',
+      );
+    }
+
+    final refreshed = await _refreshCoordinator.refreshNow();
+    return _publish(AuthState.authenticated(refreshed));
+  }
+
+  Future<AuthSession> _performRefresh() async {
+    final session = _state.session;
+    final refreshToken = session?.refreshToken;
+    if (refreshToken == null) {
+      throw const NotSignedInError();
+    }
+    final refreshed = await port.refresh(refreshToken);
+    await _persist(refreshed);
+    return refreshed;
+  }
+
+  Future<void> _persist(AuthSession session) =>
+      sessionStore.write(encodeRestAuthSession(session));
+
+  Future<void> _clearSession() async {
+    await sessionStore.clear();
+    _publish(const AuthState.unauthenticated());
+  }
+
+  AuthState _publish(AuthState state) {
+    _state = state;
+    if (!_states.isClosed) {
+      _states.add(state);
+    }
+    return state;
+  }
+
+  /// Releases the state stream.
+  Future<void> dispose() => _states.close();
+}

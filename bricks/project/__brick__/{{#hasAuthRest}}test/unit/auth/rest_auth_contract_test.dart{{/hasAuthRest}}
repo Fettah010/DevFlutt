@@ -1,0 +1,232 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/auth/auth_adapter.dart';
+import 'package:{{projectName}}/core/auth/auth_capabilities.dart';
+import 'package:{{projectName}}/core/auth/auth_error.dart';
+import 'package:{{projectName}}/core/auth/auth_session.dart';
+import 'package:{{projectName}}/core/auth/rest/fake_rest_auth_port.dart';
+import 'package:{{projectName}}/core/auth/rest/rest_auth_adapter.dart';
+import 'package:{{projectName}}/core/auth/rest/rest_auth_config.dart';
+import 'package:{{projectName}}/core/auth/rest/rest_session_codec.dart';
+import 'package:{{projectName}}/core/auth/session_store.dart';
+
+import 'auth_contract_suite.dart';
+
+const AuthSession _session = AuthSession(
+  user: AuthUser(id: 'u1', email: 'user@example.com'),
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+);
+
+class _RestAuthHarness implements AuthContractHarness {
+  final InMemorySessionStore store = InMemorySessionStore();
+
+  FakeRestAuthPort? lastPort;
+
+  DateTime now = DateTime.utc(2026, 1, 1, 12);
+
+  @override
+  AuthAdapter createAdapter({
+    AuthContractFailure failure = AuthContractFailure.none,
+  }) {
+    final port = FakeRestAuthPort(session: _session);
+    lastPort = port;
+    switch (failure) {
+      case AuthContractFailure.none:
+        break;
+      case AuthContractFailure.invalidCredentials:
+        port.nextSignInFailure = const InvalidCredentialsError();
+      case AuthContractFailure.network:
+        port.nextSignInFailure = const AuthNetworkError();
+    }
+    return RestAuthAdapter(
+      port: port,
+      config: defaultRestAuthConfig,
+      sessionStore: store,
+      clock: () => now,
+    );
+  }
+}
+
+void main() {
+  final harness = _RestAuthHarness();
+  runAuthContractTests(name: 'rest', harness: harness);
+
+  group('RestAuthAdapter session handling', () {
+    test('restores a session from the store', () async {
+      await harness.store.write(encodeRestAuthSession(_session));
+      final adapter = harness.createAdapter();
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isTrue);
+      expect(state.session!.user.id, 'u1');
+      expect(adapter.currentState.isAuthenticated, isTrue);
+    });
+
+    test('a stored value that cannot be read is discarded', () async {
+      await harness.store.write('this is not a session');
+      final adapter = harness.createAdapter();
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isFalse);
+      expect(await harness.store.read(), isNull);
+    });
+
+    test('an expired session is refreshed when it is restored', () async {
+      final expired = AuthSession(
+        user: _session.user,
+        accessToken: 'stale',
+        refreshToken: 'refresh-token',
+        expiresAt: harness.now.subtract(const Duration(minutes: 1)),
+      );
+      await harness.store.write(encodeRestAuthSession(expired));
+      final adapter = harness.createAdapter();
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isTrue);
+      expect(state.session!.accessToken, 'access-token');
+      expect(harness.lastPort!.refreshCount, 1);
+    });
+
+    test('an expired session without a refresh token is discarded', () async {
+      final expired = AuthSession(
+        user: _session.user,
+        accessToken: 'stale',
+        expiresAt: harness.now.subtract(const Duration(minutes: 1)),
+      );
+      await harness.store.write(encodeRestAuthSession(expired));
+      final adapter = harness.createAdapter();
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isFalse);
+      expect(await harness.store.read(), isNull);
+      expect(harness.lastPort!.refreshCount, 0);
+    });
+
+    test('a refresh that the backend refuses discards the session', () async {
+      await harness.store.write(encodeRestAuthSession(_session));
+      final adapter = harness.createAdapter();
+      await adapter.restoreSession();
+      harness.lastPort!.nextRefreshFailure = const SessionExpiredError();
+
+      await expectLater(
+        adapter.refreshSession(),
+        throwsA(isA<SessionExpiredError>()),
+      );
+
+      expect(adapter.currentState.isAuthenticated, isFalse);
+      expect(await harness.store.read(), isNull);
+    });
+  });
+
+  group('RestAuthAdapter token refresh', () {
+    test('concurrent refreshes cause one backend request', () async {
+      final adapter = harness.createAdapter();
+      await adapter.signInWithEmailAndPassword(
+        email: 'user@example.com',
+        password: 'correct horse battery staple',
+      );
+
+      await Future.wait<dynamic>([
+        adapter.refreshSession(),
+        adapter.refreshSession(),
+        adapter.refreshSession(),
+      ]);
+
+      expect(harness.lastPort!.refreshCount, 1);
+    });
+
+    test('a failed refresh is not retried', () async {
+      final adapter = harness.createAdapter();
+      await adapter.signInWithEmailAndPassword(
+        email: 'user@example.com',
+        password: 'correct horse battery staple',
+      );
+      harness.lastPort!.nextRefreshFailure = const SessionExpiredError();
+
+      await expectLater(
+        adapter.refreshSession(),
+        throwsA(isA<SessionExpiredError>()),
+      );
+      await expectLater(
+        adapter.refreshSession(),
+        throwsA(isA<NotSignedInError>()),
+      );
+
+      expect(harness.lastPort!.refreshCount, 1);
+    });
+  });
+
+  group('RestAuthAdapter logout', () {
+    test('signing out clears the stored session', () async {
+      final adapter = harness.createAdapter();
+      await adapter.signInWithEmailAndPassword(
+        email: 'user@example.com',
+        password: 'correct horse battery staple',
+      );
+
+      await adapter.signOut();
+
+      expect(adapter.currentState.isAuthenticated, isFalse);
+      expect(await harness.store.read(), isNull);
+      expect(harness.lastPort!.logoutCount, 1);
+    });
+
+    test('a backend logout failure still clears the local session', () async {
+      final adapter = harness.createAdapter();
+      await adapter.signInWithEmailAndPassword(
+        email: 'user@example.com',
+        password: 'correct horse battery staple',
+      );
+      harness.lastPort!.nextLogoutFailure = const AuthNetworkError();
+
+      await expectLater(adapter.signOut(), throwsA(isA<AuthNetworkError>()));
+
+      expect(adapter.currentState.isAuthenticated, isFalse);
+      expect(await harness.store.read(), isNull);
+    });
+  });
+
+  group('RestAuthAdapter configuration', () {
+    test('a backend without a registration path cannot register', () async {
+      final port = FakeRestAuthPort(session: _session);
+      final adapter = RestAuthAdapter(
+        port: port,
+        config: const RestAuthConfig(loginPath: '/auth/login'),
+        sessionStore: InMemorySessionStore(),
+      );
+
+      expect(
+        adapter.capabilities.supports(
+          AuthCapability.emailPasswordRegistration,
+        ),
+        isFalse,
+      );
+      await expectLater(
+        adapter.registerWithEmailAndPassword(
+          email: 'user@example.com',
+          password: 'correct horse battery staple',
+        ),
+        throwsA(isA<UnsupportedCapabilityError>()),
+      );
+    });
+
+    test('a backend without a password-reset path cannot reset', () async {
+      final port = FakeRestAuthPort(session: _session);
+      final adapter = RestAuthAdapter(
+        port: port,
+        config: const RestAuthConfig(loginPath: '/auth/login'),
+        sessionStore: InMemorySessionStore(),
+      );
+
+      await expectLater(
+        adapter.requestPasswordReset('user@example.com'),
+        throwsA(isA<UnsupportedCapabilityError>()),
+      );
+    });
+  });
+}

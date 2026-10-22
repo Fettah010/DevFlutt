@@ -57,6 +57,26 @@ vars:
     type: boolean
     description: Include the app-owned error reporter and its local adapter.
     default: false
+  hasAuthCore:
+    type: boolean
+    description: Include the provider-neutral authentication contract and session store.
+    default: false
+  hasAuthRest:
+    type: boolean
+    description: Include the custom REST/JWT authentication adapter.
+    default: false
+  hasAuthFirebase:
+    type: boolean
+    description: Include the Firebase Authentication adapter.
+    default: false
+  hasAuthSupabase:
+    type: boolean
+    description: Include the Supabase Auth adapter.
+    default: false
+  hasAuth:
+    type: boolean
+    description: Include the selected authentication adapter in the composition root.
+    default: false
   hasServices:
     type: boolean
     description: Include the generated composition root for the selected services.

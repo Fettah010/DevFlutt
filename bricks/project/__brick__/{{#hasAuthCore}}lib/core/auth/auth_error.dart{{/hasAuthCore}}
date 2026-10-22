@@ -1,0 +1,122 @@
+/// The failures an authentication provider can report.
+///
+/// The type is sealed. An adapter maps its provider's own exceptions onto these
+/// cases, so a provider exception never escapes the adapter and a feature never
+/// has to import a provider SDK to handle a failure.
+sealed class AuthError {
+  const AuthError({this.message});
+
+  /// A short description of the failure.
+  ///
+  /// It never contains a token, a password, or a provider response body.
+  final String? message;
+
+  /// A stable, machine-readable identifier for the failure.
+  String get code;
+
+  /// Whether attempting the same operation again could succeed.
+  ///
+  /// A failure that is not retryable must not be retried by the caller; a
+  /// credential rejection in particular is never a transient condition.
+  bool get isRetryable => false;
+
+  @override
+  String toString() => 'AuthError($code)';
+}
+
+/// The provider rejected the supplied credentials.
+class InvalidCredentialsError extends AuthError {
+  const InvalidCredentialsError({super.message});
+
+  @override
+  String get code => 'invalid-credentials';
+}
+
+/// The provider could not be reached.
+class AuthNetworkError extends AuthError {
+  const AuthNetworkError({super.message});
+
+  @override
+  String get code => 'network';
+
+  @override
+  bool get isRetryable => true;
+}
+
+/// The provider did not answer in time.
+class AuthTimeoutError extends AuthError {
+  const AuthTimeoutError({super.message});
+
+  @override
+  String get code => 'timeout';
+
+  @override
+  bool get isRetryable => true;
+}
+
+/// The operation was cancelled before it completed.
+class AuthCancelledError extends AuthError {
+  const AuthCancelledError({super.message});
+
+  @override
+  String get code => 'cancelled';
+}
+
+/// The session exists but its access token has expired and could not be
+/// refreshed.
+class SessionExpiredError extends AuthError {
+  const SessionExpiredError({super.message});
+
+  @override
+  String get code => 'session-expired';
+}
+
+/// The provider revoked the session, for example because the user signed out
+/// elsewhere or the provider invalidated the token.
+class SessionRevokedError extends AuthError {
+  const SessionRevokedError({super.message});
+
+  @override
+  String get code => 'session-revoked';
+}
+
+/// The operation needs a session and there is none.
+class NotSignedInError extends AuthError {
+  const NotSignedInError({super.message});
+
+  @override
+  String get code => 'not-signed-in';
+}
+
+/// The provider does not implement the requested capability.
+///
+/// The capability is named so that a feature can tell the user what is
+/// missing instead of failing obscurely.
+class UnsupportedCapabilityError extends AuthError {
+  const UnsupportedCapabilityError(this.capability, {super.message});
+
+  /// The capability that the provider does not implement.
+  final String capability;
+
+  @override
+  String get code => 'unsupported-capability';
+}
+
+/// The provider failed for a reason the template does not model.
+class ProviderFailureError extends AuthError {
+  const ProviderFailureError({this.providerCode, super.message});
+
+  /// The provider's own error code, when it supplied one.
+  final String? providerCode;
+
+  @override
+  String get code => 'provider-failure';
+}
+
+/// A failure the template could not classify.
+class UnknownAuthError extends AuthError {
+  const UnknownAuthError({super.message});
+
+  @override
+  String get code => 'unknown';
+}

@@ -1,0 +1,114 @@
+import '../auth_error.dart';
+import '../auth_session.dart';
+import 'rest_auth_port.dart';
+
+/// A deterministic [RestAuthPort] for tests.
+///
+/// The port never touches the network. It records the calls it received, so a
+/// test can assert how many times the backend was asked to do something.
+class FakeRestAuthPort implements RestAuthPort {
+  /// Creates a port that answers with [session].
+  FakeRestAuthPort({this.session});
+
+  /// The session a successful call returns.
+  AuthSession? session;
+
+  /// The failure the next sign-in reports.
+  AuthError? nextSignInFailure;
+
+  /// The failure the next refresh reports.
+  AuthError? nextRefreshFailure;
+
+  /// The failure the next registration reports.
+  AuthError? nextRegisterFailure;
+
+  /// The failure the next logout reports.
+  AuthError? nextLogoutFailure;
+
+  /// The failure the next password reset reports.
+  AuthError? nextPasswordResetFailure;
+
+  /// The number of sign-in calls received.
+  int signInCount = 0;
+
+  /// The number of registration calls received.
+  int registerCount = 0;
+
+  /// The number of refresh calls received.
+  int refreshCount = 0;
+
+  /// The number of logout calls received.
+  int logoutCount = 0;
+
+  /// The number of password-reset calls received.
+  int passwordResetCount = 0;
+
+  /// The refresh tokens the port was given.
+  final List<String> refreshTokens = <String>[];
+
+  @override
+  Future<AuthSession> signIn({
+    required String email,
+    required String password,
+  }) async {
+    signInCount += 1;
+    final failure = nextSignInFailure;
+    if (failure != null) {
+      nextSignInFailure = null;
+      throw failure;
+    }
+    return session ?? _defaultSession;
+  }
+
+  @override
+  Future<AuthSession> register({
+    required String email,
+    required String password,
+  }) async {
+    registerCount += 1;
+    final failure = nextRegisterFailure;
+    if (failure != null) {
+      nextRegisterFailure = null;
+      throw failure;
+    }
+    return session ?? _defaultSession;
+  }
+
+  @override
+  Future<AuthSession> refresh(String refreshToken) async {
+    refreshCount += 1;
+    refreshTokens.add(refreshToken);
+    final failure = nextRefreshFailure;
+    if (failure != null) {
+      nextRefreshFailure = null;
+      throw failure;
+    }
+    return session ?? _defaultSession;
+  }
+
+  @override
+  Future<void> logout(String refreshToken) async {
+    logoutCount += 1;
+    final failure = nextLogoutFailure;
+    if (failure != null) {
+      nextLogoutFailure = null;
+      throw failure;
+    }
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    passwordResetCount += 1;
+    final failure = nextPasswordResetFailure;
+    if (failure != null) {
+      nextPasswordResetFailure = null;
+      throw failure;
+    }
+  }
+
+  static final AuthSession _defaultSession = AuthSession(
+    user: AuthUser(id: 'u1', email: 'user@example.com'),
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+  );
+}

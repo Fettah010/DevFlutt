@@ -1,0 +1,222 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/auth/auth_adapter.dart';
+import 'package:{{projectName}}/core/auth/auth_capabilities.dart';
+import 'package:{{projectName}}/core/auth/auth_error.dart';
+import 'package:{{projectName}}/core/auth/auth_state.dart';
+
+/// The failure a contract harness can make the provider report.
+enum AuthContractFailure {
+  /// The provider behaves normally.
+  none,
+
+  /// The provider rejects the credentials.
+  invalidCredentials,
+
+  /// The provider cannot be reached.
+  network,
+}
+
+/// The operations a harness provides so that the shared suite can exercise an
+/// adapter.
+///
+/// Every adapter's test supplies one of these over its own fake provider port,
+/// so all adapters are verified against one definition of correct behaviour.
+abstract interface class AuthContractHarness {
+  /// Creates an adapter that starts with no session.
+  ///
+  /// When [failure] is not [AuthContractFailure.none], the next sign-in the
+  /// adapter performs reports that failure.
+  AuthAdapter createAdapter({AuthContractFailure failure = AuthContractFailure.none});
+}
+
+/// Runs the shared authentication contract against [harness].
+///
+/// The suite only asserts the behaviour of the capabilities the adapter
+/// declares, so an adapter that does not implement a capability is not held to
+/// it. The adapter-specific behaviour — how a session is persisted, how an
+/// expired session is detected — is verified by the adapter's own test.
+void runAuthContractTests({
+  required String name,
+  required AuthContractHarness harness,
+}) {
+  group('$name authentication adapter', () {
+    test('reports at least the core capabilities', () {
+      final adapter = harness.createAdapter();
+
+      expect(adapter.capabilities.all, isNotEmpty);
+      expect(
+        adapter.capabilities.supports(AuthCapability.emailPasswordSignIn),
+        isTrue,
+      );
+      expect(
+        adapter.capabilities.supports(AuthCapability.sessionRestoration),
+        isTrue,
+      );
+      expect(adapter.capabilities.supports(AuthCapability.logout), isTrue);
+    });
+
+    test('every reported capability has a known identifier', () {
+      final adapter = harness.createAdapter();
+
+      for (final id in adapter.capabilities.ids) {
+        expect(AuthCapability.fromId(id), isNotNull, reason: 'unknown $id');
+      }
+    });
+
+    test('starts with no session', () async {
+      final adapter = harness.createAdapter();
+
+      expect(adapter.currentState.status, AuthStatus.unknown);
+
+      final state = await adapter.restoreSession();
+
+      expect(state.status, AuthStatus.unauthenticated);
+      expect(state.isAuthenticated, isFalse);
+    });
+
+    test('signing in produces an authenticated state', () async {
+      final adapter = harness.createAdapter();
+      final states = <AuthState>[];
+      final subscription = adapter.authStateChanges.listen(states.add);
+
+      final state = await adapter.signInWithEmailAndPassword(
+        email: 'user@example.com',
+        password: 'correct horse battery staple',
+      );
+
+      expect(state.isAuthenticated, isTrue);
+      expect(state.session, isNotNull);
+      expect(state.session!.user.email, 'user@example.com');
+      expect(adapter.currentState.isAuthenticated, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(states.any((observed) => observed.isAuthenticated), isTrue);
+      await subscription.cancel();
+    });
+
+    test('a rejected sign-in throws and leaves the state unauthenticated',
+        () async {
+      final adapter = harness.createAdapter(
+        failure: AuthContractFailure.invalidCredentials,
+      );
+
+      await expectLater(
+        () => adapter.signInWithEmailAndPassword(
+          email: 'user@example.com',
+          password: 'wrong',
+        ),
+        throwsA(isA<InvalidCredentialsError>()),
+      );
+      expect(adapter.currentState.isAuthenticated, isFalse);
+    });
+
+    test('an unreachable provider throws a retryable error', () async {
+      final adapter = harness.createAdapter(
+        failure: AuthContractFailure.network,
+      );
+
+      await expectLater(
+        () => adapter.signInWithEmailAndPassword(
+          email: 'user@example.com',
+          password: 'correct horse battery staple',
+        ),
+        throwsA(
+          isA<AuthError>().having(
+            (error) => error.isRetryable,
+            'isRetryable',
+            isTrue,
+          ),
+        ),
+      );
+      expect(adapter.currentState.isAuthenticated, isFalse);
+    });
+
+    test('signing out ends the session', () async {
+      final adapter = harness.createAdapter();
+      await adapter.signInWithEmailAndPassword(
+        email: 'user@example.com',
+        password: 'correct horse battery staple',
+      );
+
+      await adapter.signOut();
+
+      expect(adapter.currentState.isAuthenticated, isFalse);
+    });
+
+    test('signing out without a session throws', () async {
+      final adapter = harness.createAdapter();
+
+      await expectLater(
+        () => adapter.signOut(),
+        throwsA(isA<NotSignedInError>()),
+      );
+    });
+
+    test('refreshing without a session throws', () async {
+      final adapter = harness.createAdapter();
+
+      await expectLater(
+        () => adapter.refreshSession(),
+        throwsA(isA<NotSignedInError>()),
+      );
+    });
+
+    test('an operation the provider does not support throws a typed error',
+        () async {
+      final adapter = harness.createAdapter();
+      final capabilities = adapter.capabilities;
+
+      if (!capabilities.supports(AuthCapability.emailPasswordRegistration)) {
+        await expectLater(
+          () => adapter.registerWithEmailAndPassword(
+            email: 'user@example.com',
+            password: 'correct horse battery staple',
+          ),
+          throwsA(
+            isA<UnsupportedCapabilityError>().having(
+              (error) => error.capability,
+              'capability',
+              AuthCapability.emailPasswordRegistration.id,
+            ),
+          ),
+        );
+      }
+
+      if (!capabilities.supports(AuthCapability.passwordReset)) {
+        await expectLater(
+          () => adapter.requestPasswordReset('user@example.com'),
+          throwsA(
+            isA<UnsupportedCapabilityError>().having(
+              (error) => error.capability,
+              'capability',
+              AuthCapability.passwordReset.id,
+            ),
+          ),
+        );
+      }
+
+      if (!capabilities.supports(AuthCapability.oneTimePasswordSignIn)) {
+        await expectLater(
+          () => adapter.signInWithOneTimePassword('a-one-time-token'),
+          throwsA(
+            isA<UnsupportedCapabilityError>().having(
+              (error) => error.capability,
+              'capability',
+              AuthCapability.oneTimePasswordSignIn.id,
+            ),
+          ),
+        );
+      }
+    });
+
+    test('a password reset reaches the provider when it is supported', () async {
+      final adapter = harness.createAdapter();
+      if (!adapter.capabilities.supports(AuthCapability.passwordReset)) {
+        return;
+      }
+
+      await adapter.requestPasswordReset('user@example.com');
+    });
+  });
+}

@@ -1,0 +1,95 @@
+/// The signed-in user.
+///
+/// The model is provider-neutral: it carries only the fields the template can
+/// use, and never a provider identifier that a feature would have to know
+/// about.
+class AuthUser {
+  /// Creates a user.
+  const AuthUser({
+    required this.id,
+    this.email,
+    this.displayName,
+    this.isEmailVerified = false,
+  });
+
+  /// The stable identifier of the user within the provider.
+  final String id;
+
+  /// The email address of the user, when the provider exposes one.
+  final String? email;
+
+  /// The display name of the user, when the provider exposes one.
+  final String? displayName;
+
+  /// Whether the provider considers the email address verified.
+  final bool isEmailVerified;
+
+  @override
+  bool operator ==(Object other) =>
+      other is AuthUser &&
+      other.id == id &&
+      other.email == email &&
+      other.displayName == displayName &&
+      other.isEmailVerified == isEmailVerified;
+
+  @override
+  int get hashCode => Object.hash(id, email, displayName, isEmailVerified);
+
+  /// A description that never contains a credential.
+  @override
+  String toString() => 'AuthUser($id)';
+}
+
+/// A session: the tokens and the user they belong to.
+///
+/// The access token and the refresh token are deliberately not part of
+/// [toString]. A session is logged, serialized, and compared often enough that
+/// leaking a token through a description would be easy.
+class AuthSession {
+  /// Creates a session.
+  const AuthSession({
+    required this.user,
+    required this.accessToken,
+    this.refreshToken,
+    this.expiresAt,
+  });
+
+  /// The signed-in user.
+  final AuthUser user;
+
+  /// The token that authorises a request.
+  final String accessToken;
+
+  /// The token that obtains a new access token, when the provider uses one.
+  final String? refreshToken;
+
+  /// When the access token expires, when the provider says.
+  final DateTime? expiresAt;
+
+  /// Whether the access token has expired at [now].
+  ///
+  /// A session without an expiry is never considered expired: the provider did
+  /// not say, so the template does not guess.
+  bool isExpiredAt(DateTime now) {
+    final expiry = expiresAt;
+    if (expiry == null) {
+      return false;
+    }
+    return !expiry.isAfter(now);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is AuthSession &&
+      other.user == user &&
+      other.accessToken == accessToken &&
+      other.refreshToken == refreshToken &&
+      other.expiresAt == expiresAt;
+
+  @override
+  int get hashCode => Object.hash(user, accessToken, refreshToken, expiresAt);
+
+  /// A description that never contains a token.
+  @override
+  String toString() => 'AuthSession(user: ${user.id}, expiresAt: $expiresAt)';
+}

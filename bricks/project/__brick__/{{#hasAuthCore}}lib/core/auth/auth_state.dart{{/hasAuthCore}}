@@ -1,0 +1,63 @@
+import 'auth_error.dart';
+import 'auth_session.dart';
+
+/// Where the application is with respect to the user's session.
+enum AuthStatus {
+  /// The session has not been established yet.
+  ///
+  /// The application must not show protected content in this state. The
+  /// template restores the session before the first frame, so this state is
+  /// normally short-lived.
+  unknown,
+
+  /// A session exists.
+  authenticated,
+
+  /// No session exists.
+  unauthenticated,
+}
+
+/// The authentication state of the application.
+///
+/// The state is a value: an adapter replaces it rather than mutating it, and
+/// publishes every change on its state stream.
+class AuthState {
+  /// Creates a state.
+  const AuthState({required this.status, this.session, this.error});
+
+  /// The state before the session has been established.
+  const AuthState.unknown() : this(status: AuthStatus.unknown);
+
+  /// A state with a session.
+  const AuthState.authenticated(AuthSession session)
+      : this(status: AuthStatus.authenticated, session: session);
+
+  /// A state with no session, and optionally the reason there is none.
+  const AuthState.unauthenticated({AuthError? error})
+      : this(status: AuthStatus.unauthenticated, error: error);
+
+  /// Whether the application has a session.
+  final AuthStatus status;
+
+  /// The session, when there is one.
+  final AuthSession? session;
+
+  /// The failure that produced this state, when the state is a failure.
+  final AuthError? error;
+
+  /// Whether the application has a session.
+  bool get isAuthenticated => status == AuthStatus.authenticated;
+
+  @override
+  bool operator ==(Object other) =>
+      other is AuthState &&
+      other.status == status &&
+      other.session == session &&
+      other.error == error;
+
+  @override
+  int get hashCode => Object.hash(status, session, error);
+
+  @override
+  String toString() => 'AuthState($status)';
+}

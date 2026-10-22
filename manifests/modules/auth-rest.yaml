@@ -35,6 +35,7 @@ outputs:
   - lib/core/auth/rest/rest_auth_adapter.dart
   - lib/core/auth/rest/rest_auth_config.dart
   - lib/core/auth/rest/rest_auth_port.dart
+  - lib/core/auth/rest/rest_session_codec.dart
 requiredSetup:
   - The module adds no dependency. It talks to the backend through the ApiClient of
     the networking module, so the existing timeouts, cancellation, request

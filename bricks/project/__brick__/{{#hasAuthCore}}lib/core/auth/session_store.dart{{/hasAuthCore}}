@@ -1,0 +1,63 @@
+import '../secure_storage/secure_store.dart';
+
+/// Where an authentication session is persisted.
+///
+/// The interface is deliberately small. A feature that needs to read the
+/// stored session depends on this interface, not on the secure store behind
+/// it.
+abstract interface class SessionStore {
+  /// The serialized session, or `null` when there is none.
+  Future<String?> read();
+
+  /// Stores the serialized [session], replacing any previous one.
+  Future<void> write(String session);
+
+  /// Removes the stored session.
+  Future<void> clear();
+}
+
+/// A [SessionStore] backed by the secure store.
+///
+/// The session contains the access token and usually the refresh token, so it
+/// is written to the platform's secure storage and not to ordinary
+/// preferences. The Android backup rules generated with the secure-storage
+/// module keep it out of backups.
+class SecureSessionStore implements SessionStore {
+  /// Creates a store that keeps the session in [store].
+  const SecureSessionStore(this._store);
+
+  /// The key the session is stored under.
+  static const String storageKey = 'auth.session';
+
+  final SecureStore _store;
+
+  @override
+  Future<String?> read() => _store.read(storageKey);
+
+  @override
+  Future<void> write(String session) => _store.write(storageKey, session);
+
+  @override
+  Future<void> clear() => _store.delete(storageKey);
+}
+
+/// A [SessionStore] that keeps the session in memory.
+///
+/// The store is for tests. Its contents are lost when the process ends, so it
+/// must never hold a production session.
+class InMemorySessionStore implements SessionStore {
+  String? _session;
+
+  @override
+  Future<String?> read() async => _session;
+
+  @override
+  Future<void> write(String session) async {
+    _session = session;
+  }
+
+  @override
+  Future<void> clear() async {
+    _session = null;
+  }
+}

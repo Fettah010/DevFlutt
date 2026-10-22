@@ -37,6 +37,12 @@ class CreateCommand extends FtemplateCommand {
     ..addOption('output', abbr: 'O', defaultsTo: '.', help: 'Output directory.')
     ..addOption('platforms', defaultsTo: 'android', help: 'Comma-separated target platforms.')
     ..addMultiOption('module', abbr: 'm', help: 'Additional module IDs (repeatable).')
+    ..addOption(
+      'auth',
+      defaultsTo: 'none',
+      help: 'Authentication provider: none, rest, firebase, or supabase.',
+    )
+    ..addMultiOption('auth-capability', help: 'A capability the application needs (repeatable).')
     ..addOption('brick-dir', help: 'Override the path to the project brick.')
     ..addFlag(
       'dry-run',
@@ -68,18 +74,32 @@ class CreateCommand extends FtemplateCommand {
     }
 
     try {
+      final authChoice = results.option('auth') as String;
+      final authModule = _authModuleFor(authChoice);
+      if (authModule == null && authChoice != 'none') {
+        error(
+          'Invalid --auth value "$authChoice". Expected one of: '
+          '${_authChoices.join(', ')}.',
+        );
+        return 64;
+      }
+
+      final requestedCapabilities = results.multiOption('auth-capability');
+      final modules = <String>[...results.multiOption('module'), ?authModule];
+
       final spec = ProjectSpec(
         name: name,
         org: org,
         preset: results.option('preset') as String,
         output: results.option('output') as String,
         platforms: _parsePlatforms(results.option('platforms') as String),
-        modules: results.multiOption('module'),
+        modules: modules,
         dryRun: results.flag('dry-run'),
         force: results.flag('force'),
         skipPub: results.flag('no-pub'),
       );
       final plan = _planner.plan(spec);
+      _planner.validateCapabilities(plan, requestedCapabilities);
 
       emit('Project: ${spec.name}');
       emit('Package: ${spec.projectName}');
@@ -89,6 +109,16 @@ class CreateCommand extends FtemplateCommand {
       emit('Platforms: ${spec.platforms.join(', ')}');
       emit('Modules: ${_formatIds(plan.modules.map((module) => module.id))}');
       emit('Dependencies: ${_formatDeps(plan.dependencies)}');
+      final authModule_ = _authModuleOf(plan.modules);
+      if (authModule_ != null) {
+        final capabilities = authModule_.capabilities;
+        emit(
+          'Authentication: ${authModule_.id} '
+          '(${capabilities.isEmpty ? 'no capabilities' : capabilities.join(', ')})',
+        );
+      } else {
+        emit('Authentication: none');
+      }
       if (plan.permissions.isNotEmpty) {
         emit('Permissions: ${plan.permissions.join(', ')}');
       }
@@ -135,6 +165,29 @@ class CreateCommand extends FtemplateCommand {
 
   List<String> _parsePlatforms(String value) =>
       value.split(',').map((entry) => entry.trim()).where((entry) => entry.isNotEmpty).toList();
+
+  /// The authentication providers the command accepts.
+  static const List<String> _authChoices = <String>['none', 'rest', 'firebase', 'supabase'];
+
+  /// The module an authentication choice selects, or null for `none`.
+  static String? _authModuleFor(String choice) => switch (choice) {
+    'rest' => 'auth-rest',
+    'firebase' => 'auth-firebase',
+    'supabase' => 'auth-supabase',
+    _ => null,
+  };
+
+  /// The selected authentication adapter, or null when there is none.
+  static ModuleManifest? _authModuleOf(List<ModuleManifest> modules) {
+    for (final module in modules) {
+      if (module.id == 'auth-rest' ||
+          module.id == 'auth-firebase' ||
+          module.id == 'auth-supabase') {
+        return module;
+      }
+    }
+    return null;
+  }
 
   String _formatIds(Iterable<String> values) => values.isEmpty ? 'none' : values.join(', ');
 

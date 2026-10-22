@@ -9,7 +9,16 @@ import '../core/networking/retry_policy.dart';
 import '../core/networking/retrying_api_client.dart';
 {{/hasNetworking}}{{#hasSecureStorage}}import '../core/secure_storage/flutter_secure_store.dart';
 import '../core/secure_storage/secure_store.dart';
-{{/hasSecureStorage}}
+{{/hasSecureStorage}}{{#hasAuth}}import '../core/auth/auth_adapter.dart';
+{{/hasAuth}}{{#hasAuthRest}}import '../core/auth/rest/dio_rest_auth_port.dart';
+import '../core/auth/rest/rest_auth_adapter.dart';
+import '../core/auth/rest/rest_auth_config.dart';
+import '../core/auth/session_store.dart';
+{{/hasAuthRest}}{{#hasAuthFirebase}}import '../core/auth/firebase/firebase_auth_adapter.dart';
+import '../core/auth/firebase/firebase_auth_port_impl.dart';
+{{/hasAuthFirebase}}{{#hasAuthSupabase}}import '../core/auth/supabase/supabase_auth_adapter.dart';
+import '../core/auth/supabase/supabase_auth_port_impl.dart';
+{{/hasAuthSupabase}}
 /// The services the application composes at startup.
 ///
 /// The class holds exactly the services the selected modules provide. A
@@ -22,7 +31,8 @@ class AppServices {
 {{/hasLogging}}{{#hasNetworking}}    required this.apiClient,
 {{/hasNetworking}}{{#hasSecureStorage}}    required this.secureStore,
 {{/hasSecureStorage}}{{#hasDiagnostics}}    required this.errorReporter,
-{{/hasDiagnostics}}  });
+{{/hasDiagnostics}}{{#hasAuth}}    required this.authAdapter,
+{{/hasAuth}}  });
 {{#hasLogging}}
   /// The application logger.
   final AppLogger logger;
@@ -35,7 +45,13 @@ class AppServices {
 {{/hasSecureStorage}}{{#hasDiagnostics}}
   /// The reporter that records application errors.
   final ErrorReporter errorReporter;
-{{/hasDiagnostics}}
+{{/hasDiagnostics}}{{#hasAuth}}
+  /// The authentication adapter.
+  ///
+  /// The provider is behind the interface, so a feature never sees a provider
+  /// type and changing the provider does not change the feature.
+  final AuthAdapter authAdapter;
+{{/hasAuth}}
 }
 
 /// Builds the services for [config].
@@ -47,14 +63,30 @@ AppServices buildAppServices(AppConfig config) {
 {{#hasLogging}}  final logger = ConsoleLogger(
     minimumLevel: ConsoleLogger.minimumLevelFor(config.environment),
   );
-{{/hasLogging}}  return AppServices(
+{{/hasLogging}}{{#hasNetworking}}  final apiClient = RetryingApiClient(
+    inner: DioApiClient(baseUrl: config.apiBaseUrl, logger: logger),
+    policy: const RetryPolicy(maxAttempts: 3),
+    logger: logger,
+  );
+{{/hasNetworking}}{{#hasSecureStorage}}  final secureStore = const FlutterSecureStore();
+{{/hasSecureStorage}}{{#hasAuthRest}}  final restAuthConfig = defaultRestAuthConfig;
+  final authAdapter = RestAuthAdapter(
+    port: DioRestAuthPort(client: apiClient, config: restAuthConfig),
+    config: restAuthConfig,
+    sessionStore: SecureSessionStore(secureStore),
+  );
+{{/hasAuthRest}}{{#hasAuthFirebase}}  final authAdapter = FirebaseAuthAdapter(
+    port: FirebaseAuthPortImpl(),
+  );
+{{/hasAuthFirebase}}{{#hasAuthSupabase}}  final authAdapter = SupabaseAuthAdapter(
+    port: SupabaseAuthPortImpl(),
+  );
+{{/hasAuthSupabase}}
+  return AppServices(
 {{#hasLogging}}    logger: logger,
-{{/hasLogging}}{{#hasNetworking}}    apiClient: RetryingApiClient(
-      inner: DioApiClient(baseUrl: config.apiBaseUrl, logger: logger),
-      policy: const RetryPolicy(maxAttempts: 3),
-      logger: logger,
-    ),
-{{/hasNetworking}}{{#hasSecureStorage}}    secureStore: const FlutterSecureStore(),
+{{/hasLogging}}{{#hasNetworking}}    apiClient: apiClient,
+{{/hasNetworking}}{{#hasSecureStorage}}    secureStore: secureStore,
 {{/hasSecureStorage}}{{#hasDiagnostics}}    errorReporter: LocalErrorReporter(logger: logger),
-{{/hasDiagnostics}}  );
+{{/hasDiagnostics}}{{#hasAuth}}    authAdapter: authAdapter,
+{{/hasAuth}}  );
 }

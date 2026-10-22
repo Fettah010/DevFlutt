@@ -1,0 +1,24 @@
+import 'package:firebase_core/firebase_core.dart';
+
+/// The Firebase configuration of this project.
+///
+/// The values in this file are deliberately fake. Replace the whole file by
+/// running `flutterfire configure` in this project: the command registers the
+/// Android app with your Firebase project and writes the real configuration
+/// here.
+///
+/// The application refuses to start with the placeholder values, so an
+/// unconfigured project fails with an actionable message instead of an obscure
+/// provider error.
+class DefaultFirebaseOptions {
+  /// The options for the platform the application is running on.
+  ///
+  /// The values are deliberately not shaped like real credentials, so that a
+  /// secret scanner cannot mistake them for one.
+  static const FirebaseOptions currentPlatform = FirebaseOptions(
+    apiKey: 'replace-with-your-firebase-api-key',
+    appId: '1:000000000000:android:0000000000000000',
+    messagingSenderId: '000000000000',
+    projectId: 'devflutt-placeholder-project',
+  );
+}

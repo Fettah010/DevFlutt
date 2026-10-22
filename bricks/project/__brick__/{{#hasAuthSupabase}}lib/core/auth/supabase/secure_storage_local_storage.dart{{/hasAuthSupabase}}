@@ -1,0 +1,37 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../secure_storage/secure_store.dart';
+
+/// A Supabase [LocalStorage] that keeps the session in the secure store.
+///
+/// The Supabase package persists the session in shared preferences by
+/// default. The session carries the access token **and** the refresh token, so
+/// writing it to an unencrypted, auto-backed-up file would put a long-lived
+/// credential on the device in the clear. This implementation keeps it in the
+/// platform's secure storage instead, and the Android backup rules that the
+/// secure-storage module generates keep it out of backups.
+class SecureStorageLocalStorage extends LocalStorage {
+  /// Creates a storage that keeps the session in [store].
+  const SecureStorageLocalStorage(this._store);
+
+  /// The key the session is stored under.
+  static const String storageKey = 'supabase.auth.session';
+
+  final SecureStore _store;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> hasAccessToken() => _store.containsKey(storageKey);
+
+  @override
+  Future<String?> accessToken() => _store.read(storageKey);
+
+  @override
+  Future<void> removePersistedSession() => _store.delete(storageKey);
+
+  @override
+  Future<void> persistSession(String persistSessionString) =>
+      _store.write(storageKey, persistSessionString);
+}

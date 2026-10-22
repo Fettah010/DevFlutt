@@ -34,6 +34,10 @@ lib/
     networking/                    # ApiClient, ApiResult, ApiError, retry policy
     secure_storage/                # SecureStore interface and its adapters
     diagnostics/                   # ErrorReporter interface and its local adapter
+    auth/                          # AuthAdapter contract, session, capabilities, refresh
+      rest/                        # the custom REST/JWT adapter
+      firebase/                    # the Firebase Authentication adapter
+      supabase/                    # the Supabase Auth adapter
   features/
     home/home_page.dart            # example screen
     counter/                       # feature example
@@ -53,7 +57,9 @@ docs/                              # plans, reports, ADRs, testing
 The exact file list depends on the selected modules. The `blank` preset ships the base scaffold
 only; the `core` preset adds state, routing, the design system, the counter example, and the
 logger; the `demo` preset adds the showcase; the `recommended` preset adds the networking,
-secure-storage, and diagnostics modules.
+secure-storage, and diagnostics modules. No preset selects an authentication provider: a
+project asks for one explicitly with `--auth`, which adds the `auth-core` contract and one
+of the three adapters.
 
 ## Startup path
 
@@ -102,10 +108,36 @@ UI (presentation)  ──▶  application / state  ──▶  domain contracts  
 | `core/networking` | Typed HTTP client, error mapping, and bounded retry | v0.4.0 |
 | `core/secure_storage` | Secure key-value storage behind a small interface | v0.4.0 |
 | `core/diagnostics` | App-owned error reporting interface | v0.4.0 |
+| `core/auth` | Provider-neutral authentication contract, session model, capability descriptor, serialized token refresh, router redirect | v0.5.0 |
 | `app` | Route registry, router, redirect hook, unknown-route screen | v0.3.0 |
 | `app/app_services` | Generated composition root for the selected services | v0.4.0 |
 | `features/<feature>` | One self-contained feature (presentation/application/domain/data as needed) | v0.1.0 |
 | `core/*` (future) | Local persistence, offline state, platform adapters | v0.6.0+ |
+
+## Authentication model
+
+The authentication layer has one contract and one adapter behind it:
+
+```text
+feature ──▶ AuthAdapter (auth-core) ──▶ *AuthPort ──▶ provider SDK
+```
+
+- `auth-core` owns the contract, the session and state models, the capability descriptor, the
+  secure session store, the single-flight token refresh, and the router redirect. It depends
+  on no provider SDK.
+- Each adapter owns a **provider port** — the boundary the adapter depends on — and two
+  implementations of that port: the real one over the provider SDK, and a fake for tests.
+  A provider SDK change therefore touches one thin file, not the contract and not a feature.
+- The adapter reports the capabilities it implements. A feature asks
+  `authAdapter.capabilities.supports(...)` before it calls an operation it may not have, and
+  an unsupported call raises a typed `AuthError.unsupportedCapability`.
+- The three adapters are mutually exclusive. A selection of two is refused by the
+  generator before anything is written.
+
+The `auth-rest` adapter owns its session and persists it in the secure store, and refreshes
+its own token through the shared coordinator. The Firebase and Supabase adapters let the
+provider own the session and the refresh, and ask the provider for a token when the
+application needs one.
 
 ## Routing model
 
@@ -120,6 +152,12 @@ authentication rules.
 | Route to screen mapping | `app/app_router.dart` |
 | Redirect decision | `app/route_guard.dart` |
 | Unknown-route screen | `app/not_found_page.dart` |
+
+When an authentication adapter is selected together with the routing module, the guard
+gains `authRouteGuard`: it sends an unauthenticated user to the login location and
+preserves the intended destination, so a protected deep link returns the user to where
+they were going after they sign in. The template ships no login screen, so the application
+supplies the login location.
 
 ## Environments and build identity
 
@@ -139,6 +177,8 @@ logs.
 - No `print` in app code; use the logging interface.
 - UI never touches a transport, a secure store, or an error-reporting SDK: it receives the
   app-owned interface through its constructor.
+- UI never touches a provider SDK either. It receives the `AuthAdapter` and never sees a
+  Firebase or Supabase type.
 - No ad-hoc global state; registrations flow through generated registries or documented
   integration points.
 - Shared state lives in `core/state`; feature state lives in the feature that owns it.
@@ -150,6 +190,7 @@ These are resolved by ADRs in the milestone that needs them:
 - `ADR-001` State management (Riverpod) — accepted, v0.3.0
 - `ADR-003` Routing package and route-registration model — accepted, v0.3.0
 - `ADR-004` HTTP client, error model, retry policy, cache policy, token refresh — accepted, v0.4.0
+- `ADR-006` Auth and backend adapters, capability descriptors, token-refresh serialization — accepted, v0.5.0
 - `ADR-007` Logging, crash-reporting, and analytics adapters — accepted, v0.4.0
 
 See [ADR-000-template.md](adr/ADR-000-template.md) for the ADR format.

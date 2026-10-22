@@ -56,6 +56,51 @@ class CompatibilityGraph {
   /// Looks up a manifest by ID, or null when unknown.
   ModuleManifest? manifestFor(String id) => _manifests[id];
 
+  /// Validates that the resolved selection provides every required capability.
+  ///
+  /// A capability is provided by the module that declares it. When the
+  /// selection does not provide a required capability, the error names the
+  /// capability and the modules that do provide it, so the developer can
+  /// change the selection instead of guessing.
+  ///
+  /// Throws [CompatibilityException] with an actionable message.
+  void validateCapabilities(List<ModuleManifest> resolved, List<String> required) {
+    if (required.isEmpty) {
+      return;
+    }
+
+    for (final capability in required) {
+      if (!knownAuthCapabilities.contains(capability)) {
+        throw CompatibilityException(
+          'Unknown capability "$capability". Known capabilities: '
+          '${knownAuthCapabilities.join(', ')}.',
+        );
+      }
+
+      final providers = resolved
+          .where((module) => module.capabilities.contains(capability))
+          .map((module) => module.id)
+          .toList();
+      if (providers.isEmpty) {
+        throw CompatibilityException(
+          'The selection does not provide the capability "$capability". '
+          'Modules that provide it: ${_capabilityProviders(capability).join(', ')}.',
+        );
+      }
+    }
+  }
+
+  /// The modules that declare [capability], whether or not they are selected.
+  List<String> _capabilityProviders(String capability) {
+    final providers =
+        _manifests.values
+            .where((manifest) => manifest.capabilities.contains(capability))
+            .map((manifest) => manifest.id)
+            .toList()
+          ..sort();
+    return providers;
+  }
+
   void _collectRequires(String id, Set<String> resolved, List<String> path) {
     if (path.contains(id)) {
       throw CompatibilityException(

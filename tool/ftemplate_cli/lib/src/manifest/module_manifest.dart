@@ -57,6 +57,22 @@ class NativeChanges {
   );
 }
 
+/// The provider capabilities a module can declare.
+///
+/// The ids are the wire format between the module manifests, the generator's
+/// `--auth-capability` option, and the `AuthCapability` enum in the generated
+/// project. The generated enum is checked against this list by a generator test.
+const List<String> knownAuthCapabilities = <String>[
+  'email-password-sign-in',
+  'email-password-registration',
+  'password-reset',
+  'session-restoration',
+  'token-refresh',
+  'logout',
+  'one-time-password-sign-in',
+  'social-sign-in',
+];
+
 /// A parsed module manifest.
 class ModuleManifest {
   const ModuleManifest({
@@ -75,6 +91,7 @@ class ModuleManifest {
     required this.outputs,
     required this.requiredSetup,
     required this.tests,
+    this.capabilities = const <String>[],
   });
 
   final String id;
@@ -93,6 +110,11 @@ class ModuleManifest {
   final List<String> requiredSetup;
   final ManifestTests tests;
 
+  /// The provider capabilities the module implements.
+  ///
+  /// Empty for a module that implements no provider capability.
+  final List<String> capabilities;
+
   factory ModuleManifest.fromYaml(YamlMap map) => ModuleManifest(
     id: _string(map['id'], 'id'),
     version: _int(map['version'], 'version'),
@@ -109,6 +131,7 @@ class ModuleManifest {
     outputs: _stringList(map['outputs'], 'outputs'),
     requiredSetup: _stringList(map['requiredSetup'], 'requiredSetup'),
     tests: ManifestTests.fromYaml(_map(map['tests'], 'tests')),
+    capabilities: _stringList(map['capabilities'], 'capabilities'),
   );
 
   @override

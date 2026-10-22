@@ -1,0 +1,60 @@
+import 'auth_session.dart';
+
+/// Serializes token refreshes so that concurrent callers share one refresh.
+///
+/// The coordinator holds at most one in-flight refresh. The first caller
+/// starts the refresh and every later caller awaits the same future, so a
+/// burst of requests with an expired token produces exactly one refresh
+/// request rather than one per request.
+///
+/// A refresh that fails calls [onFailure] exactly once — the adapter signs the
+/// user out — and rejects every waiting caller. The coordinator never
+/// re-arms itself and holds no timer, so it cannot loop.
+class TokenRefreshCoordinator {
+  /// Creates a coordinator that calls [refresh] to obtain a new session and
+  /// [onFailure] when a refresh fails.
+  TokenRefreshCoordinator({required this.refresh, required this.onFailure});
+
+  /// Obtains a new session.
+  final Future<AuthSession> Function() refresh;
+
+  /// Ends the session after a failed refresh.
+  final Future<void> Function() onFailure;
+
+  Future<AuthSession>? _inFlight;
+
+  /// Whether a refresh is running.
+  bool get isRefreshing => _inFlight != null;
+
+  /// The number of refresh requests that were started.
+  ///
+  /// The count is what a test asserts on to prove that concurrent callers
+  /// caused a single provider request.
+  int get refreshCount => _refreshCount;
+  int _refreshCount = 0;
+
+  /// Refreshes the session, or joins the refresh that is already running.
+  ///
+  /// Throws whatever [refresh] throws, after [onFailure] has run.
+  Future<AuthSession> refreshNow() {
+    final running = _inFlight;
+    if (running != null) {
+      return running;
+    }
+    final future = _run();
+    _inFlight = future;
+    return future;
+  }
+
+  Future<AuthSession> _run() async {
+    _refreshCount += 1;
+    try {
+      return await refresh();
+    } on Object {
+      await onFailure();
+      rethrow;
+    } finally {
+      _inFlight = null;
+    }
+  }
+}

@@ -1,0 +1,165 @@
+import 'dart:async';
+
+import 'auth_adapter.dart';
+import 'auth_capabilities.dart';
+import 'auth_error.dart';
+import 'auth_session.dart';
+import 'auth_state.dart';
+
+/// A deterministic [AuthAdapter] for tests.
+///
+/// The adapter never talks to a provider. It holds the session a test gives
+/// it and records the calls it received, so a test can assert what an
+/// application asked the provider to do.
+class FakeAuthAdapter implements AuthAdapter {
+  /// Creates an adapter that starts with [session].
+  FakeAuthAdapter({
+    this.session,
+    this.capabilities = const AuthCapabilities(<AuthCapability>{
+      AuthCapability.emailPasswordSignIn,
+      AuthCapability.sessionRestoration,
+      AuthCapability.tokenRefresh,
+      AuthCapability.logout,
+    }),
+  });
+
+  /// The session the adapter holds, or `null` when there is none.
+  AuthSession? session;
+
+  /// The capabilities the adapter reports.
+  @override
+  final AuthCapabilities capabilities;
+
+  /// The failure every operation reports, when one is set.
+  AuthError? failure;
+
+  /// The number of sign-in calls received.
+  int signInCount = 0;
+
+  /// The number of registration calls received.
+  int registerCount = 0;
+
+  /// The number of password-reset calls received.
+  int passwordResetCount = 0;
+
+  /// The number of sign-out calls received.
+  int signOutCount = 0;
+
+  /// The number of refresh calls received.
+  int refreshCount = 0;
+
+  final StreamController<AuthState> _states =
+      StreamController<AuthState>.broadcast();
+
+  AuthState _state = const AuthState.unknown();
+
+  @override
+  AuthState get currentState => _state;
+
+  @override
+  Stream<AuthState> get authStateChanges => _states.stream;
+
+  @override
+  Future<AuthState> restoreSession() async {
+    final current = session;
+    if (current == null) {
+      return _publish(const AuthState.unauthenticated());
+    }
+    return _publish(AuthState.authenticated(current));
+  }
+
+  @override
+  Future<AuthState> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    signInCount += 1;
+    _throwIfFailed();
+    final current =
+        session ??
+        AuthSession(
+          user: AuthUser(id: 'u1', email: email),
+          accessToken: 'access-token',
+        );
+    session = current;
+    return _publish(AuthState.authenticated(current));
+  }
+
+  @override
+  Future<AuthState> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    registerCount += 1;
+    _throwIfFailed();
+    final current =
+        session ??
+        AuthSession(
+          user: AuthUser(id: 'u1', email: email),
+          accessToken: 'access-token',
+        );
+    session = current;
+    return _publish(AuthState.authenticated(current));
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    passwordResetCount += 1;
+    _throwIfFailed();
+  }
+
+  @override
+  Future<AuthState> signInWithOneTimePassword(String token) async {
+    _throwIfFailed();
+    if (!capabilities.supports(AuthCapability.oneTimePasswordSignIn)) {
+      throw UnsupportedCapabilityError(
+        AuthCapability.oneTimePasswordSignIn.id,
+      );
+    }
+    final current =
+        session ??
+        const AuthSession(
+          user: AuthUser(id: 'u1'),
+          accessToken: 'access-token',
+        );
+    session = current;
+    return _publish(AuthState.authenticated(current));
+  }
+
+  @override
+  Future<void> signOut() async {
+    signOutCount += 1;
+    _throwIfFailed();
+    session = null;
+    _publish(const AuthState.unauthenticated());
+  }
+
+  @override
+  Future<AuthState> refreshSession() async {
+    refreshCount += 1;
+    _throwIfFailed();
+    final current = session;
+    if (current == null) {
+      throw const NotSignedInError();
+    }
+    return _publish(AuthState.authenticated(current));
+  }
+
+  void _throwIfFailed() {
+    final error = failure;
+    if (error != null) {
+      throw error;
+    }
+  }
+
+  AuthState _publish(AuthState state) {
+    _state = state;
+    if (!_states.isClosed) {
+      _states.add(state);
+    }
+    return state;
+  }
+
+  /// Releases the state stream.
+  Future<void> dispose() => _states.close();
+}

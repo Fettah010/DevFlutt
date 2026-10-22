@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -90,7 +90,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [blank, core, demo, recommended]
+        include:
+          - name: blank
+            preset: blank
+            auth: none
+            expects_network: false
+          - name: core
+            preset: core
+            auth: none
+            expects_network: false
+          - name: demo
+            preset: demo
+            auth: none
+            expects_network: false
+          - name: recommended
+            preset: recommended
+            auth: none
+            expects_network: true
+          - name: auth-rest
+            preset: core
+            auth: rest
+            expects_network: true
+          - name: auth-firebase
+            preset: core
+            auth: firebase
+            expects_network: true
+          - name: auth-supabase
+            preset: core
+            auth: supabase
+            expects_network: true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -112,34 +140,62 @@ jobs:
         working-directory: tool/ftemplate_cli
         run: dart pub get
 
-      - name: Generate ${{ matrix.preset }} project
+      - name: Generate ${{ matrix.name }} project
         run: |
           dart run tool/ftemplate_cli/bin/ftemplate.dart create \
             --name "Generated App" \
             --org com.example \
             --preset ${{ matrix.preset }} \
-            --output /tmp/generated-${{ matrix.preset }} \
+            --auth ${{ matrix.auth }} \
+            --output /tmp/generated-${{ matrix.name }} \
             --force
 
       - name: Resolve dependencies
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter pub get
 
       - name: Check formatting
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter analyze --fatal-infos
 
       - name: Test
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter test
 
       - name: Build debug APK
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter build apk --debug --flavor dev
+
+      - name: Build release APK
+        working-directory: /tmp/generated-${{ matrix.name }}
+        run: flutter build apk --release --flavor prod
+
+      - name: Review the release manifest permissions
+        working-directory: /tmp/generated-${{ matrix.name }}
+        run: |
+          AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2"
+          APK=build/app/outputs/flutter-apk/app-prod-release.apk
+          if [ ! -f "$APK" ]; then
+            echo "The release APK was not found at $APK."
+            exit 1
+          fi
+          "$AAPT2" dump permissions "$APK" > release-permissions.log
+          cat release-permissions.log
+          if [ "${{ matrix.expects_network }}" = "true" ]; then
+            if ! grep -q "android.permission.INTERNET" release-permissions.log; then
+              echo "The selection has a network client, but the release manifest does not request the INTERNET permission, so the release build cannot reach the network."
+              exit 1
+            fi
+          else
+            if grep -q "android.permission.INTERNET" release-permissions.log; then
+              echo "The release manifest requests the INTERNET permission, but the selection has no network client."
+              exit 1
+            fi
+          fi
 
   secret-scan:
     name: Secret scan

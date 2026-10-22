@@ -55,6 +55,47 @@ apply what you want.
 
 ## Release notes for upgrading
 
+### To v0.5.0
+
+**What changed**
+
+- New modules: `auth-core` and the three mutually exclusive adapters `auth-rest`,
+  `auth-firebase`, and `auth-supabase`. They are opt-in; a project that does not select one
+  is unaffected. **No preset changes**: the road map says the provider is chosen explicitly
+  rather than guessed, so `blank`, `core`, `demo`, and `recommended` still select no
+  provider.
+- New generator options: `--auth none|rest|firebase|supabase` selects a provider, and
+  `--auth-capability` declares a capability the application needs. A selection whose
+  provider cannot satisfy a declared capability is refused before anything is written, with
+  a message that names the providers that can.
+- The module manifest schema gains one **optional** field, `capabilities`. A manifest
+  without it still validates.
+- A project that selects an authentication adapter gains an `AppServices.authAdapter`
+  field, and the `auth-core` contract files under `lib/core/auth/`.
+- The routing module gains an `authRouteGuard` helper when an adapter is selected too. The
+  default redirect hook is unchanged, so the behaviour of an existing project does not
+  change until the application opts in.
+- `firebase_auth` 7.0.0 and `firebase_core` 5.0.0 apply the Kotlin Gradle Plugin, and
+  Flutter 3.47 warns that future Flutter versions will refuse such plugins. The build
+  succeeds on the pinned toolchain. `supabase_flutter` 2.18.3 is the pinned version; the
+  3.0.0 pre-release is not used.
+
+**How to upgrade**
+
+1. Compare against the new template as described above.
+2. Authentication is opt-in, so nothing changes unless you want it. To add it, regenerate
+   with `--auth firebase`, `--auth supabase`, or `--auth rest`, and copy the new
+   `lib/core/auth/` tree into the project.
+3. For `auth-firebase`, run `flutterfire configure` in the project. It replaces the
+   placeholder `lib/firebase_options.dart` with your own configuration. Until then the
+   application refuses to start with a message that names the command.
+4. For `auth-supabase`, replace the values in `lib/core/auth/supabase/supabase_config.dart`
+   with your project URL and publishable key.
+5. For `auth-rest`, fill in `defaultRestAuthConfig` in
+   `lib/core/auth/rest/rest_auth_config.dart` with your backend's paths and field names.
+6. The application supplies its own login route and screen; the template ships the
+   contract, the redirect, and the states, not the form. See `docs/DEFERRED.md`.
+
 ### To v0.4.0
 
 **What changed**

@@ -1,11 +1,19 @@
 # Gitleaks configuration for the DevFlutt repository.
 #
-# The default rule set is used unchanged. The only allowlist entry covers the
-# redaction corpus in the logging test, whose values must look like real
-# credentials or the redaction test would no longer prove anything. The
-# patterns are deliberately narrow: they match one file path.
+# The default rule set is used unchanged. The allowlist entries are deliberately
+# narrow, and each one names a single commit or a single file path.
 #
-# The allowlist is reviewed with any change to the redaction corpus.
+# 1. The redaction corpus in the logging test holds values that must look like
+#    real credentials, or the redaction test would no longer prove anything.
+#    The pattern matches one file path.
+# 2. One commit in the history shipped the Firebase configuration placeholder
+#    with a value shaped like an API key. The value was a placeholder that was
+#    never valid, and it was replaced with a value that cannot be mistaken for
+#    a credential. The entry names that one commit, so the allowlist cannot
+#    hide a finding in any other commit.
+#
+# Both entries are reviewed with any change to the redaction corpus or to the
+# provider configuration placeholders.
 
 title = "DevFlutt gitleaks configuration"
 
@@ -16,4 +24,10 @@ useDefault = true
 description = "Deliberate credential fixtures in the redaction corpus"
 paths = [
   '''test/unit/logging_test\.dart\{\{.*\}\}$''',
+]
+
+[[allowlists]]
+description = "The retired Firebase configuration placeholder in one commit"
+commits = [
+  "b65965f86a1ecb42b5c5429a52a99b81d937dd1d",
 ]

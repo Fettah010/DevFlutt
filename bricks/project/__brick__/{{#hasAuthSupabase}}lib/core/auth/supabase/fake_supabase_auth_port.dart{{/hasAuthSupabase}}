@@ -1,0 +1,161 @@
+import 'dart:async';
+
+import '../auth_error.dart';
+import '../auth_session.dart';
+import 'supabase_auth_port.dart';
+
+/// A deterministic [SupabaseAuthPort] for tests.
+///
+/// The port never touches Supabase. It records the calls it received, so a
+/// test can assert how many times the provider was asked to do something.
+class FakeSupabaseAuthPort implements SupabaseAuthPort {
+  /// Creates a port that signs in [user].
+  FakeSupabaseAuthPort({this.user, this.token = 'access-token'})
+      : _controller = StreamController<SupabaseAuthChange>.broadcast();
+
+  /// The token the port hands out.
+  String token;
+
+  /// The signed-in user, or `null` when there is none.
+  AuthUser? user;
+
+  final StreamController<SupabaseAuthChange> _controller;
+
+  /// The failure the next sign-in reports.
+  AuthError? nextSignInFailure;
+
+  /// The failure the next registration reports.
+  AuthError? nextSignUpFailure;
+
+  /// The failure the next sign-out reports.
+  AuthError? nextSignOutFailure;
+
+  /// The failure the next password reset reports.
+  AuthError? nextPasswordResetFailure;
+
+  /// The failure the next one-time-password sign-in reports.
+  AuthError? nextVerifyOtpFailure;
+
+  /// The failure the next token request reports.
+  AuthError? nextAccessTokenFailure;
+
+  /// The number of sign-in calls received.
+  int signInCount = 0;
+
+  /// The number of registration calls received.
+  int signUpCount = 0;
+
+  /// The number of sign-out calls received.
+  int signOutCount = 0;
+
+  /// The number of password-reset calls received.
+  int passwordResetCount = 0;
+
+  /// The number of one-time-password sign-in calls received.
+  int verifyOtpCount = 0;
+
+  /// The number of forced token refreshes requested.
+  int forceRefreshCount = 0;
+
+  @override
+  AuthUser? get currentUser => user;
+
+  @override
+  Stream<SupabaseAuthChange> get authStateChanges => _controller.stream;
+
+  @override
+  Future<AuthUser> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    signInCount += 1;
+    final failure = nextSignInFailure;
+    if (failure != null) {
+      nextSignInFailure = null;
+      throw failure;
+    }
+    return _signIn();
+  }
+
+  @override
+  Future<AuthUser> signUp({
+    required String email,
+    required String password,
+  }) async {
+    signUpCount += 1;
+    final failure = nextSignUpFailure;
+    if (failure != null) {
+      nextSignUpFailure = null;
+      throw failure;
+    }
+    return _signIn();
+  }
+
+  @override
+  Future<void> signOut() async {
+    signOutCount += 1;
+    final failure = nextSignOutFailure;
+    if (failure != null) {
+      nextSignOutFailure = null;
+      throw failure;
+    }
+    user = null;
+    _controller.add(
+      const SupabaseAuthChange(event: 'SIGNED_OUT'),
+    );
+  }
+
+  @override
+  Future<void> resetPasswordForEmail(String email) async {
+    passwordResetCount += 1;
+    final failure = nextPasswordResetFailure;
+    if (failure != null) {
+      nextPasswordResetFailure = null;
+      throw failure;
+    }
+  }
+
+  @override
+  Future<AuthUser> verifyOtp({
+    required String tokenHash,
+    required String type,
+  }) async {
+    verifyOtpCount += 1;
+    final failure = nextVerifyOtpFailure;
+    if (failure != null) {
+      nextVerifyOtpFailure = null;
+      throw failure;
+    }
+    return _signIn();
+  }
+
+  @override
+  Future<String?> accessToken({required bool forceRefresh}) async {
+    if (forceRefresh) {
+      forceRefreshCount += 1;
+    }
+    final failure = nextAccessTokenFailure;
+    if (failure != null) {
+      nextAccessTokenFailure = null;
+      throw failure;
+    }
+    return user == null ? null : token;
+  }
+
+  AuthUser _signIn() {
+    final signedIn =
+        user ?? const AuthUser(id: 'u1', email: 'user@example.com');
+    user = signedIn;
+    _controller.add(
+      SupabaseAuthChange(
+        event: 'SIGNED_IN',
+        user: signedIn,
+        accessToken: token,
+      ),
+    );
+    return signedIn;
+  }
+
+  /// Releases the change stream.
+  Future<void> dispose() => _controller.close();
+}

@@ -1,0 +1,70 @@
+import 'auth_state.dart';
+
+/// The query parameter that carries the location the user was trying to reach.
+const String authRedirectParameter = 'redirect';
+
+/// Decides whether a navigation may proceed, given the authentication state.
+///
+/// Returns `null` to allow the navigation, or the location to navigate to
+/// instead. An unauthenticated user is sent to [loginLocation] with the
+/// requested location preserved in the [authRedirectParameter] query
+/// parameter, so a protected deep link returns the user to where they were
+/// going after they sign in.
+///
+/// The state [AuthStatus.unknown] is deliberately allowed through: the session
+/// has not been established yet, and redirecting would bounce the user to the
+/// login screen before the template has had a chance to restore the session.
+/// The application must not show protected content in that state, which is why
+/// the template restores the session before the first frame.
+String? authRouteRedirect({
+  required AuthState state,
+  required String requestedLocation,
+  required String loginLocation,
+}) {
+  if (state.status != AuthStatus.unauthenticated) {
+    return null;
+  }
+  if (_isLoginLocation(requestedLocation, loginLocation)) {
+    return null;
+  }
+  return loginRedirect(
+    loginLocation: loginLocation,
+    requestedLocation: requestedLocation,
+  );
+}
+
+/// Whether [requestedLocation] is the login location itself.
+///
+/// A navigation that is already the login location is left alone. Without
+/// this check the redirect would send the user to the login location, the
+/// redirect would run again on the new location, and the application would
+/// loop between the two.
+bool _isLoginLocation(String requestedLocation, String loginLocation) {
+  final requestedPath =
+      Uri.tryParse(requestedLocation)?.path ?? requestedLocation;
+  final loginPath = Uri.tryParse(loginLocation)?.path ?? loginLocation;
+  return requestedPath == loginPath;
+}
+
+/// The login location with the requested destination preserved.
+String loginRedirect({
+  required String loginLocation,
+  required String requestedLocation,
+}) {
+  final separator = loginLocation.contains('?') ? '&' : '?';
+  return '$loginLocation$separator$authRedirectParameter='
+      '${Uri.encodeComponent(requestedLocation)}';
+}
+
+/// The destination preserved in [loginLocation], or `null` when there is none.
+String? loginRedirectTarget(String loginLocation) {
+  final uri = Uri.tryParse(loginLocation);
+  if (uri == null) {
+    return null;
+  }
+  final target = uri.queryParameters[authRedirectParameter];
+  if (target == null || target.isEmpty) {
+    return null;
+  }
+  return Uri.decodeComponent(target);
+}

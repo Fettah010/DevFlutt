@@ -1,0 +1,315 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/auth/auth_capabilities.dart';
+import 'package:{{projectName}}/core/auth/auth_error.dart';
+import 'package:{{projectName}}/core/auth/auth_route_redirect.dart';
+import 'package:{{projectName}}/core/auth/auth_session.dart';
+import 'package:{{projectName}}/core/auth/auth_state.dart';
+import 'package:{{projectName}}/core/auth/session_store.dart';
+import 'package:{{projectName}}/core/auth/token_refresh_coordinator.dart';
+import 'package:{{projectName}}/core/secure_storage/in_memory_secure_store.dart';
+
+const AuthUser _user = AuthUser(id: 'u1', email: 'a@example.com');
+
+void main() {
+  group('AuthCapabilities', () {
+    test('reports the capabilities it holds', () {
+      const capabilities = AuthCapabilities(<AuthCapability>{
+        AuthCapability.logout,
+        AuthCapability.emailPasswordSignIn,
+      });
+
+      expect(capabilities.supports(AuthCapability.logout), isTrue);
+      expect(capabilities.supports(AuthCapability.socialSignIn), isFalse);
+      expect(capabilities.ids, <String>[
+        'email-password-sign-in',
+        'logout',
+      ]);
+    });
+
+    test('an empty set supports nothing', () {
+      const capabilities = AuthCapabilities.none();
+
+      expect(capabilities.all, isEmpty);
+      expect(capabilities.supports(AuthCapability.logout), isFalse);
+    });
+
+    test('every capability has a unique identifier', () {
+      final ids = AuthCapability.values.map((c) => c.id).toList();
+
+      expect(ids.toSet().length, ids.length);
+      for (final capability in AuthCapability.values) {
+        expect(AuthCapability.fromId(capability.id), capability);
+      }
+      expect(AuthCapability.fromId('not-a-capability'), isNull);
+    });
+  });
+
+  group('AuthError', () {
+    test('a rejected credential is not retryable', () {
+      const error = InvalidCredentialsError();
+
+      expect(error.code, 'invalid-credentials');
+      expect(error.isRetryable, isFalse);
+    });
+
+    test('a network and a timeout failure are retryable', () {
+      expect(const AuthNetworkError().isRetryable, isTrue);
+      expect(const AuthTimeoutError().isRetryable, isTrue);
+    });
+
+    test('an unsupported capability names the capability', () {
+      const error = UnsupportedCapabilityError('social-sign-in');
+
+      expect(error.code, 'unsupported-capability');
+      expect(error.capability, 'social-sign-in');
+    });
+
+    test('a description never contains a token', () {
+      const session = AuthSession(
+        user: _user,
+        accessToken: 'secret-access-token',
+        refreshToken: 'secret-refresh-token',
+      );
+
+      expect(session.toString(), isNot(contains('secret-access-token')));
+      expect(session.toString(), isNot(contains('secret-refresh-token')));
+    });
+  });
+
+  group('AuthSession', () {
+    test('a session with an expiry in the past has expired', () {
+      final now = DateTime.utc(2026, 1, 1, 12);
+      final session = AuthSession(
+        user: _user,
+        accessToken: 'token',
+        expiresAt: now.subtract(const Duration(seconds: 1)),
+      );
+
+      expect(session.isExpiredAt(now), isTrue);
+    });
+
+    test('a session with an expiry in the future has not expired', () {
+      final now = DateTime.utc(2026, 1, 1, 12);
+      final session = AuthSession(
+        user: _user,
+        accessToken: 'token',
+        expiresAt: now.add(const Duration(minutes: 5)),
+      );
+
+      expect(session.isExpiredAt(now), isFalse);
+    });
+
+    test('a session without an expiry is never expired', () {
+      final session = AuthSession(user: _user, accessToken: 'token');
+
+      expect(
+        session.isExpiredAt(DateTime.utc(2030, 1, 1)),
+        isFalse,
+      );
+    });
+  });
+
+  group('AuthState', () {
+    test('the authenticated state carries the session', () {
+      const session = AuthSession(user: _user, accessToken: 'token');
+      const state = AuthState.authenticated(session);
+
+      expect(state.status, AuthStatus.authenticated);
+      expect(state.isAuthenticated, isTrue);
+      expect(state.session, session);
+    });
+
+    test('the unauthenticated state can carry the reason', () {
+      const state = AuthState.unauthenticated(
+        error: InvalidCredentialsError(),
+      );
+
+      expect(state.status, AuthStatus.unauthenticated);
+      expect(state.isAuthenticated, isFalse);
+      expect(state.error, isA<InvalidCredentialsError>());
+    });
+  });
+
+  group('SessionStore', () {
+    test('the secure store keeps the session under one key', () async {
+      final secureStore = InMemorySecureStore();
+      final store = SecureSessionStore(secureStore);
+
+      await store.write('serialized-session');
+
+      expect(await secureStore.read(SecureSessionStore.storageKey),
+          'serialized-session');
+      expect(await store.read(), 'serialized-session');
+    });
+
+    test('clearing the secure store removes the session', () async {
+      final secureStore = InMemorySecureStore();
+      final store = SecureSessionStore(secureStore);
+      await store.write('serialized-session');
+
+      await store.clear();
+
+      expect(await store.read(), isNull);
+    });
+
+    test('the in-memory store keeps the session for the process', () async {
+      final store = InMemorySessionStore();
+
+      await store.write('serialized-session');
+      expect(await store.read(), 'serialized-session');
+
+      await store.clear();
+      expect(await store.read(), isNull);
+    });
+  });
+
+  group('TokenRefreshCoordinator', () {
+    test('concurrent callers share one refresh', () async {
+      var providerCalls = 0;
+      final coordinator = TokenRefreshCoordinator(
+        refresh: () async {
+          providerCalls += 1;
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          return const AuthSession(user: _user, accessToken: 'fresh');
+        },
+        onFailure: () async {},
+      );
+
+      final sessions = await Future.wait<AuthSession>([
+        coordinator.refreshNow(),
+        coordinator.refreshNow(),
+        coordinator.refreshNow(),
+      ]);
+
+      expect(providerCalls, 1);
+      expect(coordinator.refreshCount, 1);
+      for (final session in sessions) {
+        expect(session.accessToken, 'fresh');
+      }
+    });
+
+    test('a later refresh starts a new provider request', () async {
+      var providerCalls = 0;
+      final coordinator = TokenRefreshCoordinator(
+        refresh: () async {
+          providerCalls += 1;
+          return const AuthSession(user: _user, accessToken: 'fresh');
+        },
+        onFailure: () async {},
+      );
+
+      await coordinator.refreshNow();
+      await coordinator.refreshNow();
+
+      expect(providerCalls, 2);
+    });
+
+    test('a failed refresh signs out once and rejects every caller', () async {
+      var failureCalls = 0;
+      final coordinator = TokenRefreshCoordinator(
+        refresh: () async {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          throw const SessionExpiredError();
+        },
+        onFailure: () async {
+          failureCalls += 1;
+        },
+      );
+
+      final results = await Future.wait<Object?>([
+        coordinator
+            .refreshNow()
+            .then<Object?>((_) => null, onError: (Object e) => e),
+        coordinator
+            .refreshNow()
+            .then<Object?>((_) => null, onError: (Object e) => e),
+      ]);
+
+      expect(failureCalls, 1);
+      expect(coordinator.refreshCount, 1);
+      for (final result in results) {
+        expect(result, isA<SessionExpiredError>());
+      }
+    });
+
+    test('a failed refresh is not retried by the coordinator', () async {
+      var providerCalls = 0;
+      final coordinator = TokenRefreshCoordinator(
+        refresh: () async {
+          providerCalls += 1;
+          throw const SessionExpiredError();
+        },
+        onFailure: () async {},
+      );
+
+      await expectLater(
+        coordinator.refreshNow(),
+        throwsA(isA<SessionExpiredError>()),
+      );
+      await expectLater(
+        coordinator.refreshNow(),
+        throwsA(isA<SessionExpiredError>()),
+      );
+
+      expect(providerCalls, 2);
+      expect(coordinator.isRefreshing, isFalse);
+    });
+  });
+
+  group('authRouteRedirect', () {
+    test('an authenticated user is allowed through', () {
+      const state = AuthState.authenticated(
+        AuthSession(user: _user, accessToken: 'token'),
+      );
+
+      expect(
+        authRouteRedirect(
+          state: state,
+          requestedLocation: '/orders',
+          loginLocation: '/login',
+        ),
+        isNull,
+      );
+    });
+
+    test('an unknown state is allowed through', () {
+      expect(
+        authRouteRedirect(
+          state: const AuthState.unknown(),
+          requestedLocation: '/orders',
+          loginLocation: '/login',
+        ),
+        isNull,
+      );
+    });
+
+    test('an unauthenticated user is sent to the login location', () {
+      const state = AuthState.unauthenticated();
+
+      final redirect = authRouteRedirect(
+        state: state,
+        requestedLocation: '/orders',
+        loginLocation: '/login',
+      );
+
+      expect(redirect, isNotNull);
+      expect(redirect, startsWith('/login?'));
+      expect(loginRedirectTarget(redirect!), '/orders');
+    });
+
+    test('the destination survives a location that already has a query', () {
+      final redirect = loginRedirect(
+        loginLocation: '/login?from=email',
+        requestedLocation: '/orders/42?tab=history',
+      );
+
+      expect(redirect, startsWith('/login?from=email&'));
+      expect(loginRedirectTarget(redirect), '/orders/42?tab=history');
+    });
+
+    test('a login location without a destination has no target', () {
+      expect(loginRedirectTarget('/login'), isNull);
+    });
+  });
+}

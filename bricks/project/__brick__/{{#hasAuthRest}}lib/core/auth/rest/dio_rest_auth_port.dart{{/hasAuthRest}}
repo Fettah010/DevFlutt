@@ -1,0 +1,157 @@
+import '../../networking/api_client.dart';
+import '../../networking/api_error.dart';
+import '../../networking/api_request.dart';
+import '../auth_error.dart';
+import '../auth_session.dart';
+import 'rest_auth_config.dart';
+import 'rest_auth_port.dart';
+
+/// The [RestAuthPort] that talks to a backend through the HTTP client.
+///
+/// The requests go through the `ApiClient` of the networking module, so the
+/// existing timeouts, cancellation, request correlation, and log redaction
+/// apply to authentication traffic too. A password is never sent in a query
+/// string, and the response body is never logged.
+class DioRestAuthPort implements RestAuthPort {
+  /// Creates a port that talks through [client].
+  const DioRestAuthPort({required this.client, required this.config});
+
+  /// The HTTP client the requests go through.
+  final ApiClient client;
+
+  /// The backend's endpoints and payload shapes.
+  final RestAuthConfig config;
+
+  @override
+  Future<AuthSession> signIn({
+    required String email,
+    required String password,
+  }) async {
+    final body = await _post(
+      path: config.loginPath,
+      body: <String, Object?>{
+        config.emailField: email,
+        config.passwordField: password,
+      },
+    );
+    return _sessionFrom(body);
+  }
+
+  @override
+  Future<AuthSession> register({
+    required String email,
+    required String password,
+  }) async {
+    final path = config.registerPath;
+    if (path == null) {
+      throw const UnsupportedCapabilityError('email-password-registration');
+    }
+    final body = await _post(
+      path: path,
+      body: <String, Object?>{
+        config.emailField: email,
+        config.passwordField: password,
+      },
+    );
+    return _sessionFrom(body);
+  }
+
+  @override
+  Future<AuthSession> refresh(String refreshToken) async {
+    final path = config.refreshPath;
+    if (path == null) {
+      throw const UnsupportedCapabilityError('token-refresh');
+    }
+    final body = await _post(
+      path: path,
+      body: <String, Object?>{config.refreshTokenField: refreshToken},
+    );
+    return _sessionFrom(body);
+  }
+
+  @override
+  Future<void> logout(String refreshToken) async {
+    final path = config.logoutPath;
+    if (path == null) {
+      return;
+    }
+    await _post(
+      path: path,
+      body: <String, Object?>{config.refreshTokenField: refreshToken},
+    );
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) async {
+    final path = config.passwordResetPath;
+    if (path == null) {
+      throw const UnsupportedCapabilityError('password-reset');
+    }
+    await _post(path: path, body: <String, Object?>{config.emailField: email});
+  }
+
+  Future<Map<String, Object?>> _post({
+    required String path,
+    required Map<String, Object?> body,
+  }) async {
+    final result = await client.send<Map<String, Object?>>(
+      ApiRequest(method: ApiMethod.post, path: path, body: body),
+      decode: _decodeMap,
+    );
+    if (!result.isSuccess) {
+      throw _mapError(result.errorOrNull ?? const ApiUnknownError());
+    }
+    return result.valueOrNull ?? const <String, Object?>{};
+  }
+
+  AuthSession _sessionFrom(Map<String, Object?> body) {
+    final accessToken = body[config.accessTokenField];
+    if (accessToken is! String || accessToken.isEmpty) {
+      throw const ProviderFailureError(
+        message: 'The response did not carry an access token.',
+      );
+    }
+
+    final userBody = body[config.userField];
+    final user = userBody is Map<String, Object?> ? userBody : body;
+    final id = user[config.userIdField];
+    if (id is! String || id.isEmpty) {
+      throw const ProviderFailureError(
+        message: 'The response did not carry a user identifier.',
+      );
+    }
+
+    final expiresIn = body[config.expiresInField];
+    return AuthSession(
+      user: AuthUser(
+        id: id,
+        email: user[config.userEmailField] as String?,
+        displayName: user[config.userDisplayNameField] as String?,
+      ),
+      accessToken: accessToken,
+      refreshToken: body[config.refreshTokenField] as String?,
+      expiresAt: expiresIn is num
+          ? DateTime.now().add(Duration(seconds: expiresIn.toInt()))
+          : null,
+    );
+  }
+
+  /// Maps an HTTP failure onto an app-owned authentication error.
+  static AuthError _mapError(ApiError error) => switch (error) {
+    ApiNetworkError() => const AuthNetworkError(),
+    ApiTimeoutError() => const AuthTimeoutError(),
+    ApiCancelledError() => const AuthCancelledError(),
+    ApiHttpError(statusCode: final status) => switch (status) {
+      400 || 401 || 403 => const InvalidCredentialsError(),
+      404 || 410 => const SessionExpiredError(),
+      _ => ProviderFailureError(providerCode: status.toString()),
+    },
+    ApiMalformedError() => const ProviderFailureError(
+      message: 'The response could not be read.',
+    ),
+    ApiUnknownError() => const UnknownAuthError(),
+  };
+
+  static Map<String, Object?> _decodeMap(Object? json) =>
+      (json! as Map<String, Object?>).cast<String, Object?>();
+}

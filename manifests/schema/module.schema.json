@@ -62,6 +62,23 @@
         "ios": { "type": "array", "items": { "type": "string" } }
       }
     },
+    "capabilities": {
+      "type": "array",
+      "description": "Optional. The provider capabilities the module implements.",
+      "items": {
+        "enum": [
+          "email-password-sign-in",
+          "email-password-registration",
+          "password-reset",
+          "session-restoration",
+          "token-refresh",
+          "logout",
+          "one-time-password-sign-in",
+          "social-sign-in"
+        ]
+      },
+      "uniqueItems": true
+    },
     "permissions": {
       "type": "array",
       "items": { "type": "string" },

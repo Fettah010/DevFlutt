@@ -147,6 +147,188 @@ void main() {
       expect(out.toString(), contains('showcase'));
     });
 
+    test('selects no authentication provider by default', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('Authentication: none'));
+    });
+
+    test('selects the REST authentication adapter', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth',
+        'rest',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('auth-rest'));
+      expect(out.toString(), contains('Authentication: auth-rest'));
+      expect(out.toString(), contains('email-password-sign-in'));
+    });
+
+    test('selects the Firebase authentication adapter', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth',
+        'firebase',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('auth-firebase'));
+      expect(out.toString(), contains('firebase_auth: ^7.0.0'));
+      expect(out.toString(), contains('one-time-password-sign-in'));
+    });
+
+    test('rejects an unknown authentication provider', () async {
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--auth',
+        'magic',
+        '--dry-run',
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('Invalid --auth value "magic"'));
+      expect(err.toString(), contains('none, rest, firebase, supabase'));
+    });
+
+    test('accepts a capability the selected provider implements', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth',
+        'firebase',
+        '--auth-capability',
+        'one-time-password-sign-in',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('Authentication: auth-firebase'));
+    });
+
+    test('rejects a capability the selected provider does not implement', () async {
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth',
+        'rest',
+        '--auth-capability',
+        'one-time-password-sign-in',
+        '--dry-run',
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('one-time-password-sign-in'));
+      expect(err.toString(), contains('auth-firebase'));
+      expect(err.toString(), contains('auth-supabase'));
+    });
+
+    test('rejects an unknown capability', () async {
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth',
+        'rest',
+        '--auth-capability',
+        'telepathy',
+        '--dry-run',
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('Unknown capability "telepathy"'));
+    });
+
+    test('rejects a capability when no provider is selected', () async {
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth-capability',
+        'email-password-sign-in',
+        '--dry-run',
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('email-password-sign-in'));
+    });
+
+    test('rejects two authentication providers', () async {
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--preset',
+        'blank',
+        '--auth',
+        'firebase',
+        '--module',
+        'auth-supabase',
+        '--dry-run',
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('conflict'));
+    });
+
     test('rejects an invalid project name', () async {
       final err = StringBuffer();
       final code = await runner.run([

@@ -30,6 +30,21 @@ void main() {
   }
 
   group('GenerationEngine', () {
+    test('the brick declares every known capability identifier', () {
+      const brickFile =
+          '$brickPath/__brick__/{{#hasAuthCore}}lib/core/auth/'
+          'auth_capabilities.dart{{/hasAuthCore}}';
+      final source = File(brickFile).readAsStringSync();
+
+      for (final capability in knownAuthCapabilities) {
+        expect(
+          source,
+          contains("'$capability'"),
+          reason: 'the brick is missing the capability $capability',
+        );
+      }
+    });
+
     test('generates a blank project with no optional dependencies', () async {
       final result = await generate(spec(name: 'Blank', org: 'com.example'));
 
@@ -182,6 +197,30 @@ void main() {
 
       expect(backupRules.existsSync(), isFalse);
       expect(manifest.readAsStringSync(), isNot(contains('android:fullBackupContent')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('a project with a network client declares the INTERNET permission', () async {
+      final result = await generate(
+        spec(name: 'Reco App', org: 'com.example', preset: 'recommended'),
+      );
+
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml');
+
+      // Without this the release build cannot reach the network at all: the
+      // debug manifest adds the permission, the release manifest does not.
+      expect(manifest.readAsStringSync(), contains('android.permission.INTERNET'));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('a project without a network client declares no INTERNET permission', () async {
+      final result = await generate(spec(name: 'Core App', org: 'com.example', preset: 'core'));
+
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml');
+
+      expect(manifest.readAsStringSync(), isNot(contains('android.permission.INTERNET')));
 
       await result.projectDir.delete(recursive: true);
     });

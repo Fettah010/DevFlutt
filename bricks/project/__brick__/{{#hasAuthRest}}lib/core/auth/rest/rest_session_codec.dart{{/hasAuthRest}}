@@ -1,0 +1,56 @@
+import 'dart:convert';
+
+import '../auth_session.dart';
+
+/// Encodes an [AuthSession] into the string the session store keeps.
+///
+/// The format is the adapter's own; nothing outside this module reads it.
+String encodeRestAuthSession(AuthSession session) => jsonEncode(<String, Object?>{
+  'id': session.user.id,
+  'email': session.user.email,
+  'displayName': session.user.displayName,
+  'isEmailVerified': session.user.isEmailVerified,
+  'accessToken': session.accessToken,
+  'refreshToken': session.refreshToken,
+  'expiresAt': session.expiresAt?.toIso8601String(),
+});
+
+/// Decodes a stored session.
+///
+/// Returns `null` when the stored value is absent, is not valid JSON, or does
+/// not carry the fields a session needs. A stored value that cannot be read
+/// is treated as no session: it is never partially applied.
+AuthSession? decodeRestAuthSession(String? stored) {
+  if (stored == null || stored.isEmpty) {
+    return null;
+  }
+
+  Object? decoded;
+  try {
+    decoded = jsonDecode(stored);
+  } on FormatException {
+    return null;
+  }
+  if (decoded is! Map<String, dynamic>) {
+    return null;
+  }
+
+  final accessToken = decoded['accessToken'];
+  final id = decoded['id'];
+  if (accessToken is! String || accessToken.isEmpty || id is! String) {
+    return null;
+  }
+
+  final expiresAt = decoded['expiresAt'];
+  return AuthSession(
+    user: AuthUser(
+      id: id,
+      email: decoded['email'] as String?,
+      displayName: decoded['displayName'] as String?,
+      isEmailVerified: decoded['isEmailVerified'] as bool? ?? false,
+    ),
+    accessToken: accessToken,
+    refreshToken: decoded['refreshToken'] as String?,
+    expiresAt: expiresAt is String ? DateTime.tryParse(expiresAt) : null,
+  );
+}

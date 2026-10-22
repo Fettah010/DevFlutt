@@ -1,0 +1,164 @@
+import 'dart:async';
+
+import '../auth_adapter.dart';
+import '../auth_capabilities.dart';
+import '../auth_error.dart';
+import '../auth_session.dart';
+import '../auth_state.dart';
+import 'supabase_auth_port.dart';
+
+/// The authentication adapter for Supabase Auth.
+///
+/// Supabase keeps the session itself, so this adapter does not persist one:
+/// [restoreSession] asks the provider whether a session exists. The token
+/// refresh is Supabase's as well; the adapter asks for a fresh access token
+/// when the application needs one.
+class SupabaseAuthAdapter implements AuthAdapter {
+  /// Creates an adapter that talks to Supabase through [port].
+  SupabaseAuthAdapter({required this.port}) {
+    _subscription = port.authStateChanges.listen(_onStateChanged);
+  }
+
+  /// The provider boundary.
+  final SupabaseAuthPort port;
+
+  final StreamController<AuthState> _states =
+      StreamController<AuthState>.broadcast();
+
+  late final StreamSubscription<SupabaseAuthChange> _subscription;
+
+  AuthState _state = const AuthState.unknown();
+
+  @override
+  AuthCapabilities get capabilities => const AuthCapabilities(<AuthCapability>{
+    AuthCapability.emailPasswordSignIn,
+    AuthCapability.emailPasswordRegistration,
+    AuthCapability.passwordReset,
+    AuthCapability.sessionRestoration,
+    AuthCapability.tokenRefresh,
+    AuthCapability.logout,
+    AuthCapability.oneTimePasswordSignIn,
+  });
+
+  @override
+  AuthState get currentState => _state;
+
+  @override
+  Stream<AuthState> get authStateChanges => _states.stream;
+
+  @override
+  Future<AuthState> restoreSession() async {
+    final user = port.currentUser;
+    if (user == null) {
+      return _publish(const AuthState.unauthenticated());
+    }
+    final token = await port.accessToken(forceRefresh: false);
+    if (token == null) {
+      return _publish(const AuthState.unauthenticated());
+    }
+    return _publish(AuthState.authenticated(_session(user, token)));
+  }
+
+  @override
+  Future<AuthState> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final user = await port.signInWithPassword(email: email, password: password);
+    return _publish(await _sessionFor(user));
+  }
+
+  @override
+  Future<AuthState> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final user = await port.signUp(email: email, password: password);
+    return _publish(await _sessionFor(user));
+  }
+
+  @override
+  Future<void> requestPasswordReset(String email) =>
+      port.resetPasswordForEmail(email);
+
+  @override
+  Future<AuthState> signInWithOneTimePassword(String token) async {
+    final parameters =
+        Uri.tryParse(token)?.queryParameters ?? const <String, String>{};
+    final tokenHash = parameters['token_hash'];
+    if (tokenHash == null || tokenHash.isEmpty) {
+      throw const ProviderFailureError(
+        message: 'The one-time link does not carry a token hash.',
+      );
+    }
+    final user = await port.verifyOtp(
+      tokenHash: tokenHash,
+      type: parameters['type'] ?? 'email',
+    );
+    return _publish(await _sessionFor(user));
+  }
+
+  @override
+  Future<void> signOut() async {
+    if (port.currentUser == null) {
+      throw const NotSignedInError();
+    }
+    await port.signOut();
+    _publish(const AuthState.unauthenticated());
+  }
+
+  @override
+  Future<AuthState> refreshSession() async {
+    if (port.currentUser == null) {
+      throw const NotSignedInError();
+    }
+    final token = await port.accessToken(forceRefresh: true);
+    if (token == null) {
+      throw const SessionExpiredError();
+    }
+    return _publish(
+      AuthState.authenticated(_session(port.currentUser!, token)),
+    );
+  }
+
+  Future<AuthState> _sessionFor(AuthUser user) async {
+    final token = await port.accessToken(forceRefresh: false);
+    if (token == null) {
+      throw const SessionExpiredError();
+    }
+    return AuthState.authenticated(_session(user, token));
+  }
+
+  void _onStateChanged(SupabaseAuthChange change) {
+    final user = change.user;
+    if (user == null) {
+      _publish(const AuthState.unauthenticated());
+      return;
+    }
+    final token = change.accessToken;
+    if (token == null) {
+      _publish(const AuthState.unauthenticated());
+      return;
+    }
+    _publish(AuthState.authenticated(_session(user, token)));
+  }
+
+  static AuthSession _session(AuthUser user, String token) => AuthSession(
+    user: user,
+    accessToken: token,
+  );
+
+  AuthState _publish(AuthState state) {
+    _state = state;
+    if (!_states.isClosed) {
+      _states.add(state);
+    }
+    return state;
+  }
+
+  /// Releases the state stream and the provider subscription.
+  Future<void> dispose() async {
+    await _subscription.cancel();
+    await _states.close();
+  }
+}

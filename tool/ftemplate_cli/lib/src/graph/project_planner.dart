@@ -58,4 +58,13 @@ class ProjectPlanner {
       configKeys: configKeys,
     );
   }
+
+  /// Validates that [plan] provides every capability in [required].
+  ///
+  /// Throws [CompatibilityException] with an actionable message when the
+  /// selection cannot satisfy a requirement.
+  void validateCapabilities(GenerationPlan plan, List<String> required) {
+    final modules = _repository.loadModules();
+    CompatibilityGraph(modules).validateCapabilities(plan.modules, required);
+  }
 }

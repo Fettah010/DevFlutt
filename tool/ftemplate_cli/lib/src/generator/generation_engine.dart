@@ -72,6 +72,14 @@ class GenerationEngine {
       'hasNetworking': moduleIds.contains('networking'),
       'hasSecureStorage': moduleIds.contains('secure-storage'),
       'hasDiagnostics': moduleIds.contains('diagnostics'),
+      'hasAuthCore': moduleIds.contains('auth-core'),
+      'hasAuthRest': moduleIds.contains('auth-rest'),
+      'hasAuthFirebase': moduleIds.contains('auth-firebase'),
+      'hasAuthSupabase': moduleIds.contains('auth-supabase'),
+      'hasAuth': _authAdapterModuleIds.any(moduleIds.contains),
+      'hasAuthRouter':
+          _authAdapterModuleIds.any(moduleIds.contains) && moduleIds.contains('navigation'),
+      'hasNetworkPermission': plan.permissions.contains('android.permission.INTERNET'),
       'hasServices': _serviceModuleIds.any(moduleIds.contains),
       'extraDependencies': plan.dependencies
           .map((dependency) => '${dependency.name}: ${dependency.version}')
@@ -85,6 +93,16 @@ class GenerationEngine {
     'networking',
     'secure-storage',
     'diagnostics',
+  ];
+
+  /// The modules that contribute an authentication adapter.
+  ///
+  /// At most one of them can be selected; the compatibility graph rejects a
+  /// selection of two.
+  static const List<String> _authAdapterModuleIds = <String>[
+    'auth-rest',
+    'auth-firebase',
+    'auth-supabase',
   ];
 
   /// Whether [directory] exists and is non-empty.

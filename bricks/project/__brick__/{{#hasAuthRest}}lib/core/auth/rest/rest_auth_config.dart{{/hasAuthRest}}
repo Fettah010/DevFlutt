@@ -1,0 +1,87 @@
+/// The configuration of a REST authentication backend.
+///
+/// The template does not know the paths or the field names of any particular
+/// backend, so every one of them is declared here. A project fills the
+/// configuration in and hands it to the adapter.
+///
+/// This file is generated once, when the project is created, and then belongs
+/// to the project. Replace the placeholder values with the ones your backend
+/// uses.
+class RestAuthConfig {
+  /// Creates a configuration.
+  const RestAuthConfig({
+    required this.loginPath,
+    this.registerPath,
+    this.refreshPath,
+    this.logoutPath,
+    this.passwordResetPath,
+    this.emailField = 'email',
+    this.passwordField = 'password',
+    this.accessTokenField = 'accessToken',
+    this.refreshTokenField = 'refreshToken',
+    this.expiresInField = 'expiresIn',
+    this.userField = 'user',
+    this.userIdField = 'id',
+    this.userEmailField = 'email',
+    this.userDisplayNameField = 'displayName',
+  });
+
+  /// The path of the sign-in request.
+  final String loginPath;
+
+  /// The path of the registration request, or `null` when the backend has
+  /// none. Registration is not available without it.
+  final String? registerPath;
+
+  /// The path of the refresh request, or `null` when the backend has none.
+  /// Token refresh is not available without it.
+  final String? refreshPath;
+
+  /// The path of the logout request, or `null` when the backend has none.
+  ///
+  /// A backend that has one usually revokes the refresh token. A backend that
+  /// has none can only be logged out of locally.
+  final String? logoutPath;
+
+  /// The path of the password-reset request, or `null` when the backend has
+  /// none. Password reset is not available without it.
+  final String? passwordResetPath;
+
+  /// The name of the email field in the request body.
+  final String emailField;
+
+  /// The name of the password field in the request body.
+  final String passwordField;
+
+  /// The name of the access token in the response body.
+  final String accessTokenField;
+
+  /// The name of the refresh token in the response body.
+  final String refreshTokenField;
+
+  /// The name of the lifetime field in the response body, in seconds.
+  final String expiresInField;
+
+  /// The name of the user object in the response body.
+  final String userField;
+
+  /// The name of the user identifier inside the user object.
+  final String userIdField;
+
+  /// The name of the user's email address inside the user object.
+  final String userEmailField;
+
+  /// The name of the user's display name inside the user object.
+  final String userDisplayNameField;
+}
+
+/// The configuration a new project starts with.
+///
+/// The paths are placeholders. Replace them with the paths of your backend.
+const RestAuthConfig defaultRestAuthConfig = RestAuthConfig(
+  loginPath: '/auth/login',
+  registerPath: '/auth/register',
+  refreshPath: '/auth/refresh',
+  logoutPath: '/auth/logout',
+  passwordResetPath: '/auth/password-reset',
+);

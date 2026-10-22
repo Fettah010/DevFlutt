@@ -3,6 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:{{projectName}}/app/app_router.dart';
 import 'package:{{projectName}}/app/app_routes.dart';
+{{#hasAuthRouter}}import 'package:{{projectName}}/app/route_guard.dart';
+import 'package:{{projectName}}/core/auth/auth_session.dart';
+import 'package:{{projectName}}/core/auth/fake_auth_adapter.dart';
+{{/hasAuthRouter}}
 
 void main() {
   group('buildAppRouter', () {
@@ -54,4 +58,99 @@ void main() {
       }
     });
   });
-}
+{{#hasAuthRouter}}
+  group('authRouteGuard', () {
+    // The target is a path with no screen, so the test exercises the redirect
+    // alone and does not depend on any feature's widget.
+    const String protectedLocation = '/protected';
+
+    testWidgets('sends an unauthenticated user to the login location',
+        (tester) async {
+      final adapter = FakeAuthAdapter();
+      await adapter.restoreSession();
+      final router = buildAppRouter(
+        redirect: authRouteGuard(
+          authAdapter: adapter,
+          loginLocation: '/login',
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      router.go(protectedLocation);
+      await tester.pumpAndSettle();
+
+      final uri = router.routerDelegate.currentConfiguration.uri;
+      expect(uri.path, '/login');
+    });
+
+    testWidgets('keeps the intended destination', (tester) async {
+      final adapter = FakeAuthAdapter();
+      await adapter.restoreSession();
+      final router = buildAppRouter(
+        redirect: authRouteGuard(
+          authAdapter: adapter,
+          loginLocation: '/login',
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      router.go(protectedLocation);
+      await tester.pumpAndSettle();
+
+      final uri = router.routerDelegate.currentConfiguration.uri;
+      expect(uri.queryParameters['redirect'], protectedLocation);
+    });
+
+    testWidgets('does not redirect the login location again', (tester) async {
+      final adapter = FakeAuthAdapter();
+      await adapter.restoreSession();
+      final router = buildAppRouter(
+        redirect: authRouteGuard(
+          authAdapter: adapter,
+          loginLocation: '/login',
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      router.go('/login');
+      await tester.pumpAndSettle();
+
+      final uri = router.routerDelegate.currentConfiguration.uri;
+      expect(uri.path, '/login');
+      expect(uri.queryParameters.containsKey('redirect'), isFalse);
+    });
+
+    testWidgets('lets a signed-in user through', (tester) async {
+      final adapter = FakeAuthAdapter(
+        session: const AuthSession(
+          user: AuthUser(id: 'u1'),
+          accessToken: 'access-token',
+        ),
+      );
+      await adapter.restoreSession();
+      final router = buildAppRouter(
+        redirect: authRouteGuard(
+          authAdapter: adapter,
+          loginLocation: '/login',
+        ),
+      );
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      router.go(protectedLocation);
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.path,
+        protectedLocation,
+      );
+    });
+  });
+{{/hasAuthRouter}}}

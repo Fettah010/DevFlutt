@@ -1,4 +1,4 @@
-id: networking
+﻿id: networking
 version: 1
 category: networking
 summary: >-
@@ -17,7 +17,8 @@ pubDependencies:
 nativeChanges:
   android: []
   ios: []
-permissions: []
+permissions:
+  - android.permission.INTERNET
 configKeys: []
 privacy:
   network: true

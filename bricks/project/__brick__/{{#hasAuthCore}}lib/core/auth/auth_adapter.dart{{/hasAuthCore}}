@@ -1,0 +1,79 @@
+import 'auth_capabilities.dart';
+import 'auth_error.dart';
+import 'auth_state.dart';
+
+/// The application's authentication contract.
+///
+/// Features depend on this interface, never on the provider that implements
+/// it. No provider SDK type appears in a signature, so changing the provider
+/// never changes a feature.
+///
+/// An operation that fails throws a typed [AuthError]. The error types are
+/// sealed, so a caller can handle every failure case exhaustively. A failure
+/// that is not [AuthError.isRetryable] must not be retried by the caller.
+abstract interface class AuthAdapter {
+  /// The capabilities the provider implements.
+  ///
+  /// A feature asks this before it calls an operation it may not have.
+  AuthCapabilities get capabilities;
+
+  /// The current state of the session.
+  AuthState get currentState;
+
+  /// The state changes, as they happen.
+  ///
+  /// The stream is a broadcast stream: several listeners may observe it.
+  Stream<AuthState> get authStateChanges;
+
+  /// Restores a previous session from the local store.
+  ///
+  /// Returns the authenticated state when a usable session was found, and the
+  /// unauthenticated state otherwise. It does not throw when there is simply
+  /// no session; that is a normal outcome.
+  Future<AuthState> restoreSession();
+
+  /// Signs in with an email address and a password.
+  ///
+  /// Throws [InvalidCredentialsError] when the provider rejects the
+  /// credentials.
+  Future<AuthState> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  });
+
+  /// Creates an account with an email address and a password.
+  ///
+  /// Throws [UnsupportedCapabilityError] when the provider does not implement
+  /// [AuthCapability.emailPasswordRegistration].
+  Future<AuthState> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+  });
+
+  /// Asks the provider to send a password-reset message to [email].
+  ///
+  /// Throws [UnsupportedCapabilityError] when the provider does not implement
+  /// [AuthCapability.passwordReset].
+  Future<void> requestPasswordReset(String email);
+
+  /// Signs in with a one-time password, such as an email link or a magic link.
+  ///
+  /// The token is the one the provider's deep link carried. The provider turns
+  /// it into a session.
+  ///
+  /// Throws [UnsupportedCapabilityError] when the provider does not implement
+  /// [AuthCapability.oneTimePasswordSignIn].
+  Future<AuthState> signInWithOneTimePassword(String token);
+
+  /// Ends the session and clears the locally stored session.
+  ///
+  /// Throws [NotSignedInError] when there is no session to end.
+  Future<void> signOut();
+
+  /// Obtains a new access token for the current session.
+  ///
+  /// Throws [NotSignedInError] when there is no session, and
+  /// [SessionExpiredError] when the provider refused to refresh it. A refresh
+  /// that fails ends the session rather than being retried.
+  Future<AuthState> refreshSession();
+}

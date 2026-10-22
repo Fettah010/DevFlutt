@@ -1,0 +1,60 @@
+import '../auth_session.dart';
+
+/// A change of the Supabase session.
+class SupabaseAuthChange {
+  /// Creates a change.
+  const SupabaseAuthChange({required this.event, this.user, this.accessToken});
+
+  /// The provider's event name, for example `SIGNED_IN` or `TOKEN_REFRESHED`.
+  final String event;
+
+  /// The user of the new session, when there is one.
+  final AuthUser? user;
+
+  /// The access token of the new session, when there is one.
+  final String? accessToken;
+}
+
+/// The provider boundary of the Supabase authentication adapter.
+///
+/// The adapter depends on this interface, never on the Supabase SDK. The real
+/// implementation wraps `supabase_flutter`; the fake implementation is used
+/// by the tests.
+///
+/// Every method throws an [AuthError] on failure. A Supabase exception never
+/// reaches the caller.
+abstract interface class SupabaseAuthPort {
+  /// The signed-in user, or `null` when there is none.
+  AuthUser? get currentUser;
+
+  /// The session changes, as they happen.
+  Stream<SupabaseAuthChange> get authStateChanges;
+
+  /// Signs in with an email address and a password.
+  ///
+  /// Throws [InvalidCredentialsError] when Supabase rejects them.
+  Future<AuthUser> signInWithPassword({
+    required String email,
+    required String password,
+  });
+
+  /// Creates an account with an email address and a password.
+  Future<AuthUser> signUp({required String email, required String password});
+
+  /// Ends the session.
+  Future<void> signOut();
+
+  /// Asks Supabase to send a password-reset message to [email].
+  Future<void> resetPasswordForEmail(String email);
+
+  /// Verifies a one-time token and starts a session.
+  ///
+  /// [type] is the kind of the token, for example `email` or `magiclink`.
+  Future<AuthUser> verifyOtp({required String tokenHash, required String type});
+
+  /// The current access token, or `null` when there is none.
+  ///
+  /// [forceRefresh] asks Supabase for a new token even when the cached one is
+  /// still valid.
+  Future<String?> accessToken({required bool forceRefresh});
+}

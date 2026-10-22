@@ -1,0 +1,86 @@
+/// A capability an authentication provider can implement.
+///
+/// The identifiers are the wire format shared by the module manifests, the
+/// generator's `--auth-capability` option, and this enum. A generated
+/// project's manifest and this enum are kept in step by a generator test.
+enum AuthCapability {
+  /// Sign in with an email address and a password.
+  emailPasswordSignIn('email-password-sign-in'),
+
+  /// Create an account with an email address and a password.
+  emailPasswordRegistration('email-password-registration'),
+
+  /// Send a password-reset message to an email address.
+  passwordReset('password-reset'),
+
+  /// Restore a previous session on start-up.
+  sessionRestoration('session-restoration'),
+
+  /// Exchange a refresh token for a new access token.
+  tokenRefresh('token-refresh'),
+
+  /// End the session and clear the locally stored session.
+  logout('logout'),
+
+  /// Sign in with a one-time password, such as an email link or a magic link.
+  oneTimePasswordSignIn('one-time-password-sign-in'),
+
+  /// Sign in with a social identity provider.
+  ///
+  /// No adapter in this release implements it: every social provider needs
+  /// provider-console setup and platform configuration that cannot be exercised
+  /// or verified by the template.
+  socialSignIn('social-sign-in');
+
+  const AuthCapability(this.id);
+
+  /// The stable identifier of the capability.
+  final String id;
+
+  /// Resolves [id] to a capability, or returns `null` when it is unknown.
+  static AuthCapability? fromId(String id) {
+    for (final capability in AuthCapability.values) {
+      if (capability.id == id) {
+        return capability;
+      }
+    }
+    return null;
+  }
+}
+
+/// The set of capabilities an authentication provider implements.
+///
+/// An adapter reports the capabilities it supports so that a feature can ask
+/// before it calls, and so that the generator can refuse a selection whose
+/// provider cannot satisfy a declared requirement.
+class AuthCapabilities {
+  /// Creates a set from [capabilities].
+  const AuthCapabilities(this._capabilities);
+
+  /// Creates an empty set.
+  const AuthCapabilities.none() : _capabilities = const <AuthCapability>{};
+
+  final Set<AuthCapability> _capabilities;
+
+  /// Every capability in the set.
+  Iterable<AuthCapability> get all => _capabilities;
+
+  /// Whether [capability] is implemented.
+  bool supports(AuthCapability capability) => _capabilities.contains(capability);
+
+  /// The capability identifiers, sorted so that a description is stable.
+  List<String> get ids =>
+      _capabilities.map((capability) => capability.id).toList()..sort();
+
+  @override
+  bool operator ==(Object other) =>
+      other is AuthCapabilities &&
+      other._capabilities.length == _capabilities.length &&
+      other._capabilities.containsAll(_capabilities);
+
+  @override
+  int get hashCode => Object.hashAllUnordered(_capabilities);
+
+  @override
+  String toString() => 'AuthCapabilities(${ids.join(', ')})';
+}

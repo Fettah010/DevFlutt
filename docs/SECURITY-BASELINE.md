@@ -24,6 +24,7 @@ to the controls the template ships and the steps that verify them.
 | A session is never partly applied from a value that cannot be read | `core/auth/rest/rest_session_codec.dart` | `rest_auth_contract_test.dart` |
 | Encrypted values are never restored without their Keystore key | `android/app/src/main/res/xml/backup_rules.xml` | merged-manifest inspection |
 | The generated project adds no Android permission of its own | the module manifests | merged-manifest inspection |
+| A network client declares the `INTERNET` permission, and a project without one declares none | `manifests/modules/networking.yaml`, `manifests/modules/auth-*.yaml` | the generated manifest, the merged-manifest inspection |
 | No provider SDK, no telemetry, no analytics in the default presets | the module manifests | the absence tests in the generator |
 | A provider configuration placeholder is inert and fails fast | `core/auth/firebase/firebase_auth_port_impl.dart`, `core/auth/supabase/supabase_config.dart` | the start-up configuration check |
 | Committed secrets fail CI | `.github/workflows/ci.yml` (`secret-scan`) | the gate self-test |

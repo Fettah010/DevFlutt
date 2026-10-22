@@ -94,24 +94,31 @@ jobs:
           - name: blank
             preset: blank
             auth: none
+            expects_network: false
           - name: core
             preset: core
             auth: none
+            expects_network: false
           - name: demo
             preset: demo
             auth: none
+            expects_network: false
           - name: recommended
             preset: recommended
             auth: none
+            expects_network: true
           - name: auth-rest
             preset: core
             auth: rest
+            expects_network: true
           - name: auth-firebase
             preset: core
             auth: firebase
+            expects_network: true
           - name: auth-supabase
             preset: core
             auth: supabase
+            expects_network: true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -164,21 +171,30 @@ jobs:
         run: flutter build apk --debug --flavor dev
 
       - name: Build release APK
-        if: matrix.auth != 'none'
         working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter build apk --release --flavor prod
 
       - name: Review the release manifest permissions
-        if: matrix.auth != 'none'
         working-directory: /tmp/generated-${{ matrix.name }}
         run: |
           AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2"
-          "$AAPT2" dump permissions app/build/outputs/flutter-apk/app-prod-release.apk \
-            > release-permissions.log
-          cat release-permissions.log
-          if grep -q "android.permission.INTERNET" release-permissions.log; then
-            echo "The release manifest requests the INTERNET permission without a reason."
+          APK=build/app/outputs/flutter-apk/app-prod-release.apk
+          if [ ! -f "$APK" ]; then
+            echo "The release APK was not found at $APK."
             exit 1
+          fi
+          "$AAPT2" dump permissions "$APK" > release-permissions.log
+          cat release-permissions.log
+          if [ "${{ matrix.expects_network }}" = "true" ]; then
+            if ! grep -q "android.permission.INTERNET" release-permissions.log; then
+              echo "The selection has a network client, but the release manifest does not request the INTERNET permission, so the release build cannot reach the network."
+              exit 1
+            fi
+          else
+            if grep -q "android.permission.INTERNET" release-permissions.log; then
+              echo "The release manifest requests the INTERNET permission, but the selection has no network client."
+              exit 1
+            fi
           fi
 
   secret-scan:

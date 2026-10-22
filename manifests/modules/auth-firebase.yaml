@@ -1,4 +1,4 @@
-id: auth-firebase
+﻿id: auth-firebase
 version: 1
 category: auth
 summary: >-
@@ -21,7 +21,8 @@ pubDependencies:
 nativeChanges:
   android: []
   ios: []
-permissions: []
+permissions:
+  - android.permission.INTERNET
 configKeys: []
 privacy:
   network: true

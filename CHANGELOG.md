@@ -45,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The Firebase configuration placeholder is no longer shaped like an API key, so a secret
   scanner cannot mistake it for a credential.
+- **A project with a network client now declares the `INTERNET` permission.** The generator
+  collected the permissions declared by the module manifests but never wrote them into the
+  Android manifest, so a release build of a `recommended`, `auth-rest`, or `auth-supabase`
+  project could not reach the network at all: Flutter's debug manifest adds the permission
+  and the release manifest does not. The permission is now declared by the `networking`,
+  `auth-firebase`, and `auth-supabase` modules and written into the main manifest through
+  a bounded insertion point. A project without a network client still declares none.
 
 ### Notes
 

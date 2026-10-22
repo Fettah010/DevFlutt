@@ -201,6 +201,30 @@ void main() {
       await result.projectDir.delete(recursive: true);
     });
 
+    test('a project with a network client declares the INTERNET permission', () async {
+      final result = await generate(
+        spec(name: 'Reco App', org: 'com.example', preset: 'recommended'),
+      );
+
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml');
+
+      // Without this the release build cannot reach the network at all: the
+      // debug manifest adds the permission, the release manifest does not.
+      expect(manifest.readAsStringSync(), contains('android.permission.INTERNET'));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('a project without a network client declares no INTERNET permission', () async {
+      final result = await generate(spec(name: 'Core App', org: 'com.example', preset: 'core'));
+
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml');
+
+      expect(manifest.readAsStringSync(), isNot(contains('android.permission.INTERNET')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
     test('generates format-clean Dart files', () async {
       final result = await generate(spec(name: 'Formatted', org: 'com.example', preset: 'core'));
 

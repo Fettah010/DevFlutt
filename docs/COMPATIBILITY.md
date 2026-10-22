@@ -15,6 +15,16 @@
 
 ## Android
 
+The template targets Android API 24 or newer. The `INTERNET` permission is declared only by
+a module that ships a network client - `networking`, `auth-firebase`, and `auth-supabase` -
+and is written into the main manifest, so a release build can reach the network. A project
+that selects none of them declares no permission at all. The `INTERNET` permission is a
+normal install-time permission and raises no runtime prompt.
+
+The Firebase Android SDK contributes `ACCESS_NETWORK_STATE` and `READ_GSERVICES` from its
+own manifest. Those are the provider's permissions, not the template's, and they are visible
+in the merged release manifest of an `auth-firebase` project.
+
 - Conservative Kotlin flags (`android.builtInKotlin=false`, `android.newDsl=false`)
   are used because of flutter/flutter#192167 (built-in Kotlin validation fails on
   AGP 9.1+).

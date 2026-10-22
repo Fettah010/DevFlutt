@@ -81,6 +81,10 @@ vars:
     type: boolean
     description: Wire the authentication redirect into the router guard.
     default: false
+  hasNetworkPermission:
+    type: boolean
+    description: Declare the Android INTERNET permission.
+    default: false
   hasServices:
     type: boolean
     description: Include the generated composition root for the selected services.

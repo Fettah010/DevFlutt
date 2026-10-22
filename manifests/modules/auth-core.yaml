@@ -1,0 +1,47 @@
+id: auth-core
+version: 1
+category: auth
+summary: >-
+  Provider-neutral authentication contract, auth state model, capability
+  descriptor, secure session store, and serialized token refresh.
+requires:
+  - architecture-core
+  - logging
+  - secure-storage
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+capabilities: []
+outputs:
+  - lib/core/auth/auth_adapter.dart
+  - lib/core/auth/auth_capabilities.dart
+  - lib/core/auth/auth_controller.dart
+  - lib/core/auth/auth_error.dart
+  - lib/core/auth/auth_route_redirect.dart
+  - lib/core/auth/auth_session.dart
+  - lib/core/auth/auth_state.dart
+  - lib/core/auth/secure_session_store.dart
+  - lib/core/auth/session_store.dart
+  - lib/core/auth/token_refresh_coordinator.dart
+requiredSetup:
+  - The module adds no configuration key and no permission.
+  - The session is stored through the secure store of the secure-storage module, so the
+    Android backup rules that exclude it are generated with that module.
+  - The module ships no provider. Select one of auth-rest, auth-firebase, or
+    auth-supabase to add an adapter.
+  - The module provides no login screen. The router redirect helper is an extension
+    point; the authentication form belongs to the polished-UI milestone.
+tests:
+  unit: true
+  widget: false
+  integration: none

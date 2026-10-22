@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:ftemplate_cli/src/manifest/manifest_validator.dart';
+import 'package:ftemplate_cli/src/manifest/module_manifest.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
@@ -78,6 +82,45 @@ tests:
       final manifest = _with(validManifest, 'outputs', <String>[]);
       final errors = validator.validate(manifest);
       expect(errors.join('\n'), contains('outputs must not be empty'));
+    });
+
+    test('accepts known capabilities', () {
+      final manifest = _with(validManifest, 'capabilities', ['email-password-sign-in', 'logout']);
+      expect(validator.validate(manifest), isEmpty);
+    });
+
+    test('rejects an unknown capability and names the known ones', () {
+      final manifest = _with(validManifest, 'capabilities', ['telepathy']);
+      final errors = validator.validate(manifest);
+      expect(errors.join('\n'), contains('Unknown capability "telepathy"'));
+      expect(errors.join('\n'), contains('email-password-sign-in'));
+    });
+
+    test('rejects a duplicate capability', () {
+      final manifest = _with(validManifest, 'capabilities', ['logout', 'logout']);
+      final errors = validator.validate(manifest);
+      expect(errors.join('\n'), contains('Duplicate entry "logout"'));
+    });
+  });
+
+  group('manifest schema', () {
+    test('the JSON schema and the validator agree on the required fields', () {
+      final schema = json.decode(
+        File('../../manifests/schema/module.schema.json').readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final required = (schema['required'] as List<dynamic>).cast<String>().toSet();
+      expect(required, equals(ManifestValidator.requiredFields.toSet()));
+    });
+
+    test('the JSON schema and the validator agree on the known capabilities', () {
+      final schema = json.decode(
+        File('../../manifests/schema/module.schema.json').readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final properties = schema['properties'] as Map<String, dynamic>;
+      final capabilities = properties['capabilities'] as Map<String, dynamic>;
+      final items = capabilities['items'] as Map<String, dynamic>;
+      final declared = (items['enum'] as List<dynamic>).cast<String>().toList();
+      expect(declared, equals(knownAuthCapabilities));
     });
   });
 }

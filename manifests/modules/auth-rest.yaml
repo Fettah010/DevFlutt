@@ -1,0 +1,51 @@
+id: auth-rest
+version: 1
+category: auth
+summary: >-
+  Authentication adapter for a custom REST backend, with configurable endpoints and
+  payload shapes, JWT session handling, and serialized token refresh.
+requires:
+  - auth-core
+  - networking
+conflictsWith:
+  - auth-firebase
+  - auth-supabase
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+capabilities:
+  - email-password-sign-in
+  - email-password-registration
+  - password-reset
+  - session-restoration
+  - token-refresh
+  - logout
+outputs:
+  - lib/core/auth/rest/dio_rest_auth_port.dart
+  - lib/core/auth/rest/fake_rest_auth_port.dart
+  - lib/core/auth/rest/rest_auth_adapter.dart
+  - lib/core/auth/rest/rest_auth_config.dart
+  - lib/core/auth/rest/rest_auth_port.dart
+requiredSetup:
+  - The module adds no dependency. It talks to the backend through the ApiClient of
+    the networking module, so the existing timeouts, cancellation, request
+    correlation, and log redaction apply to authentication traffic too.
+  - The module adds no configuration key and no permission. Supply the endpoint paths and
+    the payload field names through RestAuthConfig in the composition root.
+  - The backend owns authorization, account recovery, rate limiting, multi-factor
+    authentication, and session revocation. The client does not implement them.
+  - The registration capability is available only when the configuration supplies a
+    registration path. The adapter reports the capability as unsupported otherwise.
+tests:
+  unit: true
+  widget: false
+  integration: none

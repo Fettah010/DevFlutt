@@ -1,0 +1,61 @@
+id: auth-firebase
+version: 1
+category: auth
+summary: >-
+  Authentication adapter for Firebase Authentication, with email and password
+  sign-in, one-time-password sign-in, session restoration, and provider-managed
+  token refresh.
+requires:
+  - auth-core
+conflictsWith:
+  - auth-rest
+  - auth-supabase
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: firebase_auth
+    version: ^7.0.0
+  - name: firebase_core
+    version: ^5.0.0
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+capabilities:
+  - email-password-sign-in
+  - email-password-registration
+  - password-reset
+  - session-restoration
+  - token-refresh
+  - logout
+  - one-time-password-sign-in
+outputs:
+  - lib/core/auth/firebase/fake_firebase_auth_port.dart
+  - lib/core/auth/firebase/firebase_auth_adapter.dart
+  - lib/core/auth/firebase/firebase_auth_port.dart
+  - lib/core/auth/firebase/firebase_auth_port_impl.dart
+requiredSetup:
+  - The module adds no permission and no configuration key.
+  - The shipped lib/firebase_options.dart is an inert placeholder. Replace it by running
+    "flutterfire configure" in the generated project, which registers the Android app
+    with your Firebase project and writes the real configuration file.
+  - The Flutter path needs no google-services.json and no
+    com.google.gms.google-services Gradle plugin. Those belong to the native Android
+    SDK, not to the Flutter SDK.
+  - Firebase Authentication requires Android API 24 or newer, which is the template's
+    minimum SDK. There is no margin, and a future increase of the template's floor is
+    not needed for Firebase.
+  - The firebase_auth and firebase_core plugins still apply the Kotlin Gradle Plugin.
+    Flutter 3.47 warns that future Flutter versions will refuse such plugins. The
+    build succeeds on the pinned toolchain.
+  - The provider owns password policy, multi-factor authentication, account recovery,
+    and session revocation.
+tests:
+  unit: true
+  widget: false
+  integration: none

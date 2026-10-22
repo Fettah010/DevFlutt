@@ -1,5 +1,7 @@
 import 'package:yaml/yaml.dart';
 
+import 'module_manifest.dart';
+
 /// Validates a module manifest against the schema rules.
 ///
 /// Returns a list of actionable error messages. An empty list means the manifest
@@ -25,6 +27,12 @@ class ManifestValidator {
     'requiredSetup',
     'tests',
   ];
+
+  /// The fields every module manifest must declare.
+  ///
+  /// The published JSON schema lists the same fields. A generator test keeps the
+  /// two in step so the documented contract cannot drift from the enforced one.
+  static List<String> get requiredFields => List<String>.unmodifiable(_requiredFields);
 
   static final RegExp _idPattern = RegExp(r'^[a-z][a-z0-9-]*$');
 
@@ -74,8 +82,30 @@ class ManifestValidator {
     _checkDuplicates(map, 'permissions', errors);
     _checkDuplicates(map, 'configKeys', errors);
     _checkDuplicates(map, 'outputs', errors);
+    _checkDuplicates(map, 'capabilities', errors);
+
+    _checkCapabilities(map, errors);
 
     return errors;
+  }
+
+  void _checkCapabilities(YamlMap map, List<String> errors) {
+    final value = map['capabilities'];
+    if (value is! YamlList) {
+      return;
+    }
+    for (final entry in value) {
+      if (entry is! String) {
+        errors.add('capabilities entries must be strings.');
+        continue;
+      }
+      if (!knownAuthCapabilities.contains(entry)) {
+        errors.add(
+          'Unknown capability "$entry". Known capabilities: '
+          '${knownAuthCapabilities.join(', ')}.',
+        );
+      }
+    }
   }
 
   void _checkDuplicates(YamlMap map, String field, List<String> errors) {

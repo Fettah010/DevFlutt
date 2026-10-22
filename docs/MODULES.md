@@ -14,19 +14,30 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `design-system` | ui | `architecture-core` | — | Reusable buttons, text field, card, message, and state views |
 | `feature-example` | feature | `architecture-core`, `state-riverpod`, `navigation` | — | Counter feature across domain, data, application, and presentation |
 | `showcase` | feature | `architecture-core`, `state-riverpod`, `navigation`, `design-system` | — | Component showcase page |
+| `logging` | diagnostics | `architecture-core` | — | `AppLogger`, `LogRecord`, `Redactor`, console and memory sinks |
+| `networking` | networking | `architecture-core`, `logging` | — | `dio`, typed `ApiClient`, error mapping, bounded retry, a fake adapter |
+| `secure-storage` | persistence | `architecture-core` | — | `flutter_secure_storage`, `SecureStore`, the Android backup exclusion |
+| `diagnostics` | diagnostics | `architecture-core`, `logging` | — | `ErrorReporter` interface and a local, in-memory adapter |
 
 ## Presets
 
 | Preset | Modules |
 |---|---|
 | `blank` | `architecture-core` |
-| `core` | `architecture-core`, `state-riverpod`, `navigation`, `design-system`, `feature-example` |
+| `core` | `architecture-core`, `state-riverpod`, `navigation`, `design-system`, `feature-example`, `logging` |
 | `demo` | `core` plus `showcase` |
+| `recommended` | `core` plus `diagnostics`, `networking`, `secure-storage` |
 
 `architecture-core` is the base scaffold of every generated project, so `blank` is the
 architecture without any optional module. `core` is the recommended starting point for a
 product. `demo` adds a showcase page that renders every shared widget; it exists to review
-the design system and is not part of `core`.
+the design system and is not part of `core`. `recommended` is a typical networked
+foundation: the core architecture plus the HTTP, diagnostic, and secure-storage plumbing.
+
+`recommended` is narrower than the road map's v1.0.0 description of it: the localisation
+scaffold and the application-lifecycle hooks join that preset in their own milestones
+(v0.8.0 and v0.7.0). The preset file is the explicit, versioned module list, so what the
+preset contains is never a hidden bundle.
 
 ## Adding modules
 

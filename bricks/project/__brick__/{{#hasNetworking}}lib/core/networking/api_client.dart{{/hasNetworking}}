@@ -1,0 +1,31 @@
+import 'api_cancellation_token.dart';
+import 'api_error.dart';
+import 'api_request.dart';
+import 'api_result.dart';
+
+/// The application's HTTP client contract.
+///
+/// Features depend on this interface, never on the transport that implements
+/// it. A request never throws: every outcome is an [ApiResult].
+abstract interface class ApiClient {
+  /// Sends [request] and decodes the response body with [decode].
+  ///
+  /// [decode] turns the decoded JSON body into [T]. A body that does not
+  /// match [decode] is reported as [ApiMalformedError].
+  ///
+  /// When [cancellationToken] is cancelled before or during the request, the
+  /// result is [ApiCancelledError].
+  ///
+  /// [requestId] is the correlation identifier of the request. The outermost
+  /// client assigns one and passes it down, so every attempt of a retried
+  /// request shares the same identifier.
+  Future<ApiResult<T>> send<T>(
+    ApiRequest request, {
+    required T Function(Object? json) decode,
+    ApiCancellationToken? cancellationToken,
+    String? requestId,
+  });
+
+  /// Cancels every in-flight request and releases the transport.
+  void close();
+}

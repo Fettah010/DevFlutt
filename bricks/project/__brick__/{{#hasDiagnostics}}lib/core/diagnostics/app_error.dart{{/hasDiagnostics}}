@@ -1,0 +1,39 @@
+/// The severity of a reportable error.
+enum AppErrorSeverity {
+  /// An informational event.
+  info,
+
+  /// Something unexpected that the application recovered from.
+  warning,
+
+  /// A failure the application could not recover from.
+  error,
+
+  /// A failure that leaves the application unusable.
+  fatal,
+}
+
+/// A reportable application error.
+///
+/// The error carries structured context so a reporter can group occurrences.
+/// The context is redacted by the logger before it reaches a sink.
+class AppError {
+  const AppError({
+    required this.message,
+    this.severity = AppErrorSeverity.error,
+    this.context = const <String, Object?>{},
+    this.cause,
+  });
+
+  /// A short description of what happened.
+  final String message;
+
+  /// How serious the failure is.
+  final AppErrorSeverity severity;
+
+  /// Structured context about the failure.
+  final Map<String, Object?> context;
+
+  /// The underlying error, when there was one.
+  final Object? cause;
+}

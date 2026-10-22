@@ -1,0 +1,65 @@
+import 'dart:developer' as developer;
+
+import '../config/app_config.dart';
+import 'app_logger.dart';
+import 'log_record.dart';
+
+/// Writes log records to the platform log.
+///
+/// The verbosity floor is chosen by the caller, which keeps the debug/release
+/// policy in the composition root rather than in the sink.
+class ConsoleLogger extends AppLogger {
+  /// Creates a console logger that accepts records at [minimumLevel] and above.
+  const ConsoleLogger({
+    required this.minimumLevel,
+    super.redactor,
+    this.writeLine = _writeToPlatform,
+  });
+
+  /// The lowest level this logger accepts.
+  @override
+  final LogLevel minimumLevel;
+
+  /// The function that renders one line. Replace it to route logs elsewhere.
+  final void Function(String line) writeLine;
+
+  /// The minimum level for [environment].
+  ///
+  /// A development build records everything, a staging build drops the debug
+  /// records, and a production build keeps only warnings and errors.
+  static LogLevel minimumLevelFor(AppEnvironment environment) =>
+      switch (environment) {
+        AppEnvironment.development => LogLevel.debug,
+        AppEnvironment.staging => LogLevel.info,
+        AppEnvironment.production => LogLevel.warning,
+      };
+
+  @override
+  void write(LogRecord record) {
+    writeLine(_render(record));
+  }
+
+  static String _render(LogRecord record) {
+    final buffer = StringBuffer()
+      ..write(record.timestamp.toUtc().toIso8601String())
+      ..write(' ')
+      ..write(record.level.label)
+      ..write(' [')
+      ..write(record.category)
+      ..write('] ')
+      ..write(record.message);
+    if (record.fields.isNotEmpty) {
+      buffer.write(' ');
+      buffer.write(record.fields);
+    }
+    if (record.errorMessage != null) {
+      buffer.write(' | ');
+      buffer.write(record.errorMessage);
+    }
+    return buffer.toString();
+  }
+
+  static void _writeToPlatform(String line) {
+    developer.log(line, level: 800);
+  }
+}

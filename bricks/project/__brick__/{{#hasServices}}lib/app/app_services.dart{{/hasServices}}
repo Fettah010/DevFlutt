@@ -1,0 +1,60 @@
+import '../core/config/app_config.dart';
+{{#hasDiagnostics}}import '../core/diagnostics/error_reporter.dart';
+import '../core/diagnostics/local_error_reporter.dart';
+{{/hasDiagnostics}}{{#hasLogging}}import '../core/logging/app_logger.dart';
+import '../core/logging/console_logger.dart';
+{{/hasLogging}}{{#hasNetworking}}import '../core/networking/api_client.dart';
+import '../core/networking/dio_api_client.dart';
+import '../core/networking/retry_policy.dart';
+import '../core/networking/retrying_api_client.dart';
+{{/hasNetworking}}{{#hasSecureStorage}}import '../core/secure_storage/flutter_secure_store.dart';
+import '../core/secure_storage/secure_store.dart';
+{{/hasSecureStorage}}
+/// The services the application composes at startup.
+///
+/// The class holds exactly the services the selected modules provide. A
+/// project that does not select a module does not get its field, and a
+/// project that selects no service module does not have this file at all.
+class AppServices {
+  /// Creates the services.
+  AppServices({
+{{#hasLogging}}    required this.logger,
+{{/hasLogging}}{{#hasNetworking}}    required this.apiClient,
+{{/hasNetworking}}{{#hasSecureStorage}}    required this.secureStore,
+{{/hasSecureStorage}}{{#hasDiagnostics}}    required this.errorReporter,
+{{/hasDiagnostics}}  });
+{{#hasLogging}}
+  /// The application logger.
+  final AppLogger logger;
+{{/hasLogging}}{{#hasNetworking}}
+  /// The HTTP client used by the features.
+  final ApiClient apiClient;
+{{/hasNetworking}}{{#hasSecureStorage}}
+  /// The store for sensitive values.
+  final SecureStore secureStore;
+{{/hasSecureStorage}}{{#hasDiagnostics}}
+  /// The reporter that records application errors.
+  final ErrorReporter errorReporter;
+{{/hasDiagnostics}}
+}
+
+/// Builds the services for [config].
+///
+/// This is the only place where the concrete implementations are chosen. A
+/// feature receives the service it needs through its constructor, so the
+/// choice stays in one reviewable file.
+AppServices buildAppServices(AppConfig config) {
+{{#hasLogging}}  final logger = ConsoleLogger(
+    minimumLevel: ConsoleLogger.minimumLevelFor(config.environment),
+  );
+{{/hasLogging}}  return AppServices(
+{{#hasLogging}}    logger: logger,
+{{/hasLogging}}{{#hasNetworking}}    apiClient: RetryingApiClient(
+      inner: DioApiClient(baseUrl: config.apiBaseUrl, logger: logger),
+      policy: const RetryPolicy(maxAttempts: 3),
+      logger: logger,
+    ),
+{{/hasNetworking}}{{#hasSecureStorage}}    secureStore: const FlutterSecureStore(),
+{{/hasSecureStorage}}{{#hasDiagnostics}}    errorReporter: LocalErrorReporter(logger: logger),
+{{/hasDiagnostics}}  );
+}

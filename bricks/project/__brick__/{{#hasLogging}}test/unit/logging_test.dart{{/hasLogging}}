@@ -1,0 +1,216 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/logging/console_logger.dart';
+import 'package:{{projectName}}/core/logging/log_record.dart';
+import 'package:{{projectName}}/core/logging/memory_logger.dart';
+import 'package:{{projectName}}/core/logging/redactor.dart';
+
+/// A field key and a value that must never reach a log sink unchanged.
+const List<(String, String)> redactionCorpus = <(String, String)>[
+  ('authorization', 'Bearer abcdefghijklmnopqrstuvwxyz012345'),
+  ('Authorization', 'Bearer abcdefghijklmnopqrstuvwxyz012345'),
+  ('proxy-authorization', 'Basic dXNlcjpwYXNzd29yZA=='),
+  ('cookie', 'session=0123456789abcdef0123456789abcdef'),
+  ('set-cookie', 'session=0123456789abcdef0123456789abcdef'),
+  ('password', 'hunter2'),
+  ('Password', 'hunter2'),
+  ('secret', 's3cr3t'),
+  ('token', '0123456789abcdef0123456789abcdef'),
+  ('access_token', '0123456789abcdef0123456789abcdef'),
+  ('refresh_token', '0123456789abcdef0123456789abcdef'),
+  ('id_token', '0123456789abcdef0123456789abcdef'),
+  ('api_key', '0123456789abcdef0123456789abcdef'),
+  ('apikey', '0123456789abcdef0123456789abcdef'),
+  ('client_secret', '0123456789abcdef0123456789abcdef'),
+  ('private_key', '0123456789abcdef0123456789abcdef'),
+  ('session', '0123456789abcdef0123456789abcdef'),
+  ('credit_card', '4111111111111111'),
+  ('card_number', '4111111111111111'),
+  ('cvv', '123'),
+  ('pin', '1234'),
+  ('x-authorization-header', 'anything'),
+  ('service-credential', 'anything'),
+];
+
+/// A field key and a value that must be logged unchanged.
+const List<(String, String)> safeCorpus = <(String, String)>[
+  ('status', '200'),
+  ('durationMs', '42'),
+  ('endpoint', '/v1/users'),
+  ('userId', '12345'),
+  ('count', '7'),
+  ('message', 'Request completed'),
+];
+
+void main() {
+  group('Redactor', () {
+    test('redacts every sensitive field in the corpus', () {
+      const redactor = Redactor();
+
+      for (final (key, value) in redactionCorpus) {
+        final redacted = redactor.redactFields(<String, Object?>{key: value});
+
+        expect(
+          redacted[key],
+          '<redacted>',
+          reason: 'The field "$key" must be redacted.',
+        );
+      }
+    });
+
+    test('keeps every safe field in the corpus', () {
+      const redactor = Redactor();
+
+      for (final (key, value) in safeCorpus) {
+        final redacted = redactor.redactFields(<String, Object?>{key: value});
+
+        expect(
+          redacted[key],
+          value,
+          reason: 'The field "$key" must not be redacted.',
+        );
+      }
+    });
+
+    test('redacts a value that looks like a credential', () {
+      const redactor = Redactor();
+
+      final redacted = redactor.redactFields(<String, Object?>{
+        'note': 'Bearer abcdefghijklmnopqrstuvwxyz012345',
+      });
+
+      expect(redacted['note'], '<redacted>');
+    });
+
+    test('redacts a JWT-shaped value', () {
+      const redactor = Redactor();
+
+      final redacted = redactor.redactFields(<String, Object?>{
+        'note': 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl',
+      });
+
+      expect(redacted['note'], '<redacted>');
+    });
+
+    test('redacts a message that looks like a credential', () {
+      const redactor = Redactor();
+
+      expect(
+        redactor.redactText('Bearer abcdefghijklmnopqrstuvwxyz012345'),
+        '<redacted>',
+      );
+    });
+
+    test('redacts nested maps and lists', () {
+      const redactor = Redactor();
+
+      final redacted = redactor.redactFields(<String, Object?>{
+        'request': <String, Object?>{
+          'headers': <String, Object?>{'authorization': 'Bearer secret-value'},
+          'tags': <Object?>['safe', 'Bearer secret-value'],
+        },
+      });
+
+      final request = redacted['request']! as Map<String, Object?>;
+      final headers = request['headers']! as Map<String, Object?>;
+      final tags = request['tags']! as List<Object?>;
+
+      expect(headers['authorization'], '<redacted>');
+      expect(tags[0], 'safe');
+      expect(tags[1], '<redacted>');
+    });
+  });
+
+  group('AppLogger', () {
+    test('redacts a record before it reaches the sink', () {
+      final logger = MemoryLogger();
+
+      logger.info(
+        'Request failed',
+        category: 'networking',
+        fields: <String, Object?>{'authorization': 'Bearer secret-value'},
+      );
+
+      expect(logger.records, hasLength(1));
+      expect(logger.records.single.fields['authorization'], '<redacted>');
+    });
+
+    test('records the error as redacted text, never as the object', () {
+      final logger = MemoryLogger();
+
+      logger.error(
+        'Request failed',
+        error: StateError('token=0123456789abcdef0123456789abcdef'),
+      );
+
+      final record = logger.records.single;
+      expect(record.errorMessage, isNot(contains('0123456789abcdef')));
+      expect(record.errorMessage, contains('<redacted>'));
+    });
+
+    test('drops records below the minimum level', () {
+      final logger = MemoryLogger(minimumLevel: LogLevel.warning);
+
+      logger.debug('debug');
+      logger.info('info');
+      logger.warning('warning');
+      logger.error('error');
+
+      expect(logger.messagesAt(LogLevel.debug), isEmpty);
+      expect(logger.messagesAt(LogLevel.info), isEmpty);
+      expect(logger.messagesAt(LogLevel.warning), <String>['warning']);
+      expect(logger.messagesAt(LogLevel.error), <String>['error']);
+    });
+
+    test('keeps the category of a record', () {
+      final logger = MemoryLogger();
+
+      logger.info('started', category: 'networking');
+
+      expect(logger.recordsIn('networking'), hasLength(1));
+      expect(logger.recordsIn('app'), isEmpty);
+    });
+  });
+
+  group('ConsoleLogger', () {
+    test('writes a redacted line', () {
+      final lines = <String>[];
+      final logger = ConsoleLogger(
+        minimumLevel: LogLevel.debug,
+        writeLine: lines.add,
+      );
+
+      logger.info(
+        'Request completed',
+        category: 'networking',
+        fields: <String, Object?>{'authorization': 'Bearer secret-value'},
+      );
+
+      expect(lines, hasLength(1));
+      expect(lines.single, contains('INFO'));
+      expect(lines.single, contains('[networking]'));
+      expect(lines.single, contains('<redacted>'));
+      expect(lines.single, isNot(contains('secret-value')));
+    });
+
+    test('does not write records below the minimum level', () {
+      final lines = <String>[];
+      final logger = ConsoleLogger(
+        minimumLevel: LogLevel.error,
+        writeLine: lines.add,
+      );
+
+      logger.warning('ignored');
+
+      expect(lines, isEmpty);
+    });
+  });
+
+  group('LogLevel', () {
+    test('orders severities', () {
+      expect(LogLevel.debug.isAtLeast(LogLevel.debug), isTrue);
+      expect(LogLevel.debug.isAtLeast(LogLevel.info), isFalse);
+      expect(LogLevel.error.isAtLeast(LogLevel.warning), isTrue);
+    });
+  });
+}

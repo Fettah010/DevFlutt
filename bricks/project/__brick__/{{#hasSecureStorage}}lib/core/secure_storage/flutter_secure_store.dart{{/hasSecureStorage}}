@@ -1,0 +1,33 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'secure_store.dart';
+
+/// A [SecureStore] backed by the platform's secure storage.
+///
+/// On Android the plugin wraps an AES-GCM key with a key held in the Android
+/// Keystore. The generated Android project excludes the plugin's storage file
+/// from the backup, because a restored value cannot be unwrapped without the
+/// device key.
+class FlutterSecureStore implements SecureStore {
+  /// Creates a store that uses [storage].
+  const FlutterSecureStore([this.storage = const FlutterSecureStorage()]);
+
+  /// The plugin instance that performs the storage.
+  final FlutterSecureStorage storage;
+
+  @override
+  Future<String?> read(String key) => storage.read(key: key);
+
+  @override
+  Future<void> write(String key, String value) =>
+      storage.write(key: key, value: value);
+
+  @override
+  Future<void> delete(String key) => storage.delete(key: key);
+
+  @override
+  Future<void> deleteAll() => storage.deleteAll();
+
+  @override
+  Future<bool> containsKey(String key) => storage.containsKey(key: key);
+}

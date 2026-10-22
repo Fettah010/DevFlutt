@@ -1,0 +1,41 @@
+import '../logging/app_logger.dart';
+import 'app_error.dart';
+import 'error_reporter.dart';
+
+/// An [ErrorReporter] that keeps the reported errors in memory.
+///
+/// The reporter never touches the network. It exists so that an application can
+/// record what went wrong, and so that a future adapter — a crash reporter, or
+/// a user-initiated diagnostics export — has something to read.
+class LocalErrorReporter implements ErrorReporter {
+  /// Creates a reporter that keeps at most [maxRecords] errors.
+  LocalErrorReporter({this.logger, this.maxRecords = 50});
+
+  /// The logger that receives a redacted copy of every error. Optional.
+  final AppLogger? logger;
+
+  /// The largest number of errors kept in memory.
+  final int maxRecords;
+
+  final List<AppError> _records = <AppError>[];
+
+  /// The errors reported so far, oldest first.
+  List<AppError> get records => List<AppError>.unmodifiable(_records);
+
+  /// Removes every recorded error.
+  void clear() => _records.clear();
+
+  @override
+  void report(AppError error) {
+    _records.add(error);
+    if (_records.length > maxRecords) {
+      _records.removeRange(0, _records.length - maxRecords);
+    }
+    logger?.error(
+      error.message,
+      category: 'diagnostics',
+      fields: error.context,
+      error: error.cause,
+    );
+  }
+}

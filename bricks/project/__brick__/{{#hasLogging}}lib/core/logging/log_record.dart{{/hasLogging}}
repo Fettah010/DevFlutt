@@ -1,0 +1,63 @@
+/// The severity of a log record.
+enum LogLevel {
+  /// Detailed information useful while developing.
+  debug(0, 'DEBUG'),
+
+  /// An ordinary, expected event.
+  info(1, 'INFO'),
+
+  /// Something unexpected that the application recovered from.
+  warning(2, 'WARNING'),
+
+  /// A failure that the application could not recover from.
+  error(3, 'ERROR');
+
+  const LogLevel(this.severity, this.label);
+
+  /// The numeric severity. A higher value is more severe.
+  final int severity;
+
+  /// The short label used in the rendered output.
+  final String label;
+
+  /// Whether this level is at least as severe as [other].
+  bool isAtLeast(LogLevel other) => severity >= other.severity;
+}
+
+/// A single structured log record.
+///
+/// A record never carries a sensitive value: the logger redacts the fields,
+/// the message, the error text, and the stack trace before the record is
+/// created.
+class LogRecord {
+  const LogRecord({
+    required this.level,
+    required this.message,
+    required this.category,
+    required this.timestamp,
+    this.fields = const <String, Object?>{},
+    this.errorMessage,
+    this.stackTrace,
+  });
+
+  /// The severity of the record.
+  final LogLevel level;
+
+  /// The human-readable message.
+  final String message;
+
+  /// The subsystem the record belongs to, such as `networking`.
+  final String category;
+
+  /// When the record was created.
+  final DateTime timestamp;
+
+  /// Structured key-value context. Sensitive entries are redacted.
+  final Map<String, Object?> fields;
+
+  /// The redacted description of the associated error, when there was one.
+  final String? errorMessage;
+
+  /// The redacted stack trace, when there was one.
+  final String? stackTrace;
+}

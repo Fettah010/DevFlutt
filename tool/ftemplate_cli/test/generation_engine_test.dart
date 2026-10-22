@@ -86,6 +86,106 @@ void main() {
       await result.projectDir.delete(recursive: true);
     });
 
+    test('the blank project contains no service module files', () async {
+      final result = await generate(spec(name: 'Blank', org: 'com.example'));
+
+      final services = File('${result.projectDir.path}/lib/app/app_services.dart');
+      final logging = Directory('${result.projectDir.path}/lib/core/logging');
+      final networking = Directory('${result.projectDir.path}/lib/core/networking');
+      final secureStorage = Directory('${result.projectDir.path}/lib/core/secure_storage');
+      final diagnostics = Directory('${result.projectDir.path}/lib/core/diagnostics');
+
+      expect(services.existsSync(), isFalse);
+      expect(logging.existsSync(), isFalse);
+      expect(networking.existsSync(), isFalse);
+      expect(secureStorage.existsSync(), isFalse);
+      expect(diagnostics.existsSync(), isFalse);
+
+      final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
+      expect(pubspec, isNot(contains('dio')));
+      expect(pubspec, isNot(contains('flutter_secure_storage')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('the core project has the logger but no transport or storage', () async {
+      final result = await generate(spec(name: 'Core App', org: 'com.example', preset: 'core'));
+
+      final logger = File('${result.projectDir.path}/lib/core/logging/app_logger.dart');
+      final services = File('${result.projectDir.path}/lib/app/app_services.dart');
+      final networking = Directory('${result.projectDir.path}/lib/core/networking');
+
+      expect(logger.existsSync(), isTrue);
+      expect(services.existsSync(), isTrue);
+      expect(networking.existsSync(), isFalse);
+
+      final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
+      expect(pubspec, isNot(contains('dio')));
+      expect(pubspec, isNot(contains('flutter_secure_storage')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('generates a recommended project with the service modules', () async {
+      final result = await generate(
+        spec(name: 'Reco App', org: 'com.example', preset: 'recommended'),
+      );
+
+      final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
+      expect(pubspec, contains('dio: ^5.11.1'));
+      expect(pubspec, contains('flutter_secure_storage: ^11.2.0'));
+
+      final services = File('${result.projectDir.path}/lib/app/app_services.dart');
+      expect(services.existsSync(), isTrue);
+      expect(services.readAsStringSync(), contains('buildAppServices'));
+
+      final client = File('${result.projectDir.path}/lib/core/networking/dio_api_client.dart');
+      expect(client.existsSync(), isTrue);
+
+      expect(
+        result.metadata['modules'],
+        containsAll(['logging', 'diagnostics', 'networking', 'secure-storage']),
+      );
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('the secure-storage module generates the Android backup rules', () async {
+      final result = await generate(
+        spec(name: 'Reco App', org: 'com.example', preset: 'recommended'),
+      );
+
+      final backupRules = File(
+        '${result.projectDir.path}/android/app/src/main/res/xml/backup_rules.xml',
+      );
+      final extractionRules = File(
+        '${result.projectDir.path}/android/app/src/main/res/xml/data_extraction_rules.xml',
+      );
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml');
+
+      expect(backupRules.existsSync(), isTrue);
+      expect(extractionRules.existsSync(), isTrue);
+      expect(backupRules.readAsStringSync(), contains('FlutterSecureStorage.xml'));
+      expect(manifest.readAsStringSync(), contains('android:fullBackupContent'));
+      expect(manifest.readAsStringSync(), contains('android:dataExtractionRules'));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('a project without secure storage has no backup rules', () async {
+      final result = await generate(spec(name: 'Core App', org: 'com.example', preset: 'core'));
+
+      final backupRules = File(
+        '${result.projectDir.path}/android/app/src/main/res/xml/backup_rules.xml',
+      );
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml');
+
+      expect(backupRules.existsSync(), isFalse);
+      expect(manifest.readAsStringSync(), isNot(contains('android:fullBackupContent')));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
     test('generates format-clean Dart files', () async {
       final result = await generate(spec(name: 'Formatted', org: 'com.example', preset: 'core'));
 

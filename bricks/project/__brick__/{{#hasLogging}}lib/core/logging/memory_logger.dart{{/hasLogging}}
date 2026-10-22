@@ -1,0 +1,35 @@
+import 'app_logger.dart';
+import 'log_record.dart';
+
+/// A logger that keeps the records it receives, for assertions in tests.
+class MemoryLogger extends AppLogger {
+  /// Creates a memory logger that accepts records at [minimumLevel] and above.
+  MemoryLogger({
+    this.minimumLevel = LogLevel.debug,
+    super.redactor,
+  });
+
+  /// The lowest level this logger accepts.
+  @override
+  final LogLevel minimumLevel;
+
+  /// The records received so far, in order.
+  final List<LogRecord> records = <LogRecord>[];
+
+  /// The messages received at [level], in order.
+  List<String> messagesAt(LogLevel level) => records
+      .where((record) => record.level == level)
+      .map((record) => record.message)
+      .toList(growable: false);
+
+  /// The records received in [category], in order.
+  List<LogRecord> recordsIn(String category) => records
+      .where((record) => record.category == category)
+      .toList(growable: false);
+
+  /// Removes every recorded record.
+  void clear() => records.clear();
+
+  @override
+  void write(LogRecord record) => records.add(record);
+}

@@ -1,0 +1,32 @@
+id: logging
+version: 1
+category: diagnostics
+summary: >-
+  Structured, redacted logging with severity, category context, and a
+  debug/release verbosity policy.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/logging/app_logger.dart
+  - lib/core/logging/log_record.dart
+  - lib/core/logging/redactor.dart
+  - lib/core/logging/console_logger.dart
+  - lib/core/logging/memory_logger.dart
+requiredSetup: []
+tests:
+  unit: true
+  widget: false
+  integration: none

@@ -1,0 +1,100 @@
+import 'log_record.dart';
+import 'redactor.dart';
+
+/// The application's logging interface.
+///
+/// Every record is redacted before it reaches the sink, so a sink cannot leak
+/// a sensitive value by omission. Generated application code never calls
+/// `print`; it logs through this interface.
+abstract class AppLogger {
+  /// Creates a logger that redacts with [redactor].
+  const AppLogger({this.redactor = const Redactor()});
+
+  /// The redactor applied to every record.
+  final Redactor redactor;
+
+  /// The lowest level this logger accepts.
+  LogLevel get minimumLevel;
+
+  /// Whether a record of [level] passes this logger's policy.
+  bool isEnabled(LogLevel level) => level.isAtLeast(minimumLevel);
+
+  /// Records a message at [level].
+  ///
+  /// [fields] is structured context. [error] and [stackTrace] are recorded as
+  /// redacted text, never as the original objects.
+  void log(
+    LogLevel level,
+    String message, {
+    String category = 'app',
+    Map<String, Object?> fields = const <String, Object?>{},
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    if (!isEnabled(level)) {
+      return;
+    }
+    write(
+      redactor.redact(
+        LogRecord(
+          level: level,
+          message: message,
+          category: category,
+          timestamp: DateTime.now(),
+          fields: fields,
+          errorMessage: error?.toString(),
+          stackTrace: stackTrace?.toString(),
+        ),
+      ),
+    );
+  }
+
+  /// Records a debug message.
+  void debug(
+    String message, {
+    String category = 'app',
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) => log(LogLevel.debug, message, category: category, fields: fields);
+
+  /// Records an informational message.
+  void info(
+    String message, {
+    String category = 'app',
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) => log(LogLevel.info, message, category: category, fields: fields);
+
+  /// Records a warning.
+  void warning(
+    String message, {
+    String category = 'app',
+    Map<String, Object?> fields = const <String, Object?>{},
+    Object? error,
+    StackTrace? stackTrace,
+  }) => log(
+    LogLevel.warning,
+    message,
+    category: category,
+    fields: fields,
+    error: error,
+    stackTrace: stackTrace,
+  );
+
+  /// Records an error.
+  void error(
+    String message, {
+    String category = 'app',
+    Map<String, Object?> fields = const <String, Object?>{},
+    Object? error,
+    StackTrace? stackTrace,
+  }) => log(
+    LogLevel.error,
+    message,
+    category: category,
+    fields: fields,
+    error: error,
+    stackTrace: stackTrace,
+  );
+
+  /// Writes an already-redacted record to the sink.
+  void write(LogRecord record);
+}

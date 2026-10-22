@@ -1,0 +1,47 @@
+/// The HTTP method of a request.
+enum ApiMethod {
+  get('GET'),
+  head('HEAD'),
+  options('OPTIONS'),
+  post('POST'),
+  put('PUT'),
+  patch('PATCH'),
+  delete('DELETE');
+
+  const ApiMethod(this.wireName);
+
+  /// The method name sent on the wire.
+  final String wireName;
+
+  /// Whether the method may be retried automatically.
+  ///
+  /// Only the safe methods qualify. A `POST` is never replayed, because the
+  /// template cannot know whether the backend supplied an idempotency key.
+  bool get isRetryable => this == ApiMethod.get || this == ApiMethod.head || this == ApiMethod.options;
+}
+
+/// A request to a REST endpoint.
+class ApiRequest {
+  const ApiRequest({
+    required this.method,
+    required this.path,
+    this.query = const <String, String>{},
+    this.headers = const <String, String>{},
+    this.body,
+  });
+
+  /// The HTTP method.
+  final ApiMethod method;
+
+  /// The path, relative to the base URL.
+  final String path;
+
+  /// The query parameters.
+  final Map<String, String> query;
+
+  /// The request headers.
+  final Map<String, String> headers;
+
+  /// The request body, already encoded.
+  final Object? body;
+}

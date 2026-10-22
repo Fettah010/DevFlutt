@@ -1,0 +1,33 @@
+id: diagnostics
+version: 1
+category: diagnostics
+summary: >-
+  App-owned error reporting with a local adapter; crash and analytics providers
+  stay optional and separately selectable.
+requires:
+  - architecture-core
+  - logging
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/diagnostics/error_reporter.dart
+  - lib/core/diagnostics/app_error.dart
+  - lib/core/diagnostics/local_error_reporter.dart
+requiredSetup:
+  - The local adapter keeps errors in memory only. A crash-reporting provider is a separate module
+    and is never included by default.
+tests:
+  unit: true
+  widget: false
+  integration: none

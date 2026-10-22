@@ -1,0 +1,21 @@
+/// A key-value store for sensitive values.
+///
+/// The interface is deliberately small: read, write, delete, and clear. A
+/// feature that needs to store a session secret depends on this interface, not
+/// on the platform plugin behind it.
+abstract interface class SecureStore {
+  /// The value stored under [key], or `null` when there is none.
+  Future<String?> read(String key);
+
+  /// Stores [value] under [key], replacing any previous value.
+  Future<void> write(String key, String value);
+
+  /// Removes the value stored under [key].
+  Future<void> delete(String key);
+
+  /// Removes every value.
+  Future<void> deleteAll();
+
+  /// Whether a value is stored under [key].
+  Future<bool> containsKey(String key);
+}

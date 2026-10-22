@@ -1,0 +1,61 @@
+/// A transport-independent failure.
+///
+/// The error carries no server text and no response body: a body may contain
+/// personal data. The details belong in the log, where the redactor applies.
+sealed class ApiError {
+  const ApiError();
+
+  /// A short description that is safe to show and safe to log.
+  String get message;
+}
+
+/// The connection to the server could not be established.
+final class ApiNetworkError extends ApiError {
+  const ApiNetworkError();
+
+  @override
+  String get message => 'The network request could not be completed.';
+}
+
+/// The request did not finish within the configured timeout.
+final class ApiTimeoutError extends ApiError {
+  const ApiTimeoutError();
+
+  @override
+  String get message => 'The network request timed out.';
+}
+
+/// The request was cancelled by the caller.
+final class ApiCancelledError extends ApiError {
+  const ApiCancelledError();
+
+  @override
+  String get message => 'The network request was cancelled.';
+}
+
+/// The server answered with a status outside the success range.
+final class ApiHttpError extends ApiError {
+  const ApiHttpError({required this.statusCode});
+
+  /// The status code the server returned.
+  final int statusCode;
+
+  @override
+  String get message => 'The server responded with status $statusCode.';
+}
+
+/// The response body was not the shape the caller expected.
+final class ApiMalformedError extends ApiError {
+  const ApiMalformedError();
+
+  @override
+  String get message => 'The server response could not be read.';
+}
+
+/// A failure that does not fit any other case.
+final class ApiUnknownError extends ApiError {
+  const ApiUnknownError();
+
+  @override
+  String get message => 'The network request failed for an unknown reason.';
+}

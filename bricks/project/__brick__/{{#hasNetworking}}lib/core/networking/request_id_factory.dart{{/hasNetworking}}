@@ -1,0 +1,25 @@
+import 'dart:math';
+
+/// Generates the correlation identifier attached to every request.
+///
+/// A retried request reuses its identifier, so the backend can correlate the
+/// attempts of one logical operation.
+class RequestIdFactory {
+  /// Creates a factory that reads the time from [clock] and draws noise from
+  /// [random].
+  RequestIdFactory({DateTime Function()? clock, Random? random})
+    : _clock = clock ?? DateTime.now,
+      _random = random ?? Random();
+
+  final DateTime Function() _clock;
+  final Random _random;
+  int _counter = 0;
+
+  /// The next identifier. Identifiers are unique within one factory.
+  String next() {
+    _counter += 1;
+    final stamp = _clock().toUtc().microsecondsSinceEpoch.toRadixString(36);
+    final noise = _random.nextInt(0x7fffffff).toRadixString(36);
+    return '$stamp-$noise-${_counter.toRadixString(36)}';
+  }
+}

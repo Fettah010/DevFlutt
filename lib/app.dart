@@ -8,6 +8,7 @@ import 'features/home/home_page.dart';
 class DevFluttApp extends StatelessWidget {
   const DevFluttApp({super.key, required this.config});
 
+  /// The application configuration.
   final AppConfig config;
 
   @override

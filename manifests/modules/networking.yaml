@@ -1,0 +1,42 @@
+id: networking
+version: 1
+category: networking
+summary: >-
+  Typed HTTP client with timeouts, cancellation, request correlation, error
+  mapping, and bounded idempotent retry.
+requires:
+  - architecture-core
+  - logging
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: dio
+    version: ^5.11.1
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+outputs:
+  - lib/core/networking/api_cancellation_token.dart
+  - lib/core/networking/api_client.dart
+  - lib/core/networking/api_error.dart
+  - lib/core/networking/api_result.dart
+  - lib/core/networking/api_request.dart
+  - lib/core/networking/retry_policy.dart
+  - lib/core/networking/request_id_factory.dart
+  - lib/core/networking/retrying_api_client.dart
+  - lib/core/networking/dio_api_client.dart
+  - lib/core/networking/fake_api_client.dart
+requiredSetup:
+  - The base URL comes from the existing API_BASE_URL configuration key; no new key is added.
+  - The Dio package is pure Dart, so no Android permission or native setup is required.
+tests:
+  unit: true
+  widget: false
+  integration: none

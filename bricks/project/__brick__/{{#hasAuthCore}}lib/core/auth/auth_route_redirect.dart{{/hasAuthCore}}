@@ -24,10 +24,26 @@ String? authRouteRedirect({
   if (state.status != AuthStatus.unauthenticated) {
     return null;
   }
+  if (_isLoginLocation(requestedLocation, loginLocation)) {
+    return null;
+  }
   return loginRedirect(
     loginLocation: loginLocation,
     requestedLocation: requestedLocation,
   );
+}
+
+/// Whether [requestedLocation] is the login location itself.
+///
+/// A navigation that is already the login location is left alone. Without
+/// this check the redirect would send the user to the login location, the
+/// redirect would run again on the new location, and the application would
+/// loop between the two.
+bool _isLoginLocation(String requestedLocation, String loginLocation) {
+  final requestedPath =
+      Uri.tryParse(requestedLocation)?.path ?? requestedLocation;
+  final loginPath = Uri.tryParse(loginLocation)?.path ?? loginLocation;
+  return requestedPath == loginPath;
 }
 
 /// The login location with the requested destination preserved.

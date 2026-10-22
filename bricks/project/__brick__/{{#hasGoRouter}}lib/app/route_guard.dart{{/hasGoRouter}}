@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
-
+{{#hasAuthRouter}}import '../core/auth/auth_adapter.dart';
+import '../core/auth/auth_route_redirect.dart';
+{{/hasAuthRouter}}
 /// Decides whether a navigation may proceed.
 ///
 /// Returning `null` keeps the requested location. Returning another location
@@ -11,4 +13,35 @@ typedef RouteRedirect = String? Function(GoRouterState state);
 /// The template ships the extension point only. Replace the body of this
 /// function, or pass a different [RouteRedirect] to `buildAppRouter`, to add
 /// authentication or feature-flag redirects.
-String? routeGuard(GoRouterState state) => null;
+{{#hasAuthRouter}}String? routeGuard(GoRouterState state) => null;
+{{/hasAuthRouter}}{{^hasAuthRouter}}String? routeGuard(GoRouterState state) => null;
+{{/hasAuthRouter}}
+{{#hasAuthRouter}}
+/// A redirect that sends an unauthenticated user to the login location.
+///
+/// The intended destination is preserved in the query string, so a protected
+/// deep link returns the user to where they were going after they sign in.
+///
+/// The template ships no login screen — the login route belongs to the
+/// application — so the application passes its own location. Wire it like
+/// this in `app.dart`:
+///
+/// ```dart
+/// late final _router = buildAppRouter(
+///   redirect: authRouteGuard(
+///     authAdapter: services!.authAdapter,
+///     loginLocation: AppRoutes.login,
+///   ),
+/// );
+/// ```
+RouteRedirect authRouteGuard({
+  required AuthAdapter authAdapter,
+  required String loginLocation,
+}) {
+  return (state) => authRouteRedirect(
+    state: authAdapter.currentState,
+    requestedLocation: state.uri.toString(),
+    loginLocation: loginLocation,
+  );
+}
+{{/hasAuthRouter}}

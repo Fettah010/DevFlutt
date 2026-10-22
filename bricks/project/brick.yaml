@@ -77,6 +77,10 @@ vars:
     type: boolean
     description: Include the selected authentication adapter in the composition root.
     default: false
+  hasAuthRouter:
+    type: boolean
+    description: Wire the authentication redirect into the router guard.
+    default: false
   hasServices:
     type: boolean
     description: Include the generated composition root for the selected services.

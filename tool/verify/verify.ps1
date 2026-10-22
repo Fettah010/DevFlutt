@@ -80,8 +80,25 @@ Invoke-OptionalCheck -Name 'dependency_audit' -Command 'osv-scanner' -Arguments 
 Write-Host '==> release_permissions'
 $ReleaseApk = Join-Path $ProjectRoot 'build/app/outputs/flutter-apk/app-prod-release.apk'
 $Sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { $env:ANDROID_SDK_ROOT }
-$Aapt2 = if ($Sdk) { (Get-ChildItem -Path (Join-Path $Sdk 'build-tools') -Directory | Sort-Object { [version]($_.Name -replace '[^0-9.]', '') } | Select-Object -Last 1 | ForEach-Object { Join-Path $_.FullName 'aapt2' }) } else { $null }
-if (-not $Aapt2 -or -not (Test-Path $Aapt2)) {
+# The build tools ship an executable that is named `aapt2.exe` on Windows and
+# `aapt2` elsewhere. Resolving only one of the two made this check skip on
+# Windows, so it never ran locally.
+$Aapt2 = $null
+if ($Sdk) {
+    $BuildTools = Get-ChildItem -Path (Join-Path $Sdk 'build-tools') -Directory -ErrorAction SilentlyContinue |
+        Sort-Object { [version]($_.Name -replace '[^0-9.]', '') } |
+        Select-Object -Last 1
+    if ($BuildTools) {
+        foreach ($Candidate in @('aapt2.exe', 'aapt2')) {
+            $Path = Join-Path $BuildTools.FullName $Candidate
+            if (Test-Path $Path) {
+                $Aapt2 = $Path
+                break
+            }
+        }
+    }
+}
+if (-not $Aapt2) {
     Write-Host '    SKIP (aapt2 not found; CI performs this check)'
 }
 else {

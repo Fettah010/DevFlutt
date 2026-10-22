@@ -1,0 +1,104 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/auth/auth_adapter.dart';
+import 'package:{{projectName}}/core/auth/auth_error.dart';
+import 'package:{{projectName}}/core/auth/auth_session.dart';
+import 'package:{{projectName}}/core/auth/supabase/fake_supabase_auth_port.dart';
+import 'package:{{projectName}}/core/auth/supabase/supabase_auth_adapter.dart';
+
+import 'auth_contract_suite.dart';
+
+class _SupabaseAuthHarness implements AuthContractHarness {
+  FakeSupabaseAuthPort? lastPort;
+
+  @override
+  AuthAdapter createAdapter({
+    AuthContractFailure failure = AuthContractFailure.none,
+  }) {
+    final port = FakeSupabaseAuthPort();
+    lastPort = port;
+    switch (failure) {
+      case AuthContractFailure.none:
+        break;
+      case AuthContractFailure.invalidCredentials:
+        port.nextSignInFailure = const InvalidCredentialsError();
+      case AuthContractFailure.network:
+        port.nextSignInFailure = const AuthNetworkError();
+    }
+    return SupabaseAuthAdapter(port: port);
+  }
+}
+
+void main() {
+  final harness = _SupabaseAuthHarness();
+  runAuthContractTests(name: 'supabase', harness: harness);
+
+  group('SupabaseAuthAdapter', () {
+    test('restores a session the provider already has', () async {
+      final port = FakeSupabaseAuthPort(
+        user: const AuthUser(id: 'u1', email: 'user@example.com'),
+      );
+      final adapter = SupabaseAuthAdapter(port: port);
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isTrue);
+      expect(state.session!.user.id, 'u1');
+      expect(state.session!.accessToken, 'access-token');
+    });
+
+    test('restores no session when the provider has none', () async {
+      final adapter = SupabaseAuthAdapter(port: FakeSupabaseAuthPort());
+
+      final state = await adapter.restoreSession();
+
+      expect(state.isAuthenticated, isFalse);
+    });
+
+    test('a forced refresh asks the provider for a new token', () async {
+      final port = FakeSupabaseAuthPort(
+        user: const AuthUser(id: 'u1', email: 'user@example.com'),
+      );
+      final adapter = SupabaseAuthAdapter(port: port);
+      await adapter.restoreSession();
+
+      await adapter.refreshSession();
+
+      expect(port.forceRefreshCount, 1);
+    });
+
+    test('a one-time link signs the user in', () async {
+      final port = FakeSupabaseAuthPort();
+      final adapter = SupabaseAuthAdapter(port: port);
+
+      final state = await adapter.signInWithOneTimePassword(
+        'io.supabase.dev://login-callback?token_hash=abc&type=magiclink',
+      );
+
+      expect(state.isAuthenticated, isTrue);
+      expect(port.verifyOtpCount, 1);
+    });
+
+    test('a one-time link without a token hash is rejected', () async {
+      final port = FakeSupabaseAuthPort();
+      final adapter = SupabaseAuthAdapter(port: port);
+
+      await expectLater(
+        () => adapter.signInWithOneTimePassword(
+          'io.supabase.dev://login-callback?type=magiclink',
+        ),
+        throwsA(isA<ProviderFailureError>()),
+      );
+      expect(port.verifyOtpCount, 0);
+    });
+
+    test('a password reset reaches the provider', () async {
+      final port = FakeSupabaseAuthPort();
+      final adapter = SupabaseAuthAdapter(port: port);
+
+      await adapter.requestPasswordReset('user@example.com');
+
+      expect(port.passwordResetCount, 1);
+    });
+  });
+}

@@ -1,0 +1,39 @@
+/// The Supabase configuration of this project.
+///
+/// The values in this file are deliberately fake. Replace them with the
+/// project URL and the publishable key from your Supabase project settings.
+///
+/// The publishable key is a public identifier, not a secret. It is the key
+/// every Supabase client ships with. The service-role key is a secret and
+/// must never appear in an application.
+class SupabaseConfig {
+  /// Creates a configuration.
+  const SupabaseConfig({required this.url, required this.publishableKey});
+
+  /// The URL of the placeholder configuration the template ships.
+  static const String placeholderUrl = 'https://placeholder.supabase.co';
+
+  /// The publishable key of the placeholder configuration.
+  static const String placeholderPublishableKey = 'sb_publishable_placeholder';
+
+  /// The URL of the Supabase project.
+  final String url;
+
+  /// The publishable key of the Supabase project.
+  final String publishableKey;
+
+  /// Whether the configuration has been replaced with real values.
+  bool get isConfigured =>
+      url.isNotEmpty &&
+      url != placeholderUrl &&
+      publishableKey.isNotEmpty &&
+      publishableKey != placeholderPublishableKey;
+}
+
+/// The configuration a new project starts with.
+///
+/// Replace the values with the ones from your Supabase project settings.
+const SupabaseConfig defaultSupabaseConfig = SupabaseConfig(
+  url: SupabaseConfig.placeholderUrl,
+  publishableKey: SupabaseConfig.placeholderPublishableKey,
+);

@@ -38,6 +38,7 @@ outputs:
   - lib/core/auth/supabase/supabase_auth_adapter.dart
   - lib/core/auth/supabase/supabase_auth_port.dart
   - lib/core/auth/supabase/supabase_auth_port_impl.dart
+  - lib/core/auth/supabase/supabase_config.dart
 requiredSetup:
   - The module adds no permission and no configuration key.
   - The shipped configuration file holds an inert project URL and publishable key.

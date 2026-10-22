@@ -1,0 +1,189 @@
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+
+import '../../secure_storage/flutter_secure_store.dart';
+import '../auth_error.dart';
+import '../auth_session.dart';
+import 'secure_storage_local_storage.dart';
+import 'supabase_auth_port.dart';
+import 'supabase_config.dart';
+
+/// Prepares Supabase for use.
+///
+/// The call is idempotent: a second call in the same process does nothing.
+/// It throws a [StateError] with an actionable message when the project's
+/// configuration still carries the placeholder values.
+Future<void> initializeSupabaseAuth({
+  SupabaseConfig config = defaultSupabaseConfig,
+}) async {
+  if (!config.isConfigured) {
+    throw StateError(
+      'Supabase is not configured. Replace the values in '
+      'lib/core/auth/supabase/supabase_config.dart with the project URL and '
+      'the publishable key from your Supabase project settings.',
+    );
+  }
+  try {
+    await supabase.Supabase.initialize(
+      url: config.url,
+      publishableKey: config.publishableKey,
+      authOptions: supabase.FlutterAuthClientOptions(
+        localStorage: SecureStorageLocalStorage(const FlutterSecureStore()),
+      ),
+    );
+  } on supabase.AuthException catch (error) {
+    // A second initialization in the same process is not a failure.
+    if (!error.message.toLowerCase().contains('already')) {
+      rethrow;
+    }
+  }
+}
+
+/// The [SupabaseAuthPort] that talks to Supabase Auth.
+///
+/// This is the only file in the module that imports `supabase_flutter`. The
+/// SDK is imported with a prefix, because the Supabase package exports an
+/// `AuthUser` of its own and the template's own model must win.
+class SupabaseAuthPortImpl implements SupabaseAuthPort {
+  /// Creates a port that talks through [client].
+  SupabaseAuthPortImpl({supabase.SupabaseClient? client})
+      : _client = client ?? supabase.Supabase.instance.client;
+
+  final supabase.SupabaseClient _client;
+
+  @override
+  AuthUser? get currentUser => _toUser(_client.auth.currentSession?.user);
+
+  @override
+  Stream<SupabaseAuthChange> get authStateChanges =>
+      _client.auth.onAuthStateChange.map(
+        (state) => SupabaseAuthChange(
+          event: state.event.name,
+          user: _toUser(state.session?.user),
+          accessToken: state.session?.accessToken,
+        ),
+      );
+
+  @override
+  Future<AuthUser> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      return _requireUser(response.user);
+    } on supabase.AuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<AuthUser> signUp({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _client.auth.signUp(
+        email: email,
+        password: password,
+      );
+      return _requireUser(response.user);
+    } on supabase.AuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<void> signOut() async {
+    try {
+      await _client.auth.signOut();
+    } on supabase.AuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<void> resetPasswordForEmail(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(email);
+    } on supabase.AuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<AuthUser> verifyOtp({
+    required String tokenHash,
+    required String type,
+  }) async {
+    try {
+      final response = await _client.auth.verifyOTP(
+        token: tokenHash,
+        type: _otpType(type),
+      );
+      return _requireUser(response.user);
+    } on supabase.AuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  @override
+  Future<String?> accessToken({required bool forceRefresh}) async {
+    try {
+      if (forceRefresh) {
+        await _client.auth.refreshSession();
+      }
+      return _client.auth.currentSession?.accessToken;
+    } on supabase.AuthException catch (error) {
+      throw _mapError(error);
+    }
+  }
+
+  static AuthUser _requireUser(supabase.User? user) {
+    final mapped = _toUser(user);
+    if (mapped == null) {
+      throw const ProviderFailureError(
+        message: 'The provider did not return a user.',
+      );
+    }
+    return mapped;
+  }
+
+  static AuthUser? _toUser(supabase.User? user) {
+    if (user == null) {
+      return null;
+    }
+    return AuthUser(
+      id: user.id,
+      email: user.email,
+      displayName: user.userMetadata?['full_name'] as String?,
+    );
+  }
+
+  /// Maps the type in a one-time link onto the provider's own type.
+  static supabase.OtpType _otpType(String type) => switch (type) {
+    'magiclink' => supabase.OtpType.magiclink,
+    'recovery' => supabase.OtpType.recovery,
+    'invite' => supabase.OtpType.invite,
+    'signup' => supabase.OtpType.signup,
+    'emailChange' => supabase.OtpType.emailChange,
+    _ => supabase.OtpType.email,
+  };
+
+  /// Maps a Supabase failure onto an app-owned authentication error.
+  static AuthError _mapError(supabase.AuthException error) {
+    final message = error.message.toLowerCase();
+    if (message.contains('invalid login credentials')) {
+      return const InvalidCredentialsError();
+    }
+    if (message.contains('email not confirmed')) {
+      return const SessionExpiredError();
+    }
+    if (message.contains('failed to fetch') || message.contains('network')) {
+      return const AuthNetworkError();
+    }
+    return ProviderFailureError(providerCode: error.statusCode);
+  }
+}

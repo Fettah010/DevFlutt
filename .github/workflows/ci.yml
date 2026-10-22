@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -90,7 +90,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [blank, core, demo, recommended]
+        include:
+          - name: blank
+            preset: blank
+            auth: none
+          - name: core
+            preset: core
+            auth: none
+          - name: demo
+            preset: demo
+            auth: none
+          - name: recommended
+            preset: recommended
+            auth: none
+          - name: auth-rest
+            preset: core
+            auth: rest
+          - name: auth-firebase
+            preset: core
+            auth: firebase
+          - name: auth-supabase
+            preset: core
+            auth: supabase
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -112,34 +133,53 @@ jobs:
         working-directory: tool/ftemplate_cli
         run: dart pub get
 
-      - name: Generate ${{ matrix.preset }} project
+      - name: Generate ${{ matrix.name }} project
         run: |
           dart run tool/ftemplate_cli/bin/ftemplate.dart create \
             --name "Generated App" \
             --org com.example \
             --preset ${{ matrix.preset }} \
-            --output /tmp/generated-${{ matrix.preset }} \
+            --auth ${{ matrix.auth }} \
+            --output /tmp/generated-${{ matrix.name }} \
             --force
 
       - name: Resolve dependencies
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter pub get
 
       - name: Check formatting
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter analyze --fatal-infos
 
       - name: Test
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter test
 
       - name: Build debug APK
-        working-directory: /tmp/generated-${{ matrix.preset }}
+        working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter build apk --debug --flavor dev
+
+      - name: Build release APK
+        if: matrix.auth != 'none'
+        working-directory: /tmp/generated-${{ matrix.name }}
+        run: flutter build apk --release --flavor prod
+
+      - name: Review the release manifest permissions
+        if: matrix.auth != 'none'
+        working-directory: /tmp/generated-${{ matrix.name }}
+        run: |
+          AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2"
+          "$AAPT2" dump permissions app/build/outputs/flutter-apk/app-prod-release.apk \
+            > release-permissions.log
+          cat release-permissions.log
+          if grep -q "android.permission.INTERNET" release-permissions.log; then
+            echo "The release manifest requests the INTERNET permission without a reason."
+            exit 1
+          fi
 
   secret-scan:
     name: Secret scan

@@ -1,0 +1,41 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/features/commerce/data/fake_checkout_adapter.dart';
+import 'package:{{projectName}}/features/commerce/domain/cart.dart';
+import 'package:{{projectName}}/features/commerce/domain/checkout.dart';
+import 'package:{{projectName}}/features/commerce/domain/product.dart';
+
+void main() {
+  const coffee = Product(id: 'coffee', name: 'Coffee', unitPriceMinor: 450);
+
+  test('cart totals use integer minor units and merge quantities', () {
+    final cart = Cart.empty().add(coffee).add(coffee, quantity: 2);
+    expect(cart.lines.single.quantity, 3);
+    expect(cart.totalMinor, 1350);
+  });
+
+  test('cart rejects invalid quantities and negative prices', () {
+    expect(() => Cart.empty().add(coffee, quantity: 0), throwsArgumentError);
+    expect(
+      () => Cart.empty().add(const Product(id: 'bad', name: 'Invalid', unitPriceMinor: -1)),
+      throwsArgumentError,
+    );
+  });
+
+  test('checkout request contains identifiers and quantities only', () {
+    final request = CheckoutRequest.fromCart(Cart.empty().add(coffee, quantity: 2));
+    expect(request.toJson(), <String, Object>{
+      'items': <Map<String, Object>>[
+        <String, Object>{'productId': 'coffee', 'quantity': 2},
+      ],
+    });
+    expect(request.toJson().toString(), isNot(contains('unitPrice')));
+    expect(request.toJson().toString(), isNot(contains('card')));
+  });
+
+  test('demo checkout failure is typed and can be retried explicitly', () async {
+    final adapter = DemoCheckoutAdapter(failNext: true);
+    final request = CheckoutRequest.fromCart(Cart.empty().add(coffee));
+    await expectLater(adapter.checkout(request), throwsA(isA<CheckoutFailure>()));
+    expect((await adapter.checkout(request)).orderId, 'demo-order-1');
+  });
+}

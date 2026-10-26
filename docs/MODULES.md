@@ -22,6 +22,11 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `auth-rest` | auth | `auth-core`, `networking` | `auth-firebase`, `auth-supabase` | A custom REST/JWT adapter with configurable endpoints and payload shapes |
 | `auth-firebase` | auth | `auth-core` | `auth-rest`, `auth-supabase` | `firebase_auth`, `firebase_core`, an inert `firebase_options.dart` |
 | `auth-supabase` | auth | `auth-core` | `auth-rest`, `auth-firebase` | `supabase_flutter`, a secure-storage-backed session |
+| `preferences` | persistence | `architecture-core` | — | Non-sensitive `SharedPreferencesAsync` adapter and memory fake |
+| `local-database` | persistence | `architecture-core` | — | Drift/SQLite schema, v1→v2 migration, generated source, and in-memory tests |
+| `offline-data` | feature | `navigation`, `networking`, `local-database` | — | Local-first notes sample, explicit refresh, pending operation IDs, conflict demonstration |
+| `commerce` | feature | `navigation` | — | Demo catalog/cart and server-authoritative checkout contract; in-memory by default |
+| `commerce-persistence` | persistence | `commerce`, `local-database` | — | Drift-backed cart store with close lifecycle |
 
 ## Presets
 
@@ -90,3 +95,17 @@ the module contributes to a generated project.
 Modules are generation-time selections. Removing a module from the command line
 means its files, dependencies, and registrations are never written. There is no
 runtime removal path for already-generated projects.
+
+## Persistence, offline data, and commerce
+
+These v0.7 modules are opt-in and do not change the existing presets. `preferences` is for
+simple non-sensitive values; credentials belong in `secure-storage`. `local-database`
+provides unencrypted Drift/SQLite storage and schema migrations. `offline-data` demonstrates
+explicit refresh with a five-minute freshness window, durable local edits, stable operation
+IDs, and a local-wins conflict policy. `commerce` stores its demo cart in memory unless
+`commerce-persistence` is also selected. Checkout submits product IDs and quantities, then
+displays the adapter's quote.
+
+See [preferences](modules/preferences.md), [local database](modules/local-database.md),
+[offline data](modules/offline-data.md), and [commerce](modules/commerce.md) for boundaries,
+privacy limits, and tests.

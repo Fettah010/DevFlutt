@@ -1,0 +1,8 @@
+# Explicit SPDX identifiers for packages whose LICENSE files use a layout the
+# inventory detector does not recognize. Values match the prior verified
+# inventory and package metadata used when the dependencies were introduced.
+dispose_scope: MIT
+equatable: MIT
+patrol: Apache-2.0
+patrol_finders: Apache-2.0
+patrol_log: Apache-2.0

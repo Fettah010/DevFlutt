@@ -1,0 +1,141 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../data/cart_store.dart';
+import '../data/demo_catalog_repository.dart';
+import '../data/fake_checkout_adapter.dart';
+import '../domain/cart.dart';
+import '../domain/checkout.dart';
+import '../domain/product.dart';
+
+/// Demo catalog and cart with an injected checkout boundary.
+class CommercePage extends StatefulWidget {
+  CommercePage({super.key, CartStore? cartStore, CheckoutAdapter? checkoutAdapter})
+    : cartStore = cartStore ?? MemoryCartStore(),
+      checkoutAdapter = checkoutAdapter ?? DemoCheckoutAdapter();
+
+  final CartStore cartStore;
+  final CheckoutAdapter checkoutAdapter;
+
+  @override
+  State<CommercePage> createState() => _CommercePageState();
+}
+
+class _CommercePageState extends State<CommercePage> {
+  final _catalog = const DemoCatalogRepository();
+  var _cart = Cart.empty();
+  var _loading = true;
+  var _checkingOut = false;
+  String? _message;
+
+  @override
+  void dispose() {
+    unawaited(widget.cartStore.close());
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCart();
+  }
+
+  Future<void> _loadCart() async {
+    final cart = await widget.cartStore.load();
+    if (!mounted) return;
+    setState(() {
+      _cart = cart;
+      _loading = false;
+    });
+  }
+
+  Future<void> _addProduct(Product product) async {
+    final cart = _cart.add(product);
+    await widget.cartStore.save(cart);
+    if (mounted) {
+      setState(() {
+        _cart = cart;
+        _message = null;
+      });
+    }
+  }
+
+  Future<void> _checkout() async {
+    if (_cart.isEmpty || _checkingOut) return;
+    setState(() {
+      _checkingOut = true;
+      _message = null;
+    });
+    try {
+      final quote = await widget.checkoutAdapter.checkout(CheckoutRequest.fromCart(_cart));
+      if (!mounted) return;
+      setState(() {
+        _cart = Cart.empty();
+        _checkingOut = false;
+        _message = 'Order ${quote.orderId} confirmed. Server total: ${_formatMoney(quote.totalMinor)}';
+      });
+      await widget.cartStore.save(_cart);
+    } on CheckoutFailure catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _checkingOut = false;
+        _message = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _checkingOut = false;
+        _message = 'Checkout could not be completed. Try again.';
+      });
+    }
+  }
+
+  String _formatMoney(int minor) => '\$${minor ~/ 100}.${(minor % 100).toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Demo commerce')),
+    body: _loading
+        ? const Center(child: CircularProgressIndicator())
+        : ListView(
+            padding: const EdgeInsets.all(16),
+            children: <Widget>[
+              const Text('Demo catalog prices are display estimates.'),
+              for (final product in _catalog.products)
+                ListTile(
+                  title: Text(product.name),
+                  subtitle: Text(_formatMoney(product.unitPriceMinor)),
+                  trailing: IconButton(
+                    key: Key('add-${product.id}'),
+                    tooltip: 'Add ${product.name}',
+                    onPressed: () => _addProduct(product),
+                    icon: const Icon(Icons.add_shopping_cart),
+                  ),
+                ),
+              const Divider(),
+              if (_cart.isEmpty)
+                const Text('Your cart is empty.')
+              else ...<Widget>[
+                for (final line in _cart.lines)
+                  ListTile(
+                    title: Text(line.product.name),
+                    subtitle: Text('Quantity: ${line.quantity}'),
+                    trailing: Text(_formatMoney(line.lineTotalMinor)),
+                  ),
+                Text('Estimate: ${_formatMoney(_cart.totalMinor)}'),
+              ],
+              const SizedBox(height: 12),
+              FilledButton(
+                key: const Key('checkout'),
+                onPressed: _cart.isEmpty || _checkingOut ? null : _checkout,
+                child: Text(_checkingOut ? 'Checking out…' : 'Checkout'),
+              ),
+              if (_message != null) ...<Widget>[
+                const SizedBox(height: 12),
+                Text(_message!, key: const Key('checkout-message')),
+              ],
+            ],
+          ),
+  );
+}

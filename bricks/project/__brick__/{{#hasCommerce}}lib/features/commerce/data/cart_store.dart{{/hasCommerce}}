@@ -1,0 +1,21 @@
+import '../domain/cart.dart';
+
+abstract interface class CartStore {
+  Future<Cart> load();
+  Future<void> save(Cart cart);
+  Future<void> close();
+}
+
+/// Default in-memory cart. Persistent storage is an explicit module choice.
+class MemoryCartStore implements CartStore {
+  Cart _cart = Cart.empty();
+  @override
+  Future<Cart> load() async => _cart;
+  @override
+  Future<void> save(Cart cart) async {
+    _cart = cart;
+  }
+
+  @override
+  Future<void> close() async {}
+}

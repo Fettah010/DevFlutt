@@ -1,0 +1,33 @@
+id: preferences
+version: 1
+category: persistence
+summary: Non-sensitive typed preferences behind a fakeable asynchronous store.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: shared_preferences
+    version: ^2.5.6
+devDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/preferences/preferences_store.dart
+  - lib/core/preferences/shared_preferences_store.dart
+  - lib/core/preferences/memory_preferences_store.dart
+  - test/unit/preferences_store_test.dart
+requiredSetup:
+  - Preferences are for non-sensitive values only; use secure-storage for credentials and tokens.
+tests:
+  unit: true
+  widget: false
+  integration: none

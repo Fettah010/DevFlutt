@@ -68,20 +68,22 @@ one.
 
 ## The response cache and the token-storage policy
 
-Problem: an authenticated client caches nothing, and the policy for what may be persisted
-is not written down.
-Evidence: ADR-004 defers both to v0.7.0, where the persistence and offline modules
-arrive. The road map §5.4 requires a cache to state expiration, invalidation, offline
+Problem: the reference sample has no generic authenticated-response cache, and its
+persistence policy applies only to the sample's notes.
+Evidence: ADR-004 deferred response-cache behavior to v0.7.0. The v0.7 persistence and
+offline sample states its own expiration, invalidation, offline
 behaviour, and what is safe to persist.
 Value: a networked application can cache without guessing.
-Likely milestone: v0.7.0.
-Depends on: the persistence modules.
+Likely milestone: future; v0.7.0 delivers a bounded local-first notes example, not a generic
+authenticated-response cache.
+Depends on: a separate cache policy and implementation.
 Risk: low.
 
 ## The exhaustive module-combination matrix
 
-Problem: the built matrix covers the four presets and the three authentication presets. It
-does not cover every combination of the modules that can coexist.
+Problem: the built matrix covers the four presets, the three authentication presets, and
+the five v0.7 persistence/commerce compositions individually. It does not cover every
+combination of the modules that can coexist.
 Evidence: the road map §9.4 requires the pairwise set and the maximum-capability
 composition at the hardening milestone, and the `v0.10.0` milestone completes the
 compatibility matrix.

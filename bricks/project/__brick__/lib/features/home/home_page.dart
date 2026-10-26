@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-{{#hasFeatureExample}}import 'package:go_router/go_router.dart';
+{{#hasGoRouter}}import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-{{/hasFeatureExample}}
+{{/hasGoRouter}}
 /// The application home screen.
 ///
 /// It is the first destination of the router and the fallback screen when the
@@ -46,7 +46,17 @@ class HomePage extends StatelessWidget {
                 onPressed: () => context.go(AppRoutes.counter),
                 child: const Text('Open the counter example'),
               ),
-{{/hasFeatureExample}}            ],
+{{/hasFeatureExample}}{{#hasOfflineData}}              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.go(AppRoutes.offlineNotes),
+                child: const Text('Open offline notes'),
+              ),
+{{/hasOfflineData}}{{#hasCommerce}}              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.go(AppRoutes.commerce),
+                child: const Text('Open demo commerce'),
+              ),
+{{/hasCommerce}}            ],
           ),
         ),
       ),

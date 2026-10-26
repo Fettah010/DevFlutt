@@ -1,0 +1,42 @@
+import 'cart.dart';
+
+class CheckoutLine {
+  const CheckoutLine({required this.productId, required this.quantity});
+  final String productId;
+  final int quantity;
+
+  Map<String, Object> toJson() => <String, Object>{'productId': productId, 'quantity': quantity};
+}
+
+/// Checkout input intentionally excludes client prices and payment details.
+class CheckoutRequest {
+  const CheckoutRequest(this.lines);
+
+  factory CheckoutRequest.fromCart(Cart cart) {
+    final lines = cart.lines
+        .map((line) => CheckoutLine(productId: line.product.id, quantity: line.quantity))
+        .toList()
+      ..sort((left, right) => left.productId.compareTo(right.productId));
+    return CheckoutRequest(List<CheckoutLine>.unmodifiable(lines));
+  }
+
+  final List<CheckoutLine> lines;
+  Map<String, Object> toJson() => <String, Object>{
+    'items': lines.map((line) => line.toJson()).toList(growable: false),
+  };
+}
+
+class CheckoutQuote {
+  const CheckoutQuote({required this.orderId, required this.totalMinor});
+  final String orderId;
+  final int totalMinor;
+}
+
+abstract interface class CheckoutAdapter {
+  Future<CheckoutQuote> checkout(CheckoutRequest request);
+}
+
+class CheckoutFailure implements Exception {
+  const CheckoutFailure(this.message);
+  final String message;
+}

@@ -1,0 +1,53 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:drift_flutter/drift_flutter.dart';
+
+part 'app_database.g.dart';
+
+class LocalDocuments extends Table {
+  TextColumn get key => text()();
+  TextColumn get kind => text()();
+  TextColumn get payload => text()();
+  IntColumn get updatedAtEpochMillis => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{key};
+}
+
+class PendingOperations extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get documentKey => text()();
+  TextColumn get payload => text()();
+  IntColumn get createdAtEpochMillis => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{operationId};
+}
+
+@DriftDatabase(tables: <Type>[LocalDocuments, PendingOperations])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase(super.executor, {this.schemaVersion = 2});
+
+  AppDatabase.defaults() : this(driftDatabase(name: 'devflutt'));
+
+  AppDatabase.inMemory() : this(NativeDatabase.memory());
+
+  AppDatabase.fromFile(File file, {int schemaVersion = 2})
+    : this(NativeDatabase(file), schemaVersion: schemaVersion);
+
+  @override
+  final int schemaVersion;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (migrator) async {
+      await migrator.createTable(localDocuments);
+      if (schemaVersion >= 2) await migrator.createTable(pendingOperations);
+    },
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2 && to >= 2) await migrator.createTable(pendingOperations);
+    },
+  );
+}

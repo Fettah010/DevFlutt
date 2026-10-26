@@ -59,6 +59,7 @@ function Invoke-OptionalCheck {
 }
 
 $GeneratorDir = Join-Path $ProjectRoot 'tool/ftemplate_cli'
+$ModuleDependencyAuditDir = Join-Path $ProjectRoot 'tool/module_dependency_audit'
 
 Invoke-Check -Name 'pub_get' -Command 'flutter' -Arguments @('pub', 'get')
 Invoke-Check -Name 'format' -Command 'dart' -Arguments @('format', '--output=none', '--set-exit-if-changed', 'lib', 'test')
@@ -72,10 +73,12 @@ Invoke-Check -Name 'generator_format' -Command 'dart' -Arguments @('format', '--
 Invoke-Check -Name 'generator_analyze' -Command 'dart' -Arguments @('analyze', '--fatal-infos') -WorkingDirectory $GeneratorDir
 Invoke-Check -Name 'generator_test' -Command 'dart' -Arguments @('test') -WorkingDirectory $GeneratorDir
 
+Invoke-Check -Name 'module_dependency_audit_pub_get' -Command 'flutter' -Arguments @('pub', 'get') -WorkingDirectory $ModuleDependencyAuditDir
+
 Invoke-Check -Name 'license_inventory' -Command 'dart' -Arguments @('run', 'tool/ftemplate_cli/tool/license_inventory.dart', '--check')
 
 Invoke-OptionalCheck -Name 'secret_scan' -Command 'gitleaks' -Arguments @('git', '--redact', '--verbose', '--report-format', 'json', '--report-path', (Join-Path $LogDir 'gitleaks.json'), '.') -SkipReason 'gitleaks is not installed; CI performs this check'
-Invoke-OptionalCheck -Name 'dependency_audit' -Command 'osv-scanner' -Arguments @('scan', '--lockfile=pubspec.lock', '--lockfile=tool/ftemplate_cli/pubspec.lock', '--format=json') -SkipReason 'osv-scanner is not installed; CI performs this check'
+Invoke-OptionalCheck -Name 'dependency_audit' -Command 'osv-scanner' -Arguments @('scan', '--lockfile=pubspec.lock', '--lockfile=tool/ftemplate_cli/pubspec.lock', '--lockfile=tool/module_dependency_audit/pubspec.lock', '--format=json') -SkipReason 'osv-scanner is not installed; CI performs this check'
 
 Write-Host '==> release_permissions'
 $ReleaseApk = Join-Path $ProjectRoot 'build/app/outputs/flutter-apk/app-prod-release.apk'

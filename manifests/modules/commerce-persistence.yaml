@@ -1,0 +1,30 @@
+id: commerce-persistence
+version: 1
+category: persistence
+summary: Drift-backed cart store, selected independently from the in-memory commerce sample.
+requires:
+  - commerce
+  - local-database
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+devDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/features/commerce/data/database_cart_store.dart
+  - test/unit/database_cart_store_test.dart
+requiredSetup:
+  - Cart rows are local display data, not authoritative order pricing.
+tests:
+  unit: true
+  widget: false
+  integration: none

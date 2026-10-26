@@ -25,11 +25,13 @@ The Firebase Android SDK contributes `ACCESS_NETWORK_STATE` and `READ_GSERVICES`
 own manifest. Those are the provider's permissions, not the template's, and they are visible
 in the merged release manifest of an `auth-firebase` project.
 
-- Conservative Kotlin flags (`android.builtInKotlin=false`, `android.newDsl=false`)
-  are used because of flutter/flutter#192167 (built-in Kotlin validation fails on
-  AGP 9.1+).
-- The generated app requests no Android permissions. The release manifest must not
-  request `INTERNET`; CI verifies this with `aapt2 dump permissions`.
+- Conservative Kotlin flags (`android.builtInKotlin=false`, `android.newDsl=false`,
+  `android.enableIncrementalKotlin=false`, `kotlin.incremental=false`) are used because of
+  flutter/flutter#192167 (built-in Kotlin validation fails on AGP 9.1+) and to avoid
+  Kotlin incremental-cache corruption on generated-project Gradle runs.
+- The release manifest requests `INTERNET` only when the selection includes a network
+  client (`networking`, `auth-firebase`, or `auth-supabase`). CI verifies that match with
+  `aapt2 dump permissions`.
 - Every environment is an Android product flavor: `dev`, `staging`, and `prod`. The flavor
   decides the application ID suffix (`.dev`, `.staging`, none) and the launcher label.
 - Because flavors are defined, an Android build must name one: `flutter build apk --flavor dev`.
@@ -46,6 +48,11 @@ in the merged release manifest of an `auth-firebase` project.
 | `firebase_auth` | `^7.0.0` | `auth-firebase` |
 | `firebase_core` | `^5.0.0` | `auth-firebase` |
 | `supabase_flutter` | `^2.18.3` | `auth-supabase` |
+| `shared_preferences` | `^2.5.6` | `preferences` |
+| `drift` | `^2.35.3` | `local-database` |
+| `drift_flutter` | `^0.3.1` | `local-database` |
+| `drift_dev` | `^2.35.2` | `local-database` development dependency |
+| `build_runner` | `^2.17.1` | `local-database` development dependency |
 
 `go_router` 18 migrated to the `material_ui` and `cupertino_ui` packages internally. The public
 API used by the template (`GoRouter`, `GoRoute`, `GoRouterState`) is unchanged, and generated
@@ -83,15 +90,21 @@ dependency of the package.
 | `core` + `--auth rest` | pass | pass | pass | pass | pass |
 | `core` + `--auth firebase` | pass | pass | pass | pass | pass |
 | `core` + `--auth supabase` | pass | pass | pass | pass | pass |
+| `preferences` | pass | pass | pass | pass | pass |
+| `local-database` | pass | pass | pass | pass | pass |
+| `offline-data` | pass | pass | pass | pass | pass |
+| `commerce` | pass | pass | pass | pass | pass |
+| `commerce-persistence` | pass | pass | pass | pass | pass |
 
-The release APK column is exercised for the three authentication presets, and their merged
-release manifest is reviewed for permissions.
+The release APK column is exercised for the three authentication presets and the five
+v0.7 persistence/commerce compositions, and those merged release manifests are reviewed
+for permissions.
 
 ## Coverage method
 
 The matrix is exercised in CI on every pull request. Each named preset is generated
 into a temporary directory and then resolved, format-checked, analyzed, tested, and
-fully built with `flutter build apk --debug --flavor dev`. Individual module manifests
+fully built with debug and release APKs. Individual module manifests
 are validated separately. The generator's own tests enumerate the acceptance and
 absence rules for the four service modules: a blank project has no service file, no
 service dependency, and no service import; a core project has the logger and no
@@ -105,10 +118,11 @@ selection rules: an unknown provider is refused, two providers are refused, an u
 capability is refused, and a capability the chosen provider does not implement is refused
 with a message that names the providers that do.
 
-**The gap.** The matrix covers the four presets and the three authentication presets. It
-does not cover every combination of the modules that can coexist, and it does not cover the
-maximum-capability composition. The exhaustive pairwise set is v0.10.0 work, and the
-remaining gap is recorded in `docs/DEFERRED.md`.
+**The gap.** The matrix covers the four presets, the three authentication presets, and the
+five v0.7 compositions (`preferences`, `local-database`, `offline-data`, `commerce`,
+`commerce-persistence`). It does not cover every combination of the modules that can
+coexist, and it does not cover the maximum-capability composition. The exhaustive pairwise
+set is v0.10.0 work, and the remaining gap is recorded in `docs/DEFERRED.md`.
 
 ## Generator dependencies
 
@@ -123,12 +137,13 @@ and the modules it selects.
 | Check | Tool | Scope |
 |---|---|---|
 | Secret scan | `gitleaks` 8.30.1, pinned with a verified checksum | The whole repository history, with redaction |
-| Dependency audit | `osv-scanner` 2.7.0, pinned with a verified checksum | `pubspec.lock` and the generator's lockfile |
-| Licence inventory | `tool/license_inventory.dart` | Every locked package, with the licence read from the resolved `LICENSE` file |
+| Dependency audit | `osv-scanner` 2.7.0, pinned with a verified checksum | root, generator, and optional module dependency lockfiles |
+| Licence inventory | `tool/license_inventory.dart` | Every locked package, including the optional module dependency union, with licence read from resolved `LICENSE` files |
 
-The generator's lockfile is not committed, because the generator is a Dart package and
-the Dart convention is not to commit a library's lockfile. The dependency audit resolves
-it in the runner first, so the generator's dependencies are scanned too.
+The generator's lockfile is committed so license inventory, generator tests, and the
+dependency audit use the same package graph locally and in CI. The
+`tool/module_dependency_audit` lockfile is also committed: it is a versioned union of
+optional generated-app dependencies, not a reusable-library lockfile.
 
 ## Known gaps
 
@@ -140,7 +155,8 @@ it in the runner first, so the generator's dependencies are scanned too.
 - The live Firebase and Supabase auth flows are not exercised: no provider project was
   available, so every provider behaviour is verified by contract tests over a fake. The
   provider configuration placeholders and the start-up configuration check are verified.
-- The built matrix covers the four presets and the three authentication presets, not every
-  combination of the modules that can coexist. The exhaustive pairwise set is v0.10.0 work.
+- The built matrix covers the four presets, the three authentication presets, and the five
+  v0.7 compositions individually, not every combination of the modules that can coexist.
+  The exhaustive pairwise set is v0.10.0 work.
 - The generator is a CLI proof of scope; `doctor` and `update-guide` arrive later.
 - The release signing configuration is still the debug key; real signing arrives later.

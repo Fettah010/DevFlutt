@@ -1,0 +1,36 @@
+import 'dart:convert';
+
+import 'package:{{projectName}}/core/database/app_database.dart';
+import '../domain/cart.dart';
+import 'cart_store.dart';
+
+/// Drift-backed cart persistence, installed by the commerce-persistence module.
+class DatabaseCartStore implements CartStore {
+  const DatabaseCartStore(this._database);
+  static const String _key = '__commerce_cart__';
+  final AppDatabase _database;
+
+  @override
+  Future<Cart> load() async {
+    final row = await (_database.select(_database.localDocuments)
+      ..where((value) => value.key.equals(_key))).getSingleOrNull();
+    if (row == null) return Cart.empty();
+    return Cart.fromJson((jsonDecode(row.payload) as Map<Object?, Object?>).cast<String, Object?>());
+  }
+
+  @override
+  Future<void> save(Cart cart) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await _database.into(_database.localDocuments).insertOnConflictUpdate(
+      LocalDocumentsCompanion.insert(
+        key: _key,
+        kind: 'commerce-cart',
+        payload: jsonEncode(cart.toJson()),
+        updatedAtEpochMillis: now,
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() => _database.close();
+}

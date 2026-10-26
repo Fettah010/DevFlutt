@@ -1,0 +1,16 @@
+name: devflutt_module_dependency_audit
+description: Dependency union used to audit optional generated module packages.
+publish_to: none
+version: 0.0.0
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  shared_preferences: ^2.5.6
+  drift: ^2.35.3
+  drift_flutter: ^0.3.1
+
+dev_dependencies:
+  drift_dev: ^2.35.2
+  build_runner: ^2.17.1

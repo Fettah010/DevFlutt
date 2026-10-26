@@ -1,0 +1,59 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/features/offline_notes/data/offline_note_repository.dart';
+import 'package:{{projectName}}/features/offline_notes/domain/offline_note.dart';
+import 'package:{{projectName}}/features/offline_notes/presentation/offline_notes_page.dart';
+
+void main() {
+  testWidgets('shows refreshed notes and keeps local edits visible offline', (tester) async {
+    final repository = _FakeOfflineNotesRepository();
+    addTearDown(repository.close);
+
+    await tester.pumpWidget(MaterialApp(home: OfflineNotesPage(repository: repository)));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('No notes saved yet.'), findsOneWidget);
+
+    await tester.tap(find.text('Refresh'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Updated; pending local edits were acknowledged.'), findsOneWidget);
+
+    repository.isOnline = false;
+    await tester.tap(find.text('Add local note'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('Refresh'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Offline. Showing saved local notes.'), findsOneWidget);
+    expect(find.text('New local note'), findsOneWidget);
+
+  });
+}
+
+class _FakeOfflineNotesRepository implements OfflineNotesRepository {
+  final _notes = <OfflineNote>[];
+  late final StreamController<List<OfflineNote>> _updates =
+      StreamController<List<OfflineNote>>.broadcast(
+        sync: true,
+        onListen: () => _updates.add(List<OfflineNote>.unmodifiable(_notes)),
+      );
+
+  var isOnline = true;
+
+  @override
+  Stream<List<OfflineNote>> watchNotes() => _updates.stream;
+
+  @override
+  Future<void> saveLocally(OfflineNote note) async {
+    _notes.add(note);
+    _updates.add(List<OfflineNote>.unmodifiable(_notes));
+  }
+
+  @override
+  Future<NotesRefreshResult> refresh() async =>
+      isOnline ? NotesRefreshResult.success : NotesRefreshResult.offline;
+
+  @override
+  Future<void> close() => _updates.close();
+}

@@ -1,0 +1,52 @@
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/core/database/app_database.dart';
+
+void main() {
+  late Directory directory;
+
+  setUp(() => directory = Directory.systemTemp.createTempSync('devflutt_db_test_'));
+
+  tearDown(() => directory.deleteSync(recursive: true));
+
+  test('upgrades v1 without losing local documents and reopens at v2', () async {
+    final file = File('${directory.path}/migration.sqlite');
+    final oldDatabase = AppDatabase.fromFile(file, schemaVersion: 1);
+    await oldDatabase.into(oldDatabase.localDocuments).insert(
+      LocalDocumentsCompanion.insert(
+        key: 'note-1',
+        kind: 'note',
+        payload: '{"text":"keep me"}',
+        updatedAtEpochMillis: 123,
+      ),
+    );
+    await oldDatabase.close();
+
+    final migrated = AppDatabase(NativeDatabase(file));
+    await migrated.customSelect('SELECT operation_id FROM pending_operations LIMIT 0').get();
+    final documents = await migrated.select(migrated.localDocuments).get();
+    expect(documents, hasLength(1));
+    expect(documents.single.payload, '{"text":"keep me"}');
+    await migrated.close();
+
+    final reopened = AppDatabase.fromFile(file);
+    expect(await reopened.select(reopened.localDocuments).get(), hasLength(1));
+    await reopened.close();
+  });
+
+  test('in-memory database supports isolated tests', () async {
+    final database = AppDatabase.inMemory();
+    await database.into(database.localDocuments).insert(
+      LocalDocumentsCompanion.insert(
+        key: 'memory',
+        kind: 'test',
+        payload: '{}',
+        updatedAtEpochMillis: 1,
+      ),
+    );
+    expect(await database.select(database.localDocuments).get(), hasLength(1));
+    await database.close();
+  });
+}

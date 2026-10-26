@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LOG_DIR="$PROJECT_ROOT/build/verify-logs"
 GENERATOR_DIR="$PROJECT_ROOT/tool/ftemplate_cli"
+MODULE_DEPENDENCY_AUDIT_DIR="$PROJECT_ROOT/tool/module_dependency_audit"
 mkdir -p "$LOG_DIR"
 
 cd "$PROJECT_ROOT"
@@ -67,12 +68,15 @@ run_check_in generator_format "$GENERATOR_DIR" dart format --output=none --set-e
 run_check_in generator_analyze "$GENERATOR_DIR" dart analyze --fatal-infos
 run_check_in generator_test "$GENERATOR_DIR" dart test
 
+run_check_in module_dependency_audit_pub_get "$MODULE_DEPENDENCY_AUDIT_DIR" flutter pub get
+
 run_check license_inventory dart run tool/ftemplate_cli/tool/license_inventory.dart --check
 
 run_optional_check secret_scan "gitleaks is not installed; CI performs this check" \
   gitleaks git --redact --verbose --report-format json --report-path "$LOG_DIR/gitleaks.json" .
 run_optional_check dependency_audit "osv-scanner is not installed; CI performs this check" \
-  osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock --format=json
+  osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock \
+    --lockfile=tool/module_dependency_audit/pubspec.lock --format=json
 
 echo "==> release_permissions"
 RELEASE_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-prod-release.apk"

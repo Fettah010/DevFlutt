@@ -94,31 +94,63 @@ jobs:
           - name: blank
             preset: blank
             auth: none
+            module: ''
             expects_network: false
           - name: core
             preset: core
             auth: none
+            module: ''
             expects_network: false
           - name: demo
             preset: demo
             auth: none
+            module: ''
             expects_network: false
           - name: recommended
             preset: recommended
             auth: none
+            module: ''
             expects_network: true
           - name: auth-rest
             preset: core
             auth: rest
+            module: ''
             expects_network: true
           - name: auth-firebase
             preset: core
             auth: firebase
+            module: ''
             expects_network: true
           - name: auth-supabase
             preset: core
             auth: supabase
+            module: ''
             expects_network: true
+          - name: preferences
+            preset: blank
+            auth: none
+            module: preferences
+            expects_network: false
+          - name: local-database
+            preset: blank
+            auth: none
+            module: local-database
+            expects_network: false
+          - name: offline-data
+            preset: blank
+            auth: none
+            module: offline-data
+            expects_network: true
+          - name: commerce
+            preset: blank
+            auth: none
+            module: commerce
+            expects_network: false
+          - name: commerce-persistence
+            preset: blank
+            auth: none
+            module: commerce-persistence
+            expects_network: false
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -142,11 +174,16 @@ jobs:
 
       - name: Generate ${{ matrix.name }} project
         run: |
+          MODULE_ARGS=()
+          if [ -n "${{ matrix.module }}" ]; then
+            MODULE_ARGS+=(--module "${{ matrix.module }}")
+          fi
           dart run tool/ftemplate_cli/bin/ftemplate.dart create \
             --name "Generated App" \
             --org com.example \
             --preset ${{ matrix.preset }} \
             --auth ${{ matrix.auth }} \
+            "${MODULE_ARGS[@]}" \
             --output /tmp/generated-${{ matrix.name }} \
             --force
 
@@ -254,6 +291,10 @@ jobs:
         working-directory: tool/ftemplate_cli
         run: dart pub get
 
+      - name: Resolve optional module dependency audit graph
+        working-directory: tool/module_dependency_audit
+        run: flutter pub get
+
       - name: Install osv-scanner
         run: |
           set -euo pipefail
@@ -273,6 +314,7 @@ jobs:
           osv-scanner scan \
             --lockfile=pubspec.lock \
             --lockfile=tool/ftemplate_cli/pubspec.lock \
+            --lockfile=tool/module_dependency_audit/pubspec.lock \
             --format=json > build/verify-logs/osv-scanner.json
           cat build/verify-logs/osv-scanner.json
 
@@ -304,6 +346,10 @@ jobs:
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
         run: dart pub get
+
+      - name: Resolve optional module dependency audit graph
+        working-directory: tool/module_dependency_audit
+        run: flutter pub get
 
       - name: Check the third-party notices
         run: dart run tool/ftemplate_cli/tool/license_inventory.dart --check

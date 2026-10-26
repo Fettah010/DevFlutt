@@ -30,6 +30,10 @@ to the controls the template ships and the steps that verify them.
 | Committed secrets fail CI | `.github/workflows/ci.yml` (`secret-scan`) | the gate self-test |
 | Known-vulnerable dependencies fail CI | `.github/workflows/ci.yml` (`dependency-audit`) | the scan output |
 | Every locked dependency's licence is inventoried | `THIRD-PARTY-NOTICES.md` | `license-inventory` job |
+| Preferences are documented and tested as non-sensitive storage | `core/preferences` | preference contract tests and generated-project review |
+| Offline queued writes are replayed only by explicit refresh | `offline_notes/data/offline_note_repository.dart` | offline repository and networking retry tests |
+| Checkout sends only product IDs and quantities; the local total is not authoritative | `features/commerce/domain/checkout.dart` | checkout contract and widget tests |
+| The local database is unencrypted and excludes secret/payment storage | `core/database`, module guide | migration tests and generated dependency/security review |
 
 ## What the template does not do
 
@@ -58,6 +62,13 @@ otherwise.
   modules has not been observed.
 - **No real-device run.** The functional evidence is from an emulator or a build host, which
   is proxy evidence for device-specific behaviour.
+- **Offline synchronization is a sample policy, not a backend guarantee.** Refresh is
+  explicit, pending edits win same-record conflicts, and a stable operation ID is reused;
+  no background worker, cross-device merge, or server consistency guarantee is provided.
+- **The Drift database is not encrypted.** Do not store secrets, credentials, or payment data
+  in local database rows. Use `secure-storage` for credentials.
+- **Commerce is not payment processing.** The sample has no payment SDK and its catalog
+  estimate is not a server quote.
 
 ## Threat-model boundary
 

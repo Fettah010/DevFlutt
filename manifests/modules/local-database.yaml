@@ -1,0 +1,39 @@
+id: local-database
+version: 1
+category: persistence
+summary: Drift and SQLite database with schema migrations and in-memory test support.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: drift
+    version: ^2.35.3
+  - name: drift_flutter
+    version: ^0.3.1
+devDependencies:
+  - name: drift_dev
+    version: ^2.35.2
+  - name: build_runner
+    version: ^2.17.1
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/database/app_database.dart
+  - lib/core/database/app_database.g.dart
+  - test/unit/app_database_migration_test.dart
+requiredSetup:
+  - The database is durable local storage and is not encrypted; do not put secrets or payment credentials in it.
+  - Edit app_database.dart and run dart run build_runner build after changing Drift tables or queries.
+tests:
+  unit: true
+  widget: false
+  integration: none

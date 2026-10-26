@@ -1,0 +1,29 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/core/preferences/memory_preferences_store.dart';
+
+void main() {
+  late MemoryPreferencesStore store;
+
+  setUp(() => store = MemoryPreferencesStore());
+
+  test('stores supported primitive values and removes them', () async {
+    await store.setBool('onboarding', true);
+    await store.setDouble('scale', 1.25);
+    await store.setInt('launches', 3);
+    await store.setString('theme', 'dark');
+
+    expect(await store.getBool('onboarding'), isTrue);
+    expect(await store.getDouble('scale'), 1.25);
+    expect(await store.getInt('launches'), 3);
+    expect(await store.getString('theme'), 'dark');
+
+    await store.remove('theme');
+    expect(await store.getString('theme'), isNull);
+  });
+
+  test('clear removes all values', () async {
+    await store.setString('theme', 'dark');
+    await store.clear();
+    expect(await store.getString('theme'), isNull);
+  });
+}

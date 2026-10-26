@@ -4,9 +4,6 @@
 .flutter-plugins-dependencies
 build/
 
-# The generator is a package; its lockfile is not tracked.
-tool/ftemplate_cli/pubspec.lock
-
 # IDE
 .idea/
 .vscode/

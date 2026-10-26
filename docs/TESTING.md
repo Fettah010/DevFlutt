@@ -121,7 +121,9 @@ evidence only when the same command and toolchain are used.
   publishing.
 - The release manifest must not request `INTERNET`. CI fails if it does.
 - The Flutter and Dart SDKs are not required to build the generator; only the generator
-  package's own toolchain is needed for `tool/ftemplate_cli`.
+  package's own toolchain is needed for `tool/ftemplate_cli`. Its lockfile is committed so
+  generator tests, license inventory, and dependency audit use the same package graph locally
+  and in CI.
 - The `secret-scan` and `dependency-audit` jobs download a pinned binary and verify its
   published SHA-256 checksum before running it. The local wrapper skips them when the
   tool is not installed, and says so.

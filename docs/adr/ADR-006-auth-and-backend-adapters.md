@@ -260,5 +260,5 @@ default is not used.
   not enough, and a fixed backend shape would be better.
 - A project's dependency budget cannot absorb the Firebase or Supabase transitive set, and the
   `auth-rest` adapter proves sufficient.
-- The v0.8.0 UI milestone shows that the auth contract needs a state the current `AuthState`
+- The v0.9.0 UI milestone shows that the auth contract needs a state the current `AuthState`
   does not carry.

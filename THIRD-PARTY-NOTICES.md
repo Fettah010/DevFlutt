@@ -23,6 +23,8 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `crypto` | 3.0.7 | transitive | BSD-3-Clause |
 | `cupertino_icons` | 1.0.9 | direct | MIT |
 | `dart_style` | 3.1.14 | direct | BSD-3-Clause |
+| `dispose_scope` | 2.1.0 | transitive | MIT |
+| `equatable` | 2.1.0 | transitive | MIT |
 | `fake_async` | 1.3.3 | transitive | Apache-2.0 |
 | `ffi` | 2.2.0 | transitive | BSD-3-Clause |
 | `ffi_leak_tracker` | 0.1.2 | transitive | BSD-3-Clause |
@@ -50,6 +52,9 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `node_preamble` | 2.0.2 | transitive | BSD-3-Clause |
 | `package_config` | 3.0.0 | transitive | BSD-3-Clause |
 | `path` | 1.9.1 | direct | BSD-3-Clause |
+| `patrol` | 4.10.0 | direct | Apache-2.0 |
+| `patrol_finders` | 3.6.0 | transitive | Apache-2.0 |
+| `patrol_log` | 0.10.1 | transitive | Apache-2.0 |
 | `pool` | 1.5.3 | transitive | BSD-3-Clause |
 | `posix` | 6.5.2 | transitive | MIT |
 | `pub_semver` | 2.2.1 | direct | BSD-3-Clause |

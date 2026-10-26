@@ -10,11 +10,11 @@ contract provides the operations, but there is no form, no validation, and no bu
 success, failure, offline, or recovery state.
 Evidence: the road map §6.2 requires that auth forms have validation, busy, success,
 failure, offline, and recovery states, and that the UI must not treat local form
-validation as server security. The `v0.8.0` milestone covers "polished UI states" and
+validation as server security. The `v0.9.0` milestone covers "polished UI states" and
 lists the form fields among the core UI components.
 Value: an application can reach a signed-in state without writing its own form, and the
 states are consistent across providers.
-Likely milestone: v0.8.0.
+Likely milestone: v0.9.0.
 Depends on: `auth-core` and one adapter; the design-system module for the widgets.
 Risk: low. The form is a thin layer over the adapter, and the contract already defines
 the failure cases it has to show.
@@ -57,9 +57,9 @@ Evidence: the road map §6.3 lists the backend choices, and requires the generat
 represent the auth decision and the backend decision separately instead of using one
 overloaded `backend` flag. The `v0.5.0` Implement list contains no data-backend adapter.
 ADR-006 reserves the `--backend` name for the milestone that adds them, and the
-`v0.9.0` maximum-capability composition depends on it.
+`v0.10.0` maximum-capability composition depends on it.
 Value: a networked application can use a hosted data service.
-Likely milestone: unscheduled; it must land before the v0.9.0 hardening milestone.
+Likely milestone: unscheduled; it must land before the v0.10.0 hardening milestone.
 Depends on: a per-service selection, so the whole Firebase surface is not selected by
 one package.
 Risk: medium. A data backend brings its own permissions, its own security rules, and its
@@ -70,11 +70,11 @@ one.
 
 Problem: an authenticated client caches nothing, and the policy for what may be persisted
 is not written down.
-Evidence: ADR-004 defers both to v0.6.0, where the persistence and offline modules
+Evidence: ADR-004 defers both to v0.7.0, where the persistence and offline modules
 arrive. The road map §5.4 requires a cache to state expiration, invalidation, offline
 behaviour, and what is safe to persist.
 Value: a networked application can cache without guessing.
-Likely milestone: v0.6.0.
+Likely milestone: v0.7.0.
 Depends on: the persistence modules.
 Risk: low.
 
@@ -83,9 +83,24 @@ Risk: low.
 Problem: the built matrix covers the four presets and the three authentication presets. It
 does not cover every combination of the modules that can coexist.
 Evidence: the road map §9.4 requires the pairwise set and the maximum-capability
-composition at the hardening milestone, and the `v0.9.0` milestone completes the
+composition at the hardening milestone, and the `v0.10.0` milestone completes the
 compatibility matrix.
 Value: a reviewer knows exactly which combinations are proven and which are not.
-Likely milestone: v0.9.0.
+Likely milestone: v0.10.0.
 Depends on: nothing.
 Risk: low, as long as the gap is stated rather than implied away.
+
+## Patrol coverage for generated projects
+
+Problem: Patrol currently exercises the reference app, not every generated preset or
+module composition.
+Evidence: the reference Patrol workflow now launches the actual DevFlutt app, while the
+former matrix used a synthetic widget. Generated-project native UI coverage needs a
+harness that launches each generated app's own entry point.
+Value: UI behavior can be proven for generated output without presenting a synthetic test
+as product evidence.
+Likely milestone: v0.10.0 integration hardening.
+Depends on: a generated-project Patrol harness that uses the generated test bundle and
+Android host configuration.
+Risk: medium. Running a full generated UI matrix adds emulator time and maintenance; keep
+the fast generator build/test matrix as the baseline.

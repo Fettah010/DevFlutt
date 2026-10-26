@@ -13,7 +13,7 @@ We aim to acknowledge reports within 72 hours.
 
 This template provides a blank-first starter with no network access, no telemetry, and no
 third-party runtime dependencies. Security claims are limited to what is tested and documented
-in `docs/SECURITY-BASELINE.md` (added in v0.9.0).
+in `docs/SECURITY-BASELINE.md` (added in v0.10.0).
 
 ## Supported Versions
 

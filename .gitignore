@@ -21,8 +21,12 @@ build/verify-logs/
 
 # Patrol E2E UI testing artifacts
 **/test_bundle.dart
-**/*test_bundle.dart
+**/test_bundle.dart.bak
+integration_test/patrol_test_bundle.dart
+**/PatrolGeneratedTests*.java
 .patrol.env
 playwright-report/
 test-results/
+patrol_test/screenshots/
+patrol_test/videos/
 android/.kotlin/errors/

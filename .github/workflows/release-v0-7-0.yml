@@ -1,0 +1,64 @@
+name: Scheduled v0.7.0 Release
+
+on:
+  schedule:
+    # 12 hours after 22:52 UTC (approx 10:55 UTC on 2026-10-27)
+    - cron: '55 10 27 10 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Merge PR and Publish v0.7.0
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify or Merge PR #8
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking PR #8 status..."
+          PR_STATE=$(gh pr view 8 --json state --jq .state)
+          echo "PR #8 state is: $PR_STATE"
+          if [ "$PR_STATE" = "OPEN" ]; then
+            echo "Merging PR #8 into main..."
+            gh pr merge 8 --merge --admin --subject "Release v0.7.0: Persistence, offline patterns, and commerce foundation" || \
+            gh pr merge 8 --merge --auto || \
+            gh pr merge 8 --merge
+          fi
+
+      - name: Switch to main and pull latest
+        run: |
+          git checkout main
+          git pull origin main
+
+      - name: Create tag and publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git rev-parse v0.7.0 >/dev/null 2>&1; then
+            echo "Creating git tag v0.7.0..."
+            git tag -a v0.7.0 -m "v0.7.0 - Persistence, offline patterns, synchronization and commerce foundation"
+            git push origin v0.7.0
+          fi
+
+          if ! gh release view v0.7.0 >/dev/null 2>&1; then
+            echo "Publishing GitHub Release v0.7.0..."
+            RELEASE_NOTES="build/v0.7.0-release-notes.md"
+            if [ ! -f "$RELEASE_NOTES" ]; then
+              RELEASE_NOTES="docs/releases/v0.7.0-report.md"
+            fi
+            gh release create v0.7.0 \
+              --title "v0.7.0 - Persistence, offline patterns, synchronization and commerce foundation" \
+              --notes-file "$RELEASE_NOTES" \
+              --prerelease
+          else
+            echo "Release v0.7.0 already published."
+          fi

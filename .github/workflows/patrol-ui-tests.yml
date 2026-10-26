@@ -43,6 +43,20 @@ jobs:
       - name: Add Dart tools to PATH
         run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
 
+      - name: Enable Android emulator hardware acceleration
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "This runner does not expose /dev/kvm; refusing a ten-minute software-emulator boot." >&2
+            exit 1
+          fi
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo chmod 0666 /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+          ls -l /dev/kvm
+
       - name: Prepare Android emulator and run Patrol suites
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -51,6 +65,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-linux-hw-accel: false
           disable-animations: true
           script: |
             adb devices -l

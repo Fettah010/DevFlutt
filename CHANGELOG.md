@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-27
+
 ### Added
 
 - v0.7 persistence and feature modules: non-sensitive preferences, Drift/SQLite with a v1→v2
@@ -120,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   redactor that runs before any sink, so a sink cannot leak a sensitive value by omission.
 - A typed HTTP layer behind an app-owned `ApiClient`: timeouts, cancellation, request
   correlation, typed error mapping, and a bounded retry that never replays a non-idempotent
-  request. Only one file imports `dio`.
+  request. Only one file imports `dio`.\
 - A `FakeApiClient`, so every transport rule is tested with no live service.
 - Secure key-value storage behind a `SecureStore` interface, backed by
   `flutter_secure_storage`, with the Android backup exclusion generated so encrypted values are
@@ -188,5 +190,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated project is format-clean whatever the brick looks like. The generator package
   depends on `dart_style` and `pub_semver`; generated applications do not.
 
-[Unreleased]: https://github.com/Fettah010/DevFlutt/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Fettah010/DevFlutt/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Fettah010/DevFlutt/releases/tag/v0.7.0
+[0.6.0]: https://github.com/Fettah010/DevFlutt/releases/tag/v0.6.0
+[0.5.0]: https://github.com/Fettah010/DevFlutt/releases/tag/v0.5.0
+[0.4.0]: https://github.com/Fettah010/DevFlutt/releases/tag/v0.4.0
 [0.3.0]: https://github.com/Fettah010/DevFlutt/releases/tag/v0.3.0

@@ -53,6 +53,26 @@ vars:
     type: boolean
     description: Include the secure key-value store and its Android backup rules.
     default: false
+  hasPreferences:
+    type: boolean
+    description: Include the non-sensitive preferences store.
+    default: false
+  hasLocalDatabase:
+    type: boolean
+    description: Include the Drift local database and migrations.
+    default: false
+  hasOfflineData:
+    type: boolean
+    description: Include the local-first notes example.
+    default: false
+  hasCommerce:
+    type: boolean
+    description: Include the demo catalog, cart and checkout contract.
+    default: false
+  hasCommercePersistence:
+    type: boolean
+    description: Include the optional database-backed cart store.
+    default: false
   hasDiagnostics:
     type: boolean
     description: Include the app-owned error reporter and its local adapter.
@@ -92,3 +112,6 @@ vars:
   extraDependencies:
     type: list
     description: Extra pub dependencies as strings.
+  extraDevDependencies:
+    type: list
+    description: Optional module development dependencies as strings.

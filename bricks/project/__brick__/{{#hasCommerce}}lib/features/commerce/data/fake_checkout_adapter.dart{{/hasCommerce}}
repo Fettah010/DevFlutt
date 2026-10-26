@@ -1,0 +1,19 @@
+import '../domain/checkout.dart';
+
+/// Local demo contract implementation; replace with a backend adapter.
+class DemoCheckoutAdapter implements CheckoutAdapter {
+  DemoCheckoutAdapter({this.failNext = false});
+  bool failNext;
+  CheckoutRequest? lastRequest;
+
+  @override
+  Future<CheckoutQuote> checkout(CheckoutRequest request) async {
+    lastRequest = request;
+    if (request.lines.isEmpty) throw const CheckoutFailure('Add an item before checkout.');
+    if (failNext) {
+      failNext = false;
+      throw const CheckoutFailure('Checkout could not be completed. Try again.');
+    }
+    return CheckoutQuote(orderId: 'demo-order-1', totalMinor: 1000 + request.lines.length * 125);
+  }
+}

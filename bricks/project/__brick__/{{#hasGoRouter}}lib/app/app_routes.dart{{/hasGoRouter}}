@@ -10,11 +10,17 @@ abstract final class AppRoutes {
   static const String counter = '/counter';
 {{/hasFeatureExample}}{{#hasShowcase}}  /// The component showcase.
   static const String showcase = '/showcase';
-{{/hasShowcase}}
+{{/hasShowcase}}{{#hasOfflineData}}  /// The offline-first notes sample.
+  static const String offlineNotes = '/offline-notes';
+{{/hasOfflineData}}{{#hasCommerce}}  /// The demo catalog, cart and checkout.
+  static const String commerce = '/commerce';
+{{/hasCommerce}}
   /// Every declared route path.
   static const List<String> all = <String>[
     home,
 {{#hasFeatureExample}}    counter,
 {{/hasFeatureExample}}{{#hasShowcase}}    showcase,
-{{/hasShowcase}}  ];
+{{/hasShowcase}}{{#hasOfflineData}}    offlineNotes,
+{{/hasOfflineData}}{{#hasCommerce}}    commerce,
+{{/hasCommerce}}  ];
 }

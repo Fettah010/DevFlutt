@@ -53,6 +53,20 @@
         }
       }
     },
+    "devDependencies": {
+      "description": "Optional development dependencies required to regenerate generated source.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" }
+        }
+      },
+      "uniqueItems": true
+    },
     "nativeChanges": {
       "type": "object",
       "additionalProperties": false,

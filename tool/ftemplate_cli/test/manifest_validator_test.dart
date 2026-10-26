@@ -42,6 +42,14 @@ tests:
       expect(validator.validate(validManifest), isEmpty);
     });
 
+    test('accepts optional development dependencies without changing required fields', () {
+      final manifest = _with(validManifest, 'devDependencies', [
+        {'name': 'build_runner', 'version': '^2.10.4'},
+      ]);
+      expect(validator.validate(manifest), isEmpty);
+      expect(ManifestValidator.requiredFields, isNot(contains('devDependencies')));
+    });
+
     test('reports missing required fields', () {
       final errors = validator.validate(loadYaml('id: example') as YamlMap);
       expect(errors, isNotEmpty);
@@ -121,6 +129,15 @@ tests:
       final items = capabilities['items'] as Map<String, dynamic>;
       final declared = (items['enum'] as List<dynamic>).cast<String>().toList();
       expect(declared, equals(knownAuthCapabilities));
+    });
+
+    test('the JSON schema declares optional development dependencies', () {
+      final schema = json.decode(
+        File('../../manifests/schema/module.schema.json').readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final properties = schema['properties'] as Map<String, dynamic>;
+      expect(properties['devDependencies'], isA<Map<String, dynamic>>());
+      expect((schema['required'] as List<dynamic>), isNot(contains('devDependencies')));
     });
   });
 }

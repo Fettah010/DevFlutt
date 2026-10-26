@@ -71,6 +71,11 @@ class GenerationEngine {
       'hasLogging': moduleIds.contains('logging'),
       'hasNetworking': moduleIds.contains('networking'),
       'hasSecureStorage': moduleIds.contains('secure-storage'),
+      'hasPreferences': moduleIds.contains('preferences'),
+      'hasLocalDatabase': moduleIds.contains('local-database'),
+      'hasOfflineData': moduleIds.contains('offline-data'),
+      'hasCommerce': moduleIds.contains('commerce'),
+      'hasCommercePersistence': moduleIds.contains('commerce-persistence'),
       'hasDiagnostics': moduleIds.contains('diagnostics'),
       'hasAuthCore': moduleIds.contains('auth-core'),
       'hasAuthRest': moduleIds.contains('auth-rest'),
@@ -82,6 +87,9 @@ class GenerationEngine {
       'hasNetworkPermission': plan.permissions.contains('android.permission.INTERNET'),
       'hasServices': _serviceModuleIds.any(moduleIds.contains),
       'extraDependencies': plan.dependencies
+          .map((dependency) => '${dependency.name}: ${dependency.version}')
+          .toList(),
+      'extraDevDependencies': plan.devDependencies
           .map((dependency) => '${dependency.name}: ${dependency.version}')
           .toList(),
     };

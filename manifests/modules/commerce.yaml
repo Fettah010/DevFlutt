@@ -1,0 +1,39 @@
+id: commerce
+version: 1
+category: feature
+summary: Demo catalog and cart with server-authoritative checkout contract and explicit UI states.
+requires:
+  - architecture-core
+  - navigation
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+devDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/features/commerce/domain/product.dart
+  - lib/features/commerce/domain/cart.dart
+  - lib/features/commerce/domain/checkout.dart
+  - lib/features/commerce/data/cart_store.dart
+  - lib/features/commerce/data/demo_catalog_repository.dart
+  - lib/features/commerce/data/fake_checkout_adapter.dart
+  - lib/features/commerce/presentation/commerce_page.dart
+  - test/unit/commerce_test.dart
+  - test/widget/commerce_page_test.dart
+requiredSetup:
+  - The demo cart estimate is not authoritative; checkout submits product IDs and quantities and displays the server quote.
+  - No payment SDK or card/payment credential storage is included.
+  - The in-memory cart can be replaced by a persistence adapter; select commerce-persistence for the Drift-backed implementation.
+tests:
+  unit: true
+  widget: true
+  integration: none

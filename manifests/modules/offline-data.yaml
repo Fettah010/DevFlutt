@@ -1,0 +1,38 @@
+id: offline-data
+version: 1
+category: feature
+summary: Local-first notes sample with explicit refresh, pending edits and a documented conflict policy.
+requires:
+  - architecture-core
+  - navigation
+  - networking
+  - local-database
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies: []
+devDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+outputs:
+  - lib/features/offline_notes/domain/offline_note.dart
+  - lib/features/offline_notes/data/offline_note_repository.dart
+  - lib/features/offline_notes/data/demo_offline_notes_remote.dart
+  - lib/features/offline_notes/presentation/offline_notes_page.dart
+  - test/unit/offline_note_repository_test.dart
+  - test/widget/offline_notes_page_test.dart
+requiredSetup:
+  - The sample refreshes explicitly and does not run background synchronization.
+  - Same-record conflicts use a local-wins demonstration policy; pending local edits remain visible until acknowledged.
+  - Cached remote snapshots are considered fresh for five minutes; stale data remains readable offline.
+tests:
+  unit: true
+  widget: true
+  integration: none

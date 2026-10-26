@@ -22,7 +22,11 @@ const String noticesFileName = 'THIRD-PARTY-NOTICES.md';
 const String overridesFileName = 'tool/package_licenses.yaml';
 
 /// The lockfiles the inventory covers.
-const List<String> lockfilePaths = <String>['pubspec.lock', 'tool/ftemplate_cli/pubspec.lock'];
+const List<String> lockfilePaths = <String>[
+  'pubspec.lock',
+  'tool/ftemplate_cli/pubspec.lock',
+  'tool/module_dependency_audit/pubspec.lock',
+];
 
 /// A package resolved by a lockfile.
 class LockedPackage {
@@ -46,19 +50,17 @@ class LockedPackage {
   Directory? get directory => _hostedDirectory(name, version);
 
   static Directory? _hostedDirectory(String packageName, String packageVersion) {
-    final cache = pubCacheDirectory();
-    if (cache == null) {
-      return null;
-    }
-    final hosted = Directory('${cache.path}${Platform.pathSeparator}hosted');
-    if (!hosted.existsSync()) {
-      return null;
-    }
-    final expected = '$packageName-$packageVersion';
-    for (final host in hosted.listSync().whereType<Directory>()) {
-      final candidate = Directory('${host.path}${Platform.pathSeparator}$expected');
-      if (candidate.existsSync()) {
-        return candidate;
+    for (final cache in pubCacheDirectories()) {
+      final hosted = Directory('${cache.path}${Platform.pathSeparator}hosted');
+      if (!hosted.existsSync()) {
+        continue;
+      }
+      final expected = '$packageName-$packageVersion';
+      for (final host in hosted.listSync().whereType<Directory>()) {
+        final candidate = Directory('${host.path}${Platform.pathSeparator}$expected');
+        if (candidate.existsSync()) {
+          return candidate;
+        }
       }
     }
     return null;
@@ -66,22 +68,24 @@ class LockedPackage {
 }
 
 /// The pub cache directory of the current machine.
-Directory? pubCacheDirectory() {
+List<Directory> pubCacheDirectories() {
+  final result = <Directory>[];
   final configured = Platform.environment['PUB_CACHE'];
   if (configured != null && configured.isNotEmpty) {
-    return Directory(configured);
+    result.add(Directory(configured));
   }
   if (Platform.isWindows) {
     final local = Platform.environment['LOCALAPPDATA'];
     if (local != null && local.isNotEmpty) {
-      return Directory('$local${Platform.pathSeparator}Pub${Platform.pathSeparator}Cache');
+      result.add(Directory('$local${Platform.pathSeparator}Pub${Platform.pathSeparator}Cache'));
     }
   }
   final home = Platform.environment['HOME'];
   if (home != null && home.isNotEmpty) {
-    return Directory('$home${Platform.pathSeparator}.pub-cache');
+    result.add(Directory('$home${Platform.pathSeparator}.pub-cache'));
   }
-  return null;
+  final paths = <String>{};
+  return result.where((directory) => paths.add(directory.path)).toList(growable: false);
 }
 
 /// Detects the SPDX identifier of a licence text.

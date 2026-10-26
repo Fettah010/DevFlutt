@@ -1,0 +1,1099 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'app_database.dart';
+
+// ignore_for_file: type=lint
+class $LocalDocumentsTable extends LocalDocuments
+    with TableInfo<$LocalDocumentsTable, LocalDocument> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalDocumentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtEpochMillisMeta =
+      const VerificationMeta('updatedAtEpochMillis');
+  @override
+  late final GeneratedColumn<int> updatedAtEpochMillis = GeneratedColumn<int>(
+    'updated_at_epoch_millis',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    key,
+    kind,
+    payload,
+    updatedAtEpochMillis,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_documents';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalDocument> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('updated_at_epoch_millis')) {
+      context.handle(
+        _updatedAtEpochMillisMeta,
+        updatedAtEpochMillis.isAcceptableOrUnknown(
+          data['updated_at_epoch_millis']!,
+          _updatedAtEpochMillisMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtEpochMillisMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  LocalDocument map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalDocument(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      updatedAtEpochMillis: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_epoch_millis'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalDocumentsTable createAlias(String alias) {
+    return $LocalDocumentsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalDocument extends DataClass implements Insertable<LocalDocument> {
+  final String key;
+  final String kind;
+  final String payload;
+  final int updatedAtEpochMillis;
+  const LocalDocument({
+    required this.key,
+    required this.kind,
+    required this.payload,
+    required this.updatedAtEpochMillis,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['kind'] = Variable<String>(kind);
+    map['payload'] = Variable<String>(payload);
+    map['updated_at_epoch_millis'] = Variable<int>(updatedAtEpochMillis);
+    return map;
+  }
+
+  LocalDocumentsCompanion toCompanion(bool nullToAbsent) {
+    return LocalDocumentsCompanion(
+      key: Value(key),
+      kind: Value(kind),
+      payload: Value(payload),
+      updatedAtEpochMillis: Value(updatedAtEpochMillis),
+    );
+  }
+
+  factory LocalDocument.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalDocument(
+      key: serializer.fromJson<String>(json['key']),
+      kind: serializer.fromJson<String>(json['kind']),
+      payload: serializer.fromJson<String>(json['payload']),
+      updatedAtEpochMillis: serializer.fromJson<int>(
+        json['updatedAtEpochMillis'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'kind': serializer.toJson<String>(kind),
+      'payload': serializer.toJson<String>(payload),
+      'updatedAtEpochMillis': serializer.toJson<int>(updatedAtEpochMillis),
+    };
+  }
+
+  LocalDocument copyWith({
+    String? key,
+    String? kind,
+    String? payload,
+    int? updatedAtEpochMillis,
+  }) => LocalDocument(
+    key: key ?? this.key,
+    kind: kind ?? this.kind,
+    payload: payload ?? this.payload,
+    updatedAtEpochMillis: updatedAtEpochMillis ?? this.updatedAtEpochMillis,
+  );
+  LocalDocument copyWithCompanion(LocalDocumentsCompanion data) {
+    return LocalDocument(
+      key: data.key.present ? data.key.value : this.key,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      updatedAtEpochMillis: data.updatedAtEpochMillis.present
+          ? data.updatedAtEpochMillis.value
+          : this.updatedAtEpochMillis,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalDocument(')
+          ..write('key: $key, ')
+          ..write('kind: $kind, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAtEpochMillis: $updatedAtEpochMillis')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, kind, payload, updatedAtEpochMillis);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalDocument &&
+          other.key == this.key &&
+          other.kind == this.kind &&
+          other.payload == this.payload &&
+          other.updatedAtEpochMillis == this.updatedAtEpochMillis);
+}
+
+class LocalDocumentsCompanion extends UpdateCompanion<LocalDocument> {
+  final Value<String> key;
+  final Value<String> kind;
+  final Value<String> payload;
+  final Value<int> updatedAtEpochMillis;
+  final Value<int> rowid;
+  const LocalDocumentsCompanion({
+    this.key = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.updatedAtEpochMillis = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalDocumentsCompanion.insert({
+    required String key,
+    required String kind,
+    required String payload,
+    required int updatedAtEpochMillis,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       kind = Value(kind),
+       payload = Value(payload),
+       updatedAtEpochMillis = Value(updatedAtEpochMillis);
+  static Insertable<LocalDocument> custom({
+    Expression<String>? key,
+    Expression<String>? kind,
+    Expression<String>? payload,
+    Expression<int>? updatedAtEpochMillis,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (kind != null) 'kind': kind,
+      if (payload != null) 'payload': payload,
+      if (updatedAtEpochMillis != null)
+        'updated_at_epoch_millis': updatedAtEpochMillis,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalDocumentsCompanion copyWith({
+    Value<String>? key,
+    Value<String>? kind,
+    Value<String>? payload,
+    Value<int>? updatedAtEpochMillis,
+    Value<int>? rowid,
+  }) {
+    return LocalDocumentsCompanion(
+      key: key ?? this.key,
+      kind: kind ?? this.kind,
+      payload: payload ?? this.payload,
+      updatedAtEpochMillis: updatedAtEpochMillis ?? this.updatedAtEpochMillis,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (updatedAtEpochMillis.present) {
+      map['updated_at_epoch_millis'] = Variable<int>(
+        updatedAtEpochMillis.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalDocumentsCompanion(')
+          ..write('key: $key, ')
+          ..write('kind: $kind, ')
+          ..write('payload: $payload, ')
+          ..write('updatedAtEpochMillis: $updatedAtEpochMillis, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PendingOperationsTable extends PendingOperations
+    with TableInfo<$PendingOperationsTable, PendingOperation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingOperationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _documentKeyMeta = const VerificationMeta(
+    'documentKey',
+  );
+  @override
+  late final GeneratedColumn<String> documentKey = GeneratedColumn<String>(
+    'document_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtEpochMillisMeta =
+      const VerificationMeta('createdAtEpochMillis');
+  @override
+  late final GeneratedColumn<int> createdAtEpochMillis = GeneratedColumn<int>(
+    'created_at_epoch_millis',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    operationId,
+    documentKey,
+    payload,
+    createdAtEpochMillis,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_operations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingOperation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('document_key')) {
+      context.handle(
+        _documentKeyMeta,
+        documentKey.isAcceptableOrUnknown(
+          data['document_key']!,
+          _documentKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_documentKeyMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('created_at_epoch_millis')) {
+      context.handle(
+        _createdAtEpochMillisMeta,
+        createdAtEpochMillis.isAcceptableOrUnknown(
+          data['created_at_epoch_millis']!,
+          _createdAtEpochMillisMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtEpochMillisMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  PendingOperation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingOperation(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      documentKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_key'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      createdAtEpochMillis: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_epoch_millis'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingOperationsTable createAlias(String alias) {
+    return $PendingOperationsTable(attachedDatabase, alias);
+  }
+}
+
+class PendingOperation extends DataClass
+    implements Insertable<PendingOperation> {
+  final String operationId;
+  final String documentKey;
+  final String payload;
+  final int createdAtEpochMillis;
+  const PendingOperation({
+    required this.operationId,
+    required this.documentKey,
+    required this.payload,
+    required this.createdAtEpochMillis,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    map['document_key'] = Variable<String>(documentKey);
+    map['payload'] = Variable<String>(payload);
+    map['created_at_epoch_millis'] = Variable<int>(createdAtEpochMillis);
+    return map;
+  }
+
+  PendingOperationsCompanion toCompanion(bool nullToAbsent) {
+    return PendingOperationsCompanion(
+      operationId: Value(operationId),
+      documentKey: Value(documentKey),
+      payload: Value(payload),
+      createdAtEpochMillis: Value(createdAtEpochMillis),
+    );
+  }
+
+  factory PendingOperation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingOperation(
+      operationId: serializer.fromJson<String>(json['operationId']),
+      documentKey: serializer.fromJson<String>(json['documentKey']),
+      payload: serializer.fromJson<String>(json['payload']),
+      createdAtEpochMillis: serializer.fromJson<int>(
+        json['createdAtEpochMillis'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+      'documentKey': serializer.toJson<String>(documentKey),
+      'payload': serializer.toJson<String>(payload),
+      'createdAtEpochMillis': serializer.toJson<int>(createdAtEpochMillis),
+    };
+  }
+
+  PendingOperation copyWith({
+    String? operationId,
+    String? documentKey,
+    String? payload,
+    int? createdAtEpochMillis,
+  }) => PendingOperation(
+    operationId: operationId ?? this.operationId,
+    documentKey: documentKey ?? this.documentKey,
+    payload: payload ?? this.payload,
+    createdAtEpochMillis: createdAtEpochMillis ?? this.createdAtEpochMillis,
+  );
+  PendingOperation copyWithCompanion(PendingOperationsCompanion data) {
+    return PendingOperation(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      documentKey: data.documentKey.present
+          ? data.documentKey.value
+          : this.documentKey,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      createdAtEpochMillis: data.createdAtEpochMillis.present
+          ? data.createdAtEpochMillis.value
+          : this.createdAtEpochMillis,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingOperation(')
+          ..write('operationId: $operationId, ')
+          ..write('documentKey: $documentKey, ')
+          ..write('payload: $payload, ')
+          ..write('createdAtEpochMillis: $createdAtEpochMillis')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(operationId, documentKey, payload, createdAtEpochMillis);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingOperation &&
+          other.operationId == this.operationId &&
+          other.documentKey == this.documentKey &&
+          other.payload == this.payload &&
+          other.createdAtEpochMillis == this.createdAtEpochMillis);
+}
+
+class PendingOperationsCompanion extends UpdateCompanion<PendingOperation> {
+  final Value<String> operationId;
+  final Value<String> documentKey;
+  final Value<String> payload;
+  final Value<int> createdAtEpochMillis;
+  final Value<int> rowid;
+  const PendingOperationsCompanion({
+    this.operationId = const Value.absent(),
+    this.documentKey = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.createdAtEpochMillis = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PendingOperationsCompanion.insert({
+    required String operationId,
+    required String documentKey,
+    required String payload,
+    required int createdAtEpochMillis,
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId),
+       documentKey = Value(documentKey),
+       payload = Value(payload),
+       createdAtEpochMillis = Value(createdAtEpochMillis);
+  static Insertable<PendingOperation> custom({
+    Expression<String>? operationId,
+    Expression<String>? documentKey,
+    Expression<String>? payload,
+    Expression<int>? createdAtEpochMillis,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (documentKey != null) 'document_key': documentKey,
+      if (payload != null) 'payload': payload,
+      if (createdAtEpochMillis != null)
+        'created_at_epoch_millis': createdAtEpochMillis,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PendingOperationsCompanion copyWith({
+    Value<String>? operationId,
+    Value<String>? documentKey,
+    Value<String>? payload,
+    Value<int>? createdAtEpochMillis,
+    Value<int>? rowid,
+  }) {
+    return PendingOperationsCompanion(
+      operationId: operationId ?? this.operationId,
+      documentKey: documentKey ?? this.documentKey,
+      payload: payload ?? this.payload,
+      createdAtEpochMillis: createdAtEpochMillis ?? this.createdAtEpochMillis,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (documentKey.present) {
+      map['document_key'] = Variable<String>(documentKey.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (createdAtEpochMillis.present) {
+      map['created_at_epoch_millis'] = Variable<int>(
+        createdAtEpochMillis.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingOperationsCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('documentKey: $documentKey, ')
+          ..write('payload: $payload, ')
+          ..write('createdAtEpochMillis: $createdAtEpochMillis, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+abstract class _$AppDatabase extends GeneratedDatabase {
+  _$AppDatabase(QueryExecutor e) : super(e);
+  $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $LocalDocumentsTable localDocuments = $LocalDocumentsTable(this);
+  late final $PendingOperationsTable pendingOperations =
+      $PendingOperationsTable(this);
+  @override
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  @override
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    localDocuments,
+    pendingOperations,
+  ];
+}
+
+typedef $$LocalDocumentsTableCreateCompanionBuilder =
+    LocalDocumentsCompanion Function({
+      required String key,
+      required String kind,
+      required String payload,
+      required int updatedAtEpochMillis,
+      Value<int> rowid,
+    });
+typedef $$LocalDocumentsTableUpdateCompanionBuilder =
+    LocalDocumentsCompanion Function({
+      Value<String> key,
+      Value<String> kind,
+      Value<String> payload,
+      Value<int> updatedAtEpochMillis,
+      Value<int> rowid,
+    });
+
+class $$LocalDocumentsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalDocumentsTable> {
+  $$LocalDocumentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtEpochMillis => $composableBuilder(
+    column: $table.updatedAtEpochMillis,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalDocumentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalDocumentsTable> {
+  $$LocalDocumentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtEpochMillis => $composableBuilder(
+    column: $table.updatedAtEpochMillis,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalDocumentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalDocumentsTable> {
+  $$LocalDocumentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtEpochMillis => $composableBuilder(
+    column: $table.updatedAtEpochMillis,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalDocumentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalDocumentsTable,
+          LocalDocument,
+          $$LocalDocumentsTableFilterComposer,
+          $$LocalDocumentsTableOrderingComposer,
+          $$LocalDocumentsTableAnnotationComposer,
+          $$LocalDocumentsTableCreateCompanionBuilder,
+          $$LocalDocumentsTableUpdateCompanionBuilder,
+          (
+            LocalDocument,
+            BaseReferences<_$AppDatabase, $LocalDocumentsTable, LocalDocument>,
+          ),
+          LocalDocument,
+          PrefetchHooks Function()
+        > {
+  $$LocalDocumentsTableTableManager(
+    _$AppDatabase db,
+    $LocalDocumentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalDocumentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalDocumentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalDocumentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> updatedAtEpochMillis = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalDocumentsCompanion(
+                key: key,
+                kind: kind,
+                payload: payload,
+                updatedAtEpochMillis: updatedAtEpochMillis,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String kind,
+                required String payload,
+                required int updatedAtEpochMillis,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalDocumentsCompanion.insert(
+                key: key,
+                kind: kind,
+                payload: payload,
+                updatedAtEpochMillis: updatedAtEpochMillis,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LocalDocumentsTable, LocalDocument>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $LocalDocumentsTable,
+                    LocalDocument
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalDocumentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalDocumentsTable,
+      LocalDocument,
+      $$LocalDocumentsTableFilterComposer,
+      $$LocalDocumentsTableOrderingComposer,
+      $$LocalDocumentsTableAnnotationComposer,
+      $$LocalDocumentsTableCreateCompanionBuilder,
+      $$LocalDocumentsTableUpdateCompanionBuilder,
+      (
+        LocalDocument,
+        BaseReferences<_$AppDatabase, $LocalDocumentsTable, LocalDocument>,
+      ),
+      LocalDocument,
+      PrefetchHooks Function()
+    >;
+typedef $$PendingOperationsTableCreateCompanionBuilder =
+    PendingOperationsCompanion Function({
+      required String operationId,
+      required String documentKey,
+      required String payload,
+      required int createdAtEpochMillis,
+      Value<int> rowid,
+    });
+typedef $$PendingOperationsTableUpdateCompanionBuilder =
+    PendingOperationsCompanion Function({
+      Value<String> operationId,
+      Value<String> documentKey,
+      Value<String> payload,
+      Value<int> createdAtEpochMillis,
+      Value<int> rowid,
+    });
+
+class $$PendingOperationsTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
+  $$PendingOperationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentKey => $composableBuilder(
+    column: $table.documentKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtEpochMillis => $composableBuilder(
+    column: $table.createdAtEpochMillis,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingOperationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
+  $$PendingOperationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get documentKey => $composableBuilder(
+    column: $table.documentKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtEpochMillis => $composableBuilder(
+    column: $table.createdAtEpochMillis,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingOperationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingOperationsTable> {
+  $$PendingOperationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get documentKey => $composableBuilder(
+    column: $table.documentKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtEpochMillis => $composableBuilder(
+    column: $table.createdAtEpochMillis,
+    builder: (column) => column,
+  );
+}
+
+class $$PendingOperationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingOperationsTable,
+          PendingOperation,
+          $$PendingOperationsTableFilterComposer,
+          $$PendingOperationsTableOrderingComposer,
+          $$PendingOperationsTableAnnotationComposer,
+          $$PendingOperationsTableCreateCompanionBuilder,
+          $$PendingOperationsTableUpdateCompanionBuilder,
+          (
+            PendingOperation,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingOperationsTable,
+              PendingOperation
+            >,
+          ),
+          PendingOperation,
+          PrefetchHooks Function()
+        > {
+  $$PendingOperationsTableTableManager(
+    _$AppDatabase db,
+    $PendingOperationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingOperationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingOperationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingOperationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String> documentKey = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<int> createdAtEpochMillis = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PendingOperationsCompanion(
+                operationId: operationId,
+                documentKey: documentKey,
+                payload: payload,
+                createdAtEpochMillis: createdAtEpochMillis,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                required String documentKey,
+                required String payload,
+                required int createdAtEpochMillis,
+                Value<int> rowid = const Value.absent(),
+              }) => PendingOperationsCompanion.insert(
+                operationId: operationId,
+                documentKey: documentKey,
+                payload: payload,
+                createdAtEpochMillis: createdAtEpochMillis,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PendingOperationsTable, PendingOperation>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PendingOperationsTable,
+                    PendingOperation
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingOperationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingOperationsTable,
+      PendingOperation,
+      $$PendingOperationsTableFilterComposer,
+      $$PendingOperationsTableOrderingComposer,
+      $$PendingOperationsTableAnnotationComposer,
+      $$PendingOperationsTableCreateCompanionBuilder,
+      $$PendingOperationsTableUpdateCompanionBuilder,
+      (
+        PendingOperation,
+        BaseReferences<
+          _$AppDatabase,
+          $PendingOperationsTable,
+          PendingOperation
+        >,
+      ),
+      PendingOperation,
+      PrefetchHooks Function()
+    >;
+
+class $AppDatabaseManager {
+  final _$AppDatabase _db;
+  $AppDatabaseManager(this._db);
+  $$LocalDocumentsTableTableManager get localDocuments =>
+      $$LocalDocumentsTableTableManager(_db, _db.localDocuments);
+  $$PendingOperationsTableTableManager get pendingOperations =>
+      $$PendingOperationsTableTableManager(_db, _db.pendingOperations);
+}

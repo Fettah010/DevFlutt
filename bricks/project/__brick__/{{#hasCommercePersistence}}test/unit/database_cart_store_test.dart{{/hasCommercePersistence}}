@@ -1,0 +1,21 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/core/database/app_database.dart';
+import 'package:{{projectName}}/features/commerce/data/database_cart_store.dart';
+import 'package:{{projectName}}/features/commerce/domain/cart.dart';
+import 'package:{{projectName}}/features/commerce/domain/product.dart';
+
+void main() {
+  test('database cart store restores local cart data', () async {
+    final database = AppDatabase.inMemory();
+    addTearDown(database.close);
+    const coffee = Product(id: 'coffee', name: 'Coffee', unitPriceMinor: 450);
+    final store = DatabaseCartStore(database);
+    final cart = Cart.empty().add(coffee, quantity: 2);
+
+    await store.save(cart);
+    final restored = await store.load();
+    expect(restored.lines.single.product.id, 'coffee');
+    expect(restored.lines.single.quantity, 2);
+    expect(restored.totalMinor, 900);
+  });
+}

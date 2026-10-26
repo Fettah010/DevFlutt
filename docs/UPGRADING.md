@@ -1,5 +1,18 @@
 # Upgrading
 
+## v0.7.0 module additions
+
+The v0.7.0 generator adds optional `devDependencies` to module manifests. Existing manifests
+without that key remain valid. A selected `local-database` module adds Drift runtime packages
+and Drift/build_runner development packages; other generated projects receive none of them.
+
+The new `preferences`, `local-database`, `offline-data`, `commerce`, and
+`commerce-persistence` modules are not added to existing presets. Regenerate an app to add a
+module, or copy its listed outputs and dependencies into an existing app. If you change Drift
+tables or queries, run `dart run build_runner build` and keep the generated database source
+with the table declaration. Schema changes require an explicit migration and a test that
+starts from the previous schema.
+
 ## "Use this template" copies a snapshot
 
 Clicking **Use this template** creates a **copy** of the repository at that moment. Later

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- v0.7 persistence and feature modules: non-sensitive preferences, Drift/SQLite with a v1→v2
+  migration, an explicit-refresh offline notes sample, a demo cart/checkout contract, and an
+  optional Drift-backed cart store. Existing presets remain unchanged.
+- Generator support for optional module development dependencies and generated-project
+  coverage for each v0.7 module composition.
+
+### Security and behavior boundaries
+
+- Offline refresh invalidates freshness before a request; failed refreshes preserve local
+  records and leave queued writes for explicit replay with stable operation IDs.
+- The database is unencrypted, preferences are not for secrets, and the commerce estimate is
+  not authoritative checkout pricing. No payment SDK or background sync is included.
+
 ## [0.6.0] - 2026-10-26
 
 ### Added

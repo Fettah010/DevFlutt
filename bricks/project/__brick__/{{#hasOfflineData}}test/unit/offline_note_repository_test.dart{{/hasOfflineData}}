@@ -1,0 +1,69 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/core/database/app_database.dart';
+import 'package:{{projectName}}/features/offline_notes/data/demo_offline_notes_remote.dart';
+import 'package:{{projectName}}/features/offline_notes/data/offline_note_repository.dart';
+import 'package:{{projectName}}/features/offline_notes/domain/offline_note.dart';
+
+void main() {
+  late AppDatabase database;
+  late DemoOfflineNotesRemote remote;
+  late LocalFirstNotesRepository repository;
+  var now = DateTime.utc(2026, 1, 1);
+
+  setUp(() {
+    database = AppDatabase.inMemory();
+    remote = DemoOfflineNotesRemote(
+      initial: <OfflineNote>[
+        OfflineNote(id: 'note-1', title: 'Remote title', updatedAtEpochMillis: 10),
+      ],
+    );
+    repository = LocalFirstNotesRepository(database: database, remote: remote, now: () => now);
+  });
+
+  tearDown(() => database.close());
+
+  test('refreshes remote data and marks the snapshot fresh for five minutes', () async {
+    expect(await repository.refresh(), NotesRefreshResult.success);
+    expect(await repository.isFresh(), isTrue);
+    final notes = await repository.watchNotes().first;
+    expect(notes.single.title, 'Remote title');
+
+    now = now.add(const Duration(minutes: 5));
+    expect(await repository.isFresh(), isFalse);
+  });
+
+  test('offline reads remain local and edits stay queued for retry', () async {
+    final local = OfflineNote(id: 'note-local', title: 'Created offline', updatedAtEpochMillis: 20);
+    await repository.saveLocally(local);
+    remote.isOnline = false;
+
+    expect(await repository.refresh(), NotesRefreshResult.offline);
+    expect(await repository.pendingCount(), 1);
+    expect((await repository.watchNotes().first).single.title, 'Created offline');
+  });
+
+  test('failed refresh invalidates the previous freshness marker', () async {
+    expect(await repository.refresh(), NotesRefreshResult.success);
+    expect(await repository.isFresh(), isTrue);
+
+    remote.isOnline = false;
+    expect(await repository.refresh(), NotesRefreshResult.offline);
+    expect(await repository.isFresh(), isFalse);
+    expect((await repository.watchNotes().first).single.title, 'Remote title');
+  });
+
+  test('pending local edit wins a conflict and retries with the same operation ID', () async {
+    final local = OfflineNote(id: 'note-1', title: 'Local edit', updatedAtEpochMillis: 30);
+    await repository.saveLocally(local);
+    remote.failedSavesRemaining = 1;
+
+    expect(await repository.refresh(), NotesRefreshResult.partial);
+    expect(await repository.pendingCount(), 1);
+    expect((await repository.watchNotes().first).single.title, 'Local edit');
+
+    expect(await repository.refresh(), NotesRefreshResult.success);
+    expect(remote.acceptedOperationIds, <String>['offline-note:note-1']);
+    expect(await repository.pendingCount(), 0);
+    expect((await repository.watchNotes().first).single.title, 'Local edit');
+  });
+}

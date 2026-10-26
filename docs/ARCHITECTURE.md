@@ -34,6 +34,8 @@ lib/
     networking/                    # ApiClient, ApiResult, ApiError, retry policy
     secure_storage/                # SecureStore interface and its adapters
     diagnostics/                   # ErrorReporter interface and its local adapter
+    preferences/                   # non-sensitive preference port and adapters
+    database/                      # Drift schema, migrations, generated queries
     auth/                          # AuthAdapter contract, session, capabilities, refresh
       rest/                        # the custom REST/JWT adapter
       firebase/                    # the Firebase Authentication adapter
@@ -46,6 +48,8 @@ lib/
       application/counter_controller.dart
       presentation/counter_page.dart
     showcase/presentation/showcase_page.dart
+    offline_notes/                 # explicit-refresh local-first sample (optional)
+    commerce/                      # demo cart and checkout boundary (optional)
 test/
   unit/                            # domain + config + service tests
   widget/                          # UI + theme tests
@@ -112,7 +116,10 @@ UI (presentation)  ──▶  application / state  ──▶  domain contracts  
 | `app` | Route registry, router, redirect hook, unknown-route screen | v0.3.0 |
 | `app/app_services` | Generated composition root for the selected services | v0.4.0 |
 | `features/<feature>` | One self-contained feature (presentation/application/domain/data as needed) | v0.1.0 |
-| `core/*` (future) | Local persistence, offline state, platform adapters | v0.7.0+ |
+| `core/preferences` | Non-sensitive preferences behind an app-owned port | v0.7.0 |
+| `core/database` | Drift schema, migrations, and in-memory test database | v0.7.0 |
+| `features/offline_notes` | Explicit-refresh sample with durable pending edits | v0.7.0 |
+| `features/commerce` | Demo cart and server-authoritative checkout contract | v0.7.0 |
 
 ## Authentication model
 

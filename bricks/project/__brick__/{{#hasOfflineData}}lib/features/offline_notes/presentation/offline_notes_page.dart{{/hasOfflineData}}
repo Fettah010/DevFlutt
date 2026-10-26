@@ -1,0 +1,114 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:{{projectName}}/core/database/app_database.dart';
+import 'package:{{projectName}}/features/offline_notes/data/demo_offline_notes_remote.dart';
+import 'package:{{projectName}}/features/offline_notes/data/offline_note_repository.dart';
+import 'package:{{projectName}}/features/offline_notes/domain/offline_note.dart';
+
+/// Local-first reference screen. It uses a deterministic demo remote by default.
+class OfflineNotesPage extends StatefulWidget {
+  OfflineNotesPage({super.key, OfflineNotesRepository? repository})
+    : ownsRepository = repository == null,
+      repository = repository ?? _demoRepository();
+
+  final OfflineNotesRepository repository;
+  final bool ownsRepository;
+
+  static OfflineNotesRepository _demoRepository() => LocalFirstNotesRepository(
+    database: AppDatabase.defaults(),
+    remote: DemoOfflineNotesRemote(
+      initial: <OfflineNote>[
+        OfflineNote(id: 'welcome', title: 'Saved locally first', updatedAtEpochMillis: 0),
+      ],
+    ),
+  );
+
+  @override
+  State<OfflineNotesPage> createState() => _OfflineNotesPageState();
+}
+
+class _OfflineNotesPageState extends State<OfflineNotesPage> {
+  late final Stream<List<OfflineNote>> _notes = widget.repository.watchNotes();
+  var _busy = false;
+  var _message = 'Local data stays readable when offline.';
+  var _nextId = 1;
+
+  @override
+  void dispose() {
+    if (widget.ownsRepository) unawaited(widget.repository.close());
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    setState(() => _busy = true);
+    final result = await widget.repository.refresh();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _message = switch (result) {
+        NotesRefreshResult.success => 'Updated; pending local edits were acknowledged.',
+        NotesRefreshResult.offline => 'Offline. Showing saved local notes.',
+        NotesRefreshResult.partial => 'Some edits remain queued for a later refresh.',
+      };
+    });
+  }
+
+  Future<void> _addNote() async {
+    final id = 'local-${_nextId++}';
+    await widget.repository.saveLocally(
+      OfflineNote(
+        id: id,
+        title: 'New local note',
+        updatedAtEpochMillis: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    if (mounted) setState(() => _message = 'Note saved locally and queued for refresh.');
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Offline notes')),
+    body: Column(
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(_message),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: <Widget>[
+                  FilledButton(
+                    onPressed: _busy ? null : _refresh,
+                    child: Text(_busy ? 'Refreshing…' : 'Refresh'),
+                  ),
+                  OutlinedButton(onPressed: _addNote, child: const Text('Add local note')),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<List<OfflineNote>>(
+            stream: _notes,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Center(child: Text('Could not load local notes.'));
+              }
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              final notes = snapshot.data!;
+              if (notes.isEmpty) return const Center(child: Text('No notes saved yet.'));
+              return ListView.builder(
+                itemCount: notes.length,
+                itemBuilder: (context, index) => ListTile(title: Text(notes[index].title)),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}

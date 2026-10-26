@@ -1,0 +1,193 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:{{projectName}}/core/database/app_database.dart';
+import 'package:{{projectName}}/core/networking/api_client.dart';
+import 'package:{{projectName}}/core/networking/api_error.dart';
+import 'package:{{projectName}}/core/networking/api_request.dart';
+import 'package:{{projectName}}/core/networking/api_result.dart';
+import 'package:{{projectName}}/features/offline_notes/domain/offline_note.dart';
+
+/// The only remote operations required by the sample repository.
+abstract interface class OfflineNotesRemote {
+  Future<List<OfflineNote>> fetchNotes();
+  Future<void> saveNote(OfflineNote note, {required String operationId});
+}
+
+/// Feature-facing local data contract, replaceable in widget tests.
+abstract interface class OfflineNotesRepository {
+  Stream<List<OfflineNote>> watchNotes();
+  Future<void> saveLocally(OfflineNote note);
+  Future<NotesRefreshResult> refresh();
+  Future<void> close();
+}
+
+/// Stable freshness and conflict behavior for the reference implementation.
+class LocalFirstNotesRepository implements OfflineNotesRepository {
+  LocalFirstNotesRepository({
+    required this._database,
+    required this._remote,
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
+
+  static const Duration freshnessWindow = Duration(minutes: 5);
+  static const String _noteKind = 'offline-note';
+  static const String _refreshMetaKey = '__offline_notes_last_refresh__';
+
+  final AppDatabase _database;
+  final OfflineNotesRemote _remote;
+  final DateTime Function() _now;
+
+  @override
+  Stream<List<OfflineNote>> watchNotes() => (_database.select(_database.localDocuments)
+        ..where((row) => row.kind.equals(_noteKind))
+        ..orderBy([(row) => OrderingTerm.desc(row.updatedAtEpochMillis)]))
+      .watch()
+      .map((rows) => rows.map(_decodeNote).toList(growable: false));
+
+  Future<int> pendingCount() async => (await _database.select(_database.pendingOperations).get()).length;
+
+  Future<bool> isFresh() async {
+    final metadata = await (_database.select(_database.localDocuments)
+      ..where((row) => row.key.equals(_refreshMetaKey))).getSingleOrNull();
+    if (metadata == null) return false;
+    final fetchedAt = DateTime.fromMillisecondsSinceEpoch(metadata.updatedAtEpochMillis);
+    return _now().difference(fetchedAt) < freshnessWindow;
+  }
+
+  @override
+  Future<void> saveLocally(OfflineNote note) async {
+    final noteJson = jsonEncode(note.toJson());
+    await _database.transaction(() async {
+      await _database.into(_database.localDocuments).insertOnConflictUpdate(
+        LocalDocumentsCompanion.insert(
+          key: note.id,
+          kind: _noteKind,
+          payload: noteJson,
+          updatedAtEpochMillis: note.updatedAtEpochMillis,
+        ),
+      );
+      await _database.into(_database.pendingOperations).insertOnConflictUpdate(
+        PendingOperationsCompanion.insert(
+          operationId: 'offline-note:${note.id}',
+          documentKey: note.id,
+          payload: noteJson,
+          createdAtEpochMillis: _now().millisecondsSinceEpoch,
+        ),
+      );
+    });
+  }
+
+  /// Refreshes remote snapshots and then acknowledges queued local edits.
+  ///
+  /// Pending edits win same-record conflicts and keep their stable operation ID
+  /// until the remote adapter accepts the write. Failures leave local data and
+  /// the queue intact for a later explicit refresh.
+  @override
+  Future<NotesRefreshResult> refresh() async {
+    await (_database.delete(_database.localDocuments)
+      ..where((row) => row.key.equals(_refreshMetaKey))).go();
+
+    late final List<OfflineNote> remoteNotes;
+    try {
+      remoteNotes = await _remote.fetchNotes();
+    } on Exception {
+      return NotesRefreshResult.offline;
+    }
+
+    await _database.transaction(() async {
+      for (final note in remoteNotes) {
+        final pending = await (_database.select(_database.pendingOperations)
+          ..where((row) => row.documentKey.equals(note.id))).getSingleOrNull();
+        if (pending == null) await _writeLocal(note);
+      }
+      final fetchedAt = _now().millisecondsSinceEpoch;
+      await _database.into(_database.localDocuments).insertOnConflictUpdate(
+        LocalDocumentsCompanion.insert(
+          key: _refreshMetaKey,
+          kind: 'metadata',
+          payload: '$fetchedAt',
+          updatedAtEpochMillis: fetchedAt,
+        ),
+      );
+    });
+
+    final operations = await (_database.select(_database.pendingOperations)
+      ..orderBy([(row) => OrderingTerm.asc(row.createdAtEpochMillis)])).get();
+    for (final operation in operations) {
+      final note = _decodeNotePayload(operation.payload);
+      try {
+        await _remote.saveNote(note, operationId: operation.operationId);
+      } on Exception {
+        return NotesRefreshResult.partial;
+      }
+      await (_database.delete(_database.pendingOperations)
+        ..where((row) => row.operationId.equals(operation.operationId))).go();
+    }
+    return NotesRefreshResult.success;
+  }
+
+  @override
+  Future<void> close() => _database.close();
+
+  Future<void> _writeLocal(OfflineNote note) =>
+      _database.into(_database.localDocuments).insertOnConflictUpdate(
+        LocalDocumentsCompanion.insert(
+          key: note.id,
+          kind: _noteKind,
+          payload: jsonEncode(note.toJson()),
+          updatedAtEpochMillis: note.updatedAtEpochMillis,
+        ),
+      );
+
+  OfflineNote _decodeNote(LocalDocument row) => _decodeNotePayload(row.payload);
+
+  OfflineNote _decodeNotePayload(String payload) =>
+      OfflineNote.fromJson((jsonDecode(payload) as Map<Object?, Object?>).cast<String, Object?>());
+}
+
+enum NotesRefreshResult { success, offline, partial }
+
+/// API client adapter; write operations carry the stable idempotency key.
+class ApiOfflineNotesRemote implements OfflineNotesRemote {
+  const ApiOfflineNotesRemote(this._client);
+
+  final ApiClient _client;
+
+  @override
+  Future<List<OfflineNote>> fetchNotes() async {
+    final result = await _client.send<List<OfflineNote>>(
+      const ApiRequest(method: ApiMethod.get, path: '/notes'),
+      decode: (json) {
+        if (json is! List<Object?>) throw const FormatException('Expected a note list.');
+        return json.map((entry) {
+          if (entry is! Map<Object?, Object?>) throw const FormatException('Expected a note.');
+          return OfflineNote.fromJson(entry.cast<String, Object?>());
+        }).toList(growable: false);
+      },
+    );
+    return switch (result) {
+      ApiSuccess<List<OfflineNote>>(:final value) => value,
+      ApiFailure<List<OfflineNote>>(:final error) => throw OfflineNotesRemoteFailure(error),
+    };
+  }
+
+  @override
+  Future<void> saveNote(OfflineNote note, {required String operationId}) async {
+    final result = await _client.send<void>(
+      ApiRequest(
+        method: ApiMethod.put,
+        path: '/notes/${Uri.encodeComponent(note.id)}',
+        headers: <String, String>{'Idempotency-Key': operationId},
+        body: note.toJson(),
+      ),
+      decode: (_) {},
+    );
+    if (result case ApiFailure<void>(:final error)) throw OfflineNotesRemoteFailure(error);
+  }
+}
+
+class OfflineNotesRemoteFailure implements Exception {
+  const OfflineNotesRemoteFailure(this.error);
+  final ApiError error;
+}

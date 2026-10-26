@@ -30,12 +30,18 @@ class ProjectPlanner {
     final resolved = graph.resolve(selected);
 
     final dependencies = <PubDependency>[];
+    final devDependencies = <PubDependency>[];
     final permissions = <String>[];
     final configKeys = <String>[];
     for (final module in resolved) {
       for (final dependency in module.pubDependencies) {
         if (!dependencies.contains(dependency)) {
           dependencies.add(dependency);
+        }
+      }
+      for (final dependency in module.devDependencies) {
+        if (!devDependencies.contains(dependency)) {
+          devDependencies.add(dependency);
         }
       }
       for (final permission in module.permissions) {
@@ -54,6 +60,7 @@ class ProjectPlanner {
       spec: spec,
       modules: resolved,
       dependencies: dependencies,
+      devDependencies: devDependencies,
       permissions: permissions,
       configKeys: configKeys,
     );

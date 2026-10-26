@@ -1,0 +1,7 @@
+/// Catalog data shown in the demo cart.
+class Product {
+  const Product({required this.id, required this.name, required this.unitPriceMinor});
+  final String id;
+  final String name;
+  final int unitPriceMinor;
+}

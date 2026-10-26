@@ -1,0 +1,36 @@
+import '../domain/offline_note.dart';
+import 'offline_note_repository.dart';
+
+/// Deterministic remote substitute used by the generated reference screen.
+class DemoOfflineNotesRemote implements OfflineNotesRemote {
+  DemoOfflineNotesRemote({List<OfflineNote>? initial})
+    : _notes = <String, OfflineNote>{
+        for (final note in initial ?? const <OfflineNote>[]) note.id: note,
+      };
+
+  final Map<String, OfflineNote> _notes;
+  bool isOnline = true;
+  int failedSavesRemaining = 0;
+  final List<String> acceptedOperationIds = <String>[];
+
+  @override
+  Future<List<OfflineNote>> fetchNotes() async {
+    if (!isOnline) throw const DemoOfflineNotesFailure();
+    return _notes.values.toList(growable: false);
+  }
+
+  @override
+  Future<void> saveNote(OfflineNote note, {required String operationId}) async {
+    if (!isOnline) throw const DemoOfflineNotesFailure();
+    if (failedSavesRemaining > 0) {
+      failedSavesRemaining--;
+      throw const DemoOfflineNotesFailure();
+    }
+    acceptedOperationIds.add(operationId);
+    _notes[note.id] = note;
+  }
+}
+
+class DemoOfflineNotesFailure implements Exception {
+  const DemoOfflineNotesFailure();
+}

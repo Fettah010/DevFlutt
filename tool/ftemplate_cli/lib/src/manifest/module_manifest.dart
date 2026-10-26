@@ -84,6 +84,7 @@ class ModuleManifest {
     required this.conflictsWith,
     required this.platforms,
     required this.pubDependencies,
+    this.devDependencies = const <PubDependency>[],
     required this.nativeChanges,
     required this.permissions,
     required this.configKeys,
@@ -102,6 +103,11 @@ class ModuleManifest {
   final List<String> conflictsWith;
   final List<String> platforms;
   final List<PubDependency> pubDependencies;
+
+  /// Development dependencies used by code generators or module maintenance.
+  ///
+  /// Older manifests may omit this optional field.
+  final List<PubDependency> devDependencies;
   final NativeChanges nativeChanges;
   final List<String> permissions;
   final List<String> configKeys;
@@ -124,6 +130,7 @@ class ModuleManifest {
     conflictsWith: _stringList(map['conflictsWith'], 'conflictsWith'),
     platforms: _stringList(map['platforms'], 'platforms'),
     pubDependencies: _pubDependencies(map['pubDependencies']),
+    devDependencies: _pubDependencies(map['devDependencies']),
     nativeChanges: NativeChanges.fromYaml(_map(map['nativeChanges'], 'nativeChanges')),
     permissions: _stringList(map['permissions'], 'permissions'),
     configKeys: _stringList(map['configKeys'], 'configKeys'),

@@ -2,7 +2,12 @@ import 'package:go_router/go_router.dart';
 
 {{#hasFeatureExample}}import '../features/counter/presentation/counter_page.dart';
 {{/hasFeatureExample}}{{#hasShowcase}}import '../features/showcase/presentation/showcase_page.dart';
-{{/hasShowcase}}import '../features/home/home_page.dart';
+{{/hasShowcase}}{{#hasOfflineData}}import '../features/offline_notes/presentation/offline_notes_page.dart';
+{{/hasOfflineData}}import '../features/home/home_page.dart';
+{{#hasCommerce}}import '../features/commerce/presentation/commerce_page.dart';
+{{/hasCommerce}}{{#hasCommercePersistence}}import '../core/database/app_database.dart';
+import '../features/commerce/data/database_cart_store.dart';
+{{/hasCommercePersistence}}
 import 'app_routes.dart';
 import 'not_found_page.dart';
 import 'route_guard.dart';
@@ -29,7 +34,17 @@ GoRouter buildAppRouter({RouteRedirect redirect = routeGuard}) {
         path: AppRoutes.showcase,
         builder: (context, state) => const ShowcasePage(),
       ),
-{{/hasShowcase}}    ],
+{{/hasShowcase}}{{#hasOfflineData}}      GoRoute(
+        path: AppRoutes.offlineNotes,
+        builder: (context, state) => OfflineNotesPage(),
+      ),
+{{/hasOfflineData}}{{#hasCommerce}}      GoRoute(
+        path: AppRoutes.commerce,
+        builder: (context, state) => {{#hasCommercePersistence}}CommercePage(
+          cartStore: DatabaseCartStore(AppDatabase.defaults()),
+        ){{/hasCommercePersistence}}{{^hasCommercePersistence}}CommercePage(){{/hasCommercePersistence}},
+      ),
+{{/hasCommerce}}    ],
     errorBuilder: (context, state) => NotFoundPage(location: state.uri.toString()),
   );
 }

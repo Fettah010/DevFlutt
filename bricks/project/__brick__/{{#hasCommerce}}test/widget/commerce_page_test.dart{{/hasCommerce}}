@@ -1,0 +1,38 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/features/commerce/data/fake_checkout_adapter.dart';
+import 'package:{{projectName}}/features/commerce/presentation/commerce_page.dart';
+
+void main() {
+  testWidgets('empty cart disables checkout and server quote is authoritative', (tester) async {
+    final checkout = DemoCheckoutAdapter();
+    await tester.pumpWidget(MaterialApp(home: CommercePage(checkoutAdapter: checkout)));
+    await tester.pumpAndSettle();
+    expect(find.text('Your cart is empty.'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(const Key('checkout'))).onPressed, isNull);
+
+    await tester.tap(find.byKey(const Key('add-coffee')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-coffee')));
+    await tester.pumpAndSettle();
+    expect(find.text('Estimate: \$9.00'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('checkout')));
+    await tester.pumpAndSettle();
+    expect(find.text('Order demo-order-1 confirmed. Server total: \$11.25'), findsOneWidget);
+    expect(checkout.lastRequest!.toJson().toString(), isNot(contains('unitPrice')));
+  });
+
+  testWidgets('checkout failure preserves cart and renders a recoverable message', (tester) async {
+    final checkout = DemoCheckoutAdapter(failNext: true);
+    await tester.pumpWidget(MaterialApp(home: CommercePage(checkoutAdapter: checkout)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add-bread')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('checkout')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Checkout could not be completed. Try again.'), findsOneWidget);
+    expect(find.text('Quantity: 1'), findsOneWidget);
+  });
+}

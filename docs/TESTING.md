@@ -36,8 +36,9 @@ The wrapper prints each command, writes per-command logs to
 | Patrol smoke UI test | `dart run tool/patrol/run.dart --suite smoke` |
 | Patrol Android regression tests | `dart run tool/patrol/run.dart --suite regression` |
 | Third-party notices | `dart run tool/ftemplate_cli/tool/license_inventory.dart --check` |
+| Optional module dependency graph | `cd tool/module_dependency_audit && flutter pub get` |
 | Secret scan (needs `gitleaks`) | `gitleaks git --redact --verbose .` |
-| Dependency audit (needs `osv-scanner`) | `osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock` |
+| Dependency audit (needs `osv-scanner`) | `osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock --lockfile=tool/module_dependency_audit/pubspec.lock` |
 
 The format check scopes to `lib` and `test`. The repository also holds the Mason brick
 templates, whose content is not parseable Dart until it is rendered, so formatting the
@@ -77,6 +78,19 @@ tests. An authentication preset adds the authentication contract tests, the shar
 contract suite run against the selected adapter, and the router tests for the
 authentication redirect. The generator runs the canonical Dart formatter over the
 generated files, so CI can format-check every generated project as well.
+
+The v0.7 matrix also generates `preferences`, `local-database`, `offline-data`, `commerce`,
+and `commerce-persistence` independently. Each selection is format-checked, analyzed,
+tested, built in debug and release, and checked for expected Android permissions. The
+offline sample's unit tests cover freshness invalidation, local persistence, queued operation
+IDs, offline behavior, and local-wins conflict policy; widget tests cover refresh states.
+The commerce tests check money arithmetic, checkout request fields, and failure/success UI.
+These are generated-project widget tests; Patrol still targets the reference app.
+
+`tool/module_dependency_audit` locks the union of optional generated-module runtime and
+development dependencies. The dependency and license gates include that lockfile, so optional
+Drift and preferences packages are covered even though they do not appear in the root app's
+lockfile.
 
 The service modules are tested against fakes, never against a live service. The
 `networking` module's retry, cancellation, timeout, and correlation rules are exercised
@@ -119,7 +133,8 @@ evidence only when the same command and toolchain are used.
 - Android release builds use the debug signing configuration so no real signing
   material is required. Replace it with a documented signing configuration before
   publishing.
-- The release manifest must not request `INTERNET`. CI fails if it does.
+- The release manifest requests `INTERNET` only when the generated selection includes a
+  network client. CI fails if that match is wrong.
 - The Flutter and Dart SDKs are not required to build the generator; only the generator
   package's own toolchain is needed for `tool/ftemplate_cli`. Its lockfile is committed so
   generator tests, license inventory, and dependency audit use the same package graph locally

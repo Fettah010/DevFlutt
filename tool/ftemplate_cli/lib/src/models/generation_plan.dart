@@ -7,6 +7,7 @@ class GenerationPlan {
     required this.spec,
     required this.modules,
     required this.dependencies,
+    this.devDependencies = const <PubDependency>[],
     required this.permissions,
     required this.configKeys,
   });
@@ -19,6 +20,9 @@ class GenerationPlan {
 
   /// The union of pub dependencies across the resolved modules.
   final List<PubDependency> dependencies;
+
+  /// The union of optional development dependencies across selected modules.
+  final List<PubDependency> devDependencies;
 
   /// The union of Android permissions across the resolved modules.
   final List<String> permissions;

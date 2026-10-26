@@ -83,10 +83,26 @@ class ManifestValidator {
     _checkDuplicates(map, 'configKeys', errors);
     _checkDuplicates(map, 'outputs', errors);
     _checkDuplicates(map, 'capabilities', errors);
+    _checkDependencies(map, 'devDependencies', errors);
 
     _checkCapabilities(map, errors);
 
     return errors;
+  }
+
+  void _checkDependencies(YamlMap map, String field, List<String> errors) {
+    final value = map[field];
+    if (value == null) return;
+    if (value is! YamlList) {
+      errors.add('$field must be a list.');
+      return;
+    }
+    for (var index = 0; index < value.length; index++) {
+      final entry = value[index];
+      if (entry is! YamlMap || entry['name'] is! String || entry['version'] is! String) {
+        errors.add('$field entries must be mappings with string name and version.');
+      }
+    }
   }
 
   void _checkCapabilities(YamlMap map, List<String> errors) {

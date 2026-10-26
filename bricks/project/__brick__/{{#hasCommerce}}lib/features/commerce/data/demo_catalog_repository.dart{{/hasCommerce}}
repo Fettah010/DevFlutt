@@ -1,0 +1,9 @@
+import '../domain/product.dart';
+
+class DemoCatalogRepository {
+  const DemoCatalogRepository();
+  List<Product> get products => const <Product>[
+    Product(id: 'coffee', name: 'Demo coffee', unitPriceMinor: 450),
+    Product(id: 'bread', name: 'Demo bread', unitPriceMinor: 220),
+  ];
+}

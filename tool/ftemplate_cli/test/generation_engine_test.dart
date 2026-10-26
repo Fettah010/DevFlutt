@@ -55,8 +55,100 @@ void main() {
       expect(pubspec, contains('name: blank'));
       expect(pubspec, isNot(contains('flutter_riverpod')));
       expect(pubspec, isNot(contains('go_router')));
+      expect(pubspec, isNot(contains('shared_preferences')));
+      expect(pubspec, isNot(contains('drift')));
+      expect(pubspec, isNot(contains('build_runner')));
 
       await result.projectDir.delete(recursive: true);
+    });
+
+    test('keeps database runtime and development dependencies in their sections', () async {
+      final result = await generate(
+        spec(name: 'Database App', org: 'com.example', modules: const ['local-database']),
+      );
+      final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final runtimeSection = pubspec.split('dev_dependencies:').first;
+      final developmentSection = pubspec.split('dev_dependencies:').last;
+
+      expect(runtimeSection, contains('drift: ^2.35.3'));
+      expect(runtimeSection, contains('drift_flutter: ^0.3.1'));
+      expect(runtimeSection, isNot(contains('drift_dev')));
+      expect(developmentSection, contains('drift_dev: ^2.35.2'));
+      expect(developmentSection, contains('build_runner: ^2.17.1'));
+      expect(
+        File('${result.projectDir.path}/lib/core/database/app_database.g.dart').existsSync(),
+        isTrue,
+      );
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('preferences are opt-in and never enter existing presets', () async {
+      final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+      expect(
+        File('${blank.projectDir.path}/lib/core/preferences/preferences_store.dart').existsSync(),
+        isFalse,
+      );
+      await blank.projectDir.delete(recursive: true);
+
+      final app = await generate(
+        spec(name: 'Preferences App', org: 'com.example', modules: const ['preferences']),
+      );
+      expect(
+        File('${app.projectDir.path}/lib/core/preferences/shared_preferences_store.dart')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${app.projectDir.path}/test/unit/preferences_store_test.dart').existsSync(),
+        isTrue,
+      );
+      await app.projectDir.delete(recursive: true);
+    });
+
+    test('offline notes and persistent commerce generate only with their selections', () async {
+      final memoryCommerce = await generate(
+        spec(name: 'Commerce App', org: 'com.example', modules: const ['commerce']),
+      );
+      final memoryPubspec = File('${memoryCommerce.projectDir.path}/pubspec.yaml')
+          .readAsStringSync();
+      expect(memoryPubspec, isNot(contains('drift:')));
+      expect(
+        File('${memoryCommerce.projectDir.path}/lib/features/commerce/data/cart_store.dart')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File(
+          '${memoryCommerce.projectDir.path}/lib/features/commerce/data/database_cart_store.dart',
+        ).existsSync(),
+        isFalse,
+      );
+      await memoryCommerce.projectDir.delete(recursive: true);
+
+      final selected = await generate(
+        spec(
+          name: 'Offline Commerce App',
+          org: 'com.example',
+          modules: const ['offline-data', 'commerce-persistence'],
+        ),
+      );
+      final selectedPubspec = File('${selected.projectDir.path}/pubspec.yaml').readAsStringSync();
+      expect(selectedPubspec, contains('drift: ^2.35.3'));
+      expect(
+        File(
+          '${selected.projectDir.path}/lib/features/offline_notes/data/offline_note_repository.dart',
+        ).existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${selected.projectDir.path}/lib/features/commerce/data/database_cart_store.dart')
+            .existsSync(),
+        isTrue,
+      );
+      final routes = File('${selected.projectDir.path}/lib/app/app_router.dart').readAsStringSync();
+      expect(routes, contains('DatabaseCartStore(AppDatabase.defaults())'));
+      await selected.projectDir.delete(recursive: true);
     });
 
     test('generates a core project with Riverpod and go_router', () async {

@@ -80,7 +80,7 @@ timeout budget, the cancellation rule — testable with a fake client and no net
 **Cache.** No response caching ships in v0.4.0. Caching authenticated or sensitive responses
 requires a policy that states expiration, invalidation, offline behaviour, and what is safe to
 persist; there is no authenticated traffic yet, and a cache added now would be a guess. The policy
-is deferred to v0.6.0 with the persistence and offline modules.
+is deferred to v0.7.0 with the persistence and offline modules.
 
 **Token refresh.** No refresh code ships in v0.4.0 — there is no auth adapter yet. The shape is
 fixed here so the v0.5.0 implementation cannot drift: refresh lives behind a single

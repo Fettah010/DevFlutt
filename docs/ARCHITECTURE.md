@@ -112,7 +112,7 @@ UI (presentation)  ──▶  application / state  ──▶  domain contracts  
 | `app` | Route registry, router, redirect hook, unknown-route screen | v0.3.0 |
 | `app/app_services` | Generated composition root for the selected services | v0.4.0 |
 | `features/<feature>` | One self-contained feature (presentation/application/domain/data as needed) | v0.1.0 |
-| `core/*` (future) | Local persistence, offline state, platform adapters | v0.6.0+ |
+| `core/*` (future) | Local persistence, offline state, platform adapters | v0.7.0+ |
 
 ## Authentication model
 

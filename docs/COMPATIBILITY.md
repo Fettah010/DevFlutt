@@ -97,7 +97,7 @@ absence rules for the four service modules: a blank project has no service file,
 service dependency, and no service import; a core project has the logger and no
 transport or store; a recommended project has every service file, the composition
 root, and the Android backup rules. Pairwise and maximum-coverage combinations are
-scheduled for v0.9.0.
+scheduled for v0.10.0.
 
 The three authentication presets are covered by the same method. Every adapter is verified
 against one shared contract-test suite, and the generator's own tests enumerate the
@@ -107,7 +107,7 @@ with a message that names the providers that do.
 
 **The gap.** The matrix covers the four presets and the three authentication presets. It
 does not cover every combination of the modules that can coexist, and it does not cover the
-maximum-capability composition. The exhaustive pairwise set is v0.9.0 work, and the
+maximum-capability composition. The exhaustive pairwise set is v0.10.0 work, and the
 remaining gap is recorded in `docs/DEFERRED.md`.
 
 ## Generator dependencies
@@ -132,15 +132,15 @@ it in the runner first, so the generator's dependencies are scanned too.
 
 ## Known gaps
 
-- iOS build smoke is scheduled for v0.9.0. The new modules are platform-neutral in
+- iOS build smoke is scheduled for v0.10.0. The new modules are platform-neutral in
   their Dart, but no iOS build has been observed.
-- Emulator/device smoke and performance baselines are scheduled for v0.9.0.
+- Emulator/device smoke and performance baselines are scheduled for v0.10.0.
 - The `DioApiClient` error mapping is verified by review and by the contract tests over
   the fake client; the Dio transport itself is not exercised against a live server.
 - The live Firebase and Supabase auth flows are not exercised: no provider project was
   available, so every provider behaviour is verified by contract tests over a fake. The
   provider configuration placeholders and the start-up configuration check are verified.
 - The built matrix covers the four presets and the three authentication presets, not every
-  combination of the modules that can coexist. The exhaustive pairwise set is v0.9.0 work.
+  combination of the modules that can coexist. The exhaustive pairwise set is v0.10.0 work.
 - The generator is a CLI proof of scope; `doctor` and `update-guide` arrive later.
 - The release signing configuration is still the debug key; real signing arrives later.

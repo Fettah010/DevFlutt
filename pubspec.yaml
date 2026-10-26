@@ -17,5 +17,16 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+  # Patrol E2E UI testing (LeanCode)
+  patrol: 4.10.0
+
 flutter:
   uses-material-design: true
+
+patrol:
+  app_name: DevFlutt
+  test_directory: patrol_test
+  android:
+    package_name: com.example.devflutt
+  screenshot_on_failure: true
+  emit_test_manifest: true

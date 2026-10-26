@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-26
+
+### Added
+
+- A Patrol smoke test that launches the actual reference app and verifies its visible home
+  content and semantics, plus native lifecycle, system-theme, and Wi-Fi-disabled regression
+  tests.
+- A local Patrol runner that selects an explicit device or AVD, waits for Android boot,
+  records tool/device details, enforces timeouts and nonempty successful test summaries, and
+  captures Patrol/Flutter/Android logcat on failures.
+- Android instrumentation host setup and build-time test discovery, so Patrol tests are
+  reported as native JUnit tests instead of silently producing an empty Gradle report.
+- An emulator-backed Patrol CI workflow with uploaded reports, videos, screenshots, and
+  runner diagnostics.
+- Unit tests for Patrol result-summary validation.
+
+### Changed
+
+- Pin Patrol 4.10.0 and Patrol CLI 4.8.0; refresh third-party license notices.
+- Replace the synthetic generated-project Patrol matrix with real reference-app coverage.
+
+### Removed
+
+- Placeholder permission checks that passed without requesting a permission or observing a
+  system permission flow.
+
+### Notes
+
+- The Wi-Fi test verifies that the blank app renders while Wi-Fi is disabled; it does not
+  claim offline data synchronization. Physical-device, iOS, and generated-project Patrol
+  coverage remain unverified or deferred.
+
 ## [0.5.0] - 2026-10-22
 
 ### Added

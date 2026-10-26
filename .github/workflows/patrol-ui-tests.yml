@@ -1,0 +1,86 @@
+name: Patrol UI Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patrol-ui:
+    name: Patrol UI tests (Android API 35)
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Install pinned Patrol CLI
+        run: dart pub global activate patrol_cli 4.8.0
+
+      - name: Add Dart tools to PATH
+        run: echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+
+      - name: Enable Android emulator hardware acceleration
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "This runner does not expose /dev/kvm; refusing a ten-minute software-emulator boot." >&2
+            exit 1
+          fi
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo chmod 0666 /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+          ls -l /dev/kvm
+
+      - name: Prepare Android emulator and run Patrol suites
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-linux-hw-accel: false
+          disable-animations: true
+          script: |
+            adb devices -l
+            dart run tool/patrol/run.dart --suite smoke
+            dart run tool/patrol/run.dart --suite regression
+
+      - name: Upload Patrol diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: patrol-ui-diagnostics
+          path: |
+            build/patrol-logs/**
+            build/app/reports/androidTests/**
+            build/app/test-results/**
+            patrol_test/screenshots/**
+            patrol_test/videos/**
+          if-no-files-found: warn

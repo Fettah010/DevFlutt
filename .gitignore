@@ -4,9 +4,6 @@
 .flutter-plugins-dependencies
 build/
 
-# The generator is a package; its lockfile is not tracked.
-tool/ftemplate_cli/pubspec.lock
-
 # IDE
 .idea/
 .vscode/
@@ -18,3 +15,15 @@ Thumbs.db
 
 # Verification logs
 build/verify-logs/
+
+# Patrol E2E UI testing artifacts
+**/test_bundle.dart
+**/test_bundle.dart.bak
+integration_test/patrol_test_bundle.dart
+**/PatrolGeneratedTests*.java
+.patrol.env
+playwright-report/
+test-results/
+patrol_test/screenshots/
+patrol_test/videos/
+android/.kotlin/errors/

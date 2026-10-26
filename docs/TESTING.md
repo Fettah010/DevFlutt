@@ -33,6 +33,8 @@ The wrapper prints each command, writes per-command logs to
 | Generator format check | `cd tool/ftemplate_cli && dart format --output=none --set-exit-if-changed .` |
 | Generator analysis | `cd tool/ftemplate_cli && dart analyze --fatal-infos` |
 | Generator tests | `cd tool/ftemplate_cli && dart test` |
+| Patrol smoke UI test | `dart run tool/patrol/run.dart --suite smoke` |
+| Patrol Android regression tests | `dart run tool/patrol/run.dart --suite regression` |
 | Third-party notices | `dart run tool/ftemplate_cli/tool/license_inventory.dart --check` |
 | Secret scan (needs `gitleaks`) | `gitleaks git --redact --verbose .` |
 | Dependency audit (needs `osv-scanner`) | `osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock` |
@@ -92,6 +94,21 @@ and the email link for `auth-firebase`, and the forced refresh and the one-time
 password for `auth-supabase`. No provider SDK is contacted, and no provider project is
 needed to run the suite.
 
+## Android UI tests
+
+Patrol runs only on an Android device or emulator and is intentionally separate
+from the fast `flutter test` gate. Install Patrol CLI 4.8.0 with
+`dart pub global activate patrol_cli 4.8.0`, then run the commands above from the
+repository root. The runner picks one online device or launches the only
+available AVD; use `--device <serial>` or `--emulator <id>` to disambiguate.
+Runner logs are written to `build/patrol-logs/`. Test failures also collect
+filtered Patrol, Flutter, and Android runtime logcat. Videos and failure screenshots are retained under
+`patrol_test/` and uploaded by the Patrol CI workflow.
+
+See [Patrol UI testing](testing/UI_TESTING_PLAN_PATROL.md) for the current suite,
+emulator setup, diagnostics, and coverage limits. UI test fixtures must not
+contain production credentials or personal data.
+
 ## CI evidence
 
 CI run IDs and logs are the authoritative verification record. Local runs are
@@ -104,7 +121,9 @@ evidence only when the same command and toolchain are used.
   publishing.
 - The release manifest must not request `INTERNET`. CI fails if it does.
 - The Flutter and Dart SDKs are not required to build the generator; only the generator
-  package's own toolchain is needed for `tool/ftemplate_cli`.
+  package's own toolchain is needed for `tool/ftemplate_cli`. Its lockfile is committed so
+  generator tests, license inventory, and dependency audit use the same package graph locally
+  and in CI.
 - The `secret-scan` and `dependency-audit` jobs download a pinned binary and verify its
   published SHA-256 checksum before running it. The local wrapper skips them when the
   tool is not installed, and says so.

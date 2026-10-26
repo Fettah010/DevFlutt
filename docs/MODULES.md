@@ -40,7 +40,7 @@ foundation: the core architecture plus the HTTP, diagnostic, and secure-storage 
 
 `recommended` is narrower than the road map's v1.0.0 description of it: the localisation
 scaffold and the application-lifecycle hooks join that preset in their own milestones
-(v0.8.0 and v0.7.0). The preset file is the explicit, versioned module list, so what the
+(v0.9.0 and v0.8.0). The preset file is the explicit, versioned module list, so what the
 preset contains is never a hidden bundle.
 
 No preset selects an authentication provider. The road map says the provider "is chosen

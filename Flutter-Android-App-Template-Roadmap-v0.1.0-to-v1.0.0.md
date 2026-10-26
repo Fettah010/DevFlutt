@@ -871,7 +871,26 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - Provider setup steps are clear for a first-time developer.
 - No backend or auth SDK appears in blank output; only chosen adapters appear in generated projects.
 
-## `v0.6.0` — Persistence, offline patterns, synchronization and commerce foundation
+## `v0.6.0` — Patrol UI testing and emulator execution
+
+**Outcome:** reference-app UI tests run against the actual Android app with reliable device selection, honest test counts, actionable diagnostics, and a CI emulator.
+
+### Implement
+
+- Replace placeholder Patrol assertions with behavior supported by the current app; defer flows that need product UI or platform behavior that does not exist yet.
+- Add a deterministic runner for device selection, single-AVD launch, boot readiness, timeouts, environment details, result validation, and failure logcat.
+- Add a real Android instrumentation host and test discovery so Gradle reports discovered tests instead of a false green with zero tests.
+- Run smoke and regression suites on a pinned Android emulator in CI and upload reports and failure artifacts.
+- Document coverage limits and keep generated bundles, native test classes, videos, and screenshots out of source control.
+
+### Exit criteria
+
+- Smoke and regression suites each report a nonzero count, zero failures, and zero skips on an Android emulator.
+- Ambiguous device/AVD selection, missing summaries, zero tests, skipped tests, and failed tests return nonzero with diagnostics.
+- CI runs the actual reference app on an emulator and retains test reports and diagnostic artifacts on failure.
+- No test claims permission, networking, or generated-project behavior that the current app does not implement.
+
+## `v0.7.0` — Persistence, offline patterns, synchronization and commerce foundation
 
 **Outcome:** apps can add durable local data and a meaningful offline-oriented feature without conflating cache, local storage, and server authority.
 
@@ -893,7 +912,7 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - Checkout has no client-authoritative pricing assumption and no payment-card storage.
 - Cart/storage dependencies appear only when the selected module needs them.
 
-## `v0.7.0` — Android platform services: notifications, background work and updates
+## `v0.8.0` — Android platform services: notifications, background work and updates
 
 **Outcome:** the template offers carefully bounded Android features with native behavior surfaced clearly to Flutter code.
 
@@ -915,7 +934,7 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - Update module handles not-available, canceled, failed, unsupported, and success states.
 - iOS generation rejects Android-only modules or provides a documented platform-specific substitute; it never silently generates broken native code.
 
-## `v0.8.0` — Localization, accessibility, motion and polished UI states
+## `v0.9.0` — Localization, accessibility, motion and polished UI states
 
 **Outcome:** generated apps start with a consistent, adaptable user experience without turning the blank preset into a showcase application.
 
@@ -936,7 +955,7 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - Loading/error/empty/offline states are consistent and testable.
 - Blank output remains minimal and excludes localization/gallery assets unless chosen.
 
-## `v0.9.0` — Integration hardening and release-grade verification
+## `v0.10.0` — Integration hardening and release-grade verification
 
 **Outcome:** all supported named presets and selected module combinations are tested as full generated projects.
 
@@ -960,7 +979,7 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - Performance results and test-device details are recorded, not guessed.
 - No unresolved P0/P1 defect remains in the v1.0.0 scope.
 
-## `v0.10.0` — Release candidate and freeze
+## `v0.11.0` — Release candidate and freeze
 
 **Outcome:** feature scope is frozen; focus shifts from adding features to proving reliability and clarity.
 

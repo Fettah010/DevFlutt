@@ -31,6 +31,7 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `crypto` | 3.0.8 | transitive | BSD-3-Clause |
 | `cupertino_icons` | 1.0.9 | direct | MIT |
 | `dart_style` | 3.1.14 | transitive | BSD-3-Clause |
+| `dbus` | 0.8.0 | transitive | MPL-2.0 |
 | `dispose_scope` | 2.1.0 | transitive | MIT |
 | `drift` | 2.35.3 | direct | MIT |
 | `drift_dev` | 2.35.2 | direct | MIT |
@@ -42,6 +43,11 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `file` | 7.0.1 | transitive | BSD-3-Clause |
 | `fixnum` | 1.1.1 | transitive | BSD-3-Clause |
 | `flutter_lints` | 6.0.0 | direct | BSD-3-Clause |
+| `flutter_local_notifications` | 22.3.3 | direct | BSD-3-Clause |
+| `flutter_local_notifications_linux` | 8.0.2 | transitive | BSD-3-Clause |
+| `flutter_local_notifications_platform_interface` | 12.2.0 | transitive | BSD-3-Clause |
+| `flutter_local_notifications_web` | 1.0.0 | transitive | BSD-3-Clause |
+| `flutter_local_notifications_windows` | 3.1.1 | transitive | BSD-3-Clause |
 | `frontend_server_client` | 4.2.0 | transitive | BSD-3-Clause |
 | `glob` | 2.2.0 | transitive | BSD-3-Clause |
 | `graphs` | 2.3.2 | transitive | BSD-3-Clause |
@@ -49,6 +55,7 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `http` | 1.6.0 | transitive | BSD-3-Clause |
 | `http_multi_server` | 3.2.3 | transitive | BSD-3-Clause |
 | `http_parser` | 4.1.2 | transitive | BSD-3-Clause |
+| `in_app_update` | 5.0.0 | direct | MIT |
 | `io` | 1.1.0 | transitive | BSD-3-Clause |
 | `jni` | 1.1.0 | transitive | BSD-3-Clause |
 | `jni_flutter` | 1.0.4+1 | transitive | BSD-3-Clause |
@@ -80,6 +87,7 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `patrol` | 4.10.0 | direct | Apache-2.0 |
 | `patrol_finders` | 3.6.0 | transitive | Apache-2.0 |
 | `patrol_log` | 0.10.1 | transitive | Apache-2.0 |
+| `petitparser` | 7.1.0 | transitive | MIT |
 | `platform` | 3.2.0 | transitive | BSD-3-Clause |
 | `plugin_platform_interface` | 2.1.8 | transitive | BSD-3-Clause |
 | `pool` | 1.5.3 | transitive | BSD-3-Clause |
@@ -116,7 +124,16 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `test` | 1.33.0 | direct | BSD-3-Clause |
 | `test_api` | 0.7.15 | transitive | BSD-3-Clause |
 | `test_core` | 0.6.21 | transitive | BSD-3-Clause |
+| `timezone` | 0.11.2 | transitive | BSD-2-Clause |
 | `typed_data` | 1.4.0 | transitive | BSD-3-Clause |
+| `url_launcher` | 6.3.3 | direct | BSD-3-Clause |
+| `url_launcher_android` | 6.3.33 | transitive | BSD-3-Clause |
+| `url_launcher_ios` | 6.4.2 | transitive | BSD-3-Clause |
+| `url_launcher_linux` | 3.2.3 | transitive | BSD-3-Clause |
+| `url_launcher_macos` | 3.2.6 | transitive | BSD-3-Clause |
+| `url_launcher_platform_interface` | 2.3.2 | transitive | BSD-3-Clause |
+| `url_launcher_web` | 2.4.3 | transitive | BSD-3-Clause |
+| `url_launcher_windows` | 3.1.6 | transitive | BSD-3-Clause |
 | `vector_math` | 2.4.3 | transitive | BSD-3-Clause |
 | `vm_service` | 15.4.0 | transitive | BSD-3-Clause |
 | `watcher` | 1.2.1 | transitive | BSD-3-Clause |
@@ -125,6 +142,13 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `web_socket_channel` | 3.0.3 | transitive | BSD-3-Clause |
 | `webkit_inspection_protocol` | 1.2.1 | transitive | BSD-3-Clause |
 | `win32` | 6.4.0 | transitive | BSD-3-Clause |
+| `workmanager` | 0.10.10 | direct | MIT |
+| `workmanager_android` | 0.10.9 | transitive | MIT |
+| `workmanager_apple` | 0.9.11 | transitive | MIT |
+| `workmanager_linux` | 0.1.1+1 | transitive | MIT |
+| `workmanager_platform_interface` | 0.10.5 | transitive | MIT |
+| `workmanager_web` | 0.2.0 | transitive | MIT |
 | `xdg_directories` | 1.1.0 | transitive | BSD-3-Clause |
+| `xml` | 7.1.0 | transitive | MIT |
 | `yaml` | 3.1.4 | transitive | MIT |
 | `yaml_edit` | 2.2.4 | transitive | BSD-3-Clause |

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in Android WorkManager, local notification, and Google Play in-app update modules,
+  with app-owned interfaces and fake-backed tests. Existing presets remain unchanged.
+- Conditional notification permission and core-library desugaring for the local-notifications
+  module, plus generated-project release-manifest checks for `POST_NOTIFICATIONS`.
+- Documentation for platform setup, permission timing, notification route validation,
+  background scheduling limits, and Play internal-track testing.
+
+### Security and behavior boundaries
+
+- WorkManager inputs must not contain secrets; local notification payloads are validated
+  internal routes and do not confer authorization. Play update flows require Google Play
+  installation, with an HTTPS listing fallback.
+
 ## [0.7.0] - 2026-10-27
 
 ### Added

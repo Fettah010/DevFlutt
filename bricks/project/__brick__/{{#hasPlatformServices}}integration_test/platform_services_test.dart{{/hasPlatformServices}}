@@ -1,0 +1,63 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:{{projectName}}/bootstrap/bootstrap.dart';
+{{#hasBackgroundWork}}
+import 'package:{{projectName}}/core/background_work/background_task.dart';
+import 'package:{{projectName}}/core/background_work/task_callback_dispatcher.dart';
+import 'package:{{projectName}}/core/background_work/workmanager_task_scheduler.dart';
+{{/hasBackgroundWork}}
+{{#hasLocalNotifications}}
+import 'package:{{projectName}}/core/notifications/local_notification_service.dart';
+{{/hasLocalNotifications}}
+{{#hasAppUpdates}}
+import 'package:{{projectName}}/core/app_updates/app_update_client.dart';
+import 'package:{{projectName}}/core/app_updates/play_app_update_client.dart';
+{{/hasAppUpdates}}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('selected Android platform services initialize natively', (tester) async {
+    debugPrint('Starting generated app bootstrap.');
+    await bootstrap();
+    debugPrint('Generated app bootstrap completed.');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+{{#hasBackgroundWork}}    debugPrint('Scheduling and cancelling WorkManager smoke task.');
+    const scheduler = WorkmanagerTaskScheduler();
+    const taskName = 'devflutt.platform-services-smoke';
+    await scheduler.scheduleOneOff(
+      BackgroundTask(uniqueName: taskName, taskName: sampleBackgroundTaskName),
+    );
+    await scheduler.cancel(taskName);
+    debugPrint('WorkManager smoke task completed.');
+{{/hasBackgroundWork}}{{#hasLocalNotifications}}    debugPrint('Showing test notification.');
+    final notificationShown = await LocalNotificationService().show(
+      id: 740801,
+      title: 'Platform service smoke test',
+      body: 'Test-only notification.',
+      route: '/',
+    );
+    expect(
+      notificationShown,
+      const bool.fromEnvironment('DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED'),
+    );
+    debugPrint('Notification permission path completed.');
+{{/hasLocalNotifications}}{{#hasAppUpdates}}    debugPrint('Checking Play update availability.');
+    final updateOutcome = await PlayAppUpdateClient(
+      applicationId: '{{applicationId}}',
+    ).checkForUpdate();
+    expect(
+      updateOutcome.status,
+      isIn(<AppUpdateStatus>[
+        AppUpdateStatus.available,
+        AppUpdateStatus.unavailable,
+        AppUpdateStatus.unsupported,
+        AppUpdateStatus.failed,
+      ]),
+    );
+    debugPrint('Play update availability check completed: ${updateOutcome.status}.');
+{{/hasAppUpdates}}  });
+}

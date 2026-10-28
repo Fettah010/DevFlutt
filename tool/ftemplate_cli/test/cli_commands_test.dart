@@ -105,6 +105,63 @@ void main() {
       expect(out.toString(), contains('Dry run'));
     });
 
+    test('reports selected Android permissions and native changes in dry-run output', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'Alerts App',
+        '--org',
+        'com.example',
+        '--module',
+        'local-notifications',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(
+        out.toString(),
+        contains('Permissions: android.permission.POST_NOTIFICATIONS, android.permission.VIBRATE'),
+      );
+      expect(
+        out.toString(),
+        contains(
+          'Android native changes: android/app/src/main/AndroidManifest.xml: '
+          'declare POST_NOTIFICATIONS and VIBRATE for the selected module.',
+        ),
+      );
+    });
+
+    test('rejects Android-only modules for iOS before writing output', () async {
+      final parent = await Directory.systemTemp.createTemp('ftemplate_platform_test_');
+      final destination = Directory('${parent.path}/generated');
+      final err = StringBuffer();
+      try {
+        final code = await runner.run([
+          'create',
+          '--name',
+          'Alerts App',
+          '--org',
+          'com.example',
+          '--platforms',
+          'ios',
+          '--module',
+          'local-notifications',
+          '--brick-dir',
+          '../../bricks/project',
+          '--output',
+          destination.path,
+        ], err: err.writeln);
+
+        expect(code, 64);
+        expect(err.toString(), contains('local-notifications'));
+        expect(err.toString(), contains('ios'));
+        expect(destination.existsSync(), isFalse);
+      } finally {
+        await parent.delete(recursive: true);
+      }
+    });
+
     test('plans a core project with resolved modules', () async {
       final out = StringBuffer();
       final code = await runner.run([

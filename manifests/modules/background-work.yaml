@@ -1,0 +1,38 @@
+id: background-work
+version: 1
+category: platform
+summary: Android WorkManager adapter for constrained, deferrable background tasks.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+pubDependencies:
+  - name: workmanager
+    version: ^0.10.10
+nativeChanges:
+  android:
+    - Android WorkManager components are contributed by the selected Flutter plugin.
+    - Remove plugin foreground-service permissions because the generated adapter does not expose foreground work.
+    - Remove the plugin POST_NOTIFICATIONS permission unless local-notifications is also selected.
+  ios: []
+permissions:
+  - android.permission.ACCESS_NETWORK_STATE
+  - android.permission.WAKE_LOCK
+  - android.permission.RECEIVE_BOOT_COMPLETED
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/background_work/background_task.dart
+  - lib/core/background_work/workmanager_task_scheduler.dart
+  - lib/core/background_work/task_callback_dispatcher.dart
+  - test/unit/background_task_scheduler_test.dart
+requiredSetup:
+  - WorkManager is best-effort and does not guarantee exact execution times.
+  - Keep credentials and sensitive payloads out of persisted task input.
+tests:
+  unit: true
+  widget: false
+  integration: emulator smoke

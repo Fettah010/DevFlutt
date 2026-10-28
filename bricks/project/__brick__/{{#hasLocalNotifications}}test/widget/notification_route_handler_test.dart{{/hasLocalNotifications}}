@@ -1,0 +1,34 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:{{projectName}}/app/app_routes.dart';
+import 'package:{{projectName}}/core/notifications/notification_route_handler.dart';
+
+void main() {
+  testWidgets('routes declared internal paths and rejects external or unknown targets', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/initial',
+      routes: <RouteBase>[
+        GoRoute(path: AppRoutes.home, builder: (context, state) => const Text('Home')),
+        GoRoute(path: '/initial', builder: (context, state) => const Text('Initial')),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    expect(find.text('Initial'), findsOneWidget);
+
+    final handler = NotificationRouteHandler(router);
+    expect(handler.handle(AppRoutes.home), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.text('Home'), findsOneWidget);
+
+    expect(handler.handle('https://example.com/'), isFalse);
+    expect(handler.handle('/unknown'), isFalse);
+    expect(handler.handle('/?destination=/unknown'), isFalse);
+    await tester.pumpAndSettle();
+    expect(find.text('Home'), findsOneWidget);
+  });
+}

@@ -1,0 +1,50 @@
+enum AppUpdateStatus {
+  available,
+  unavailable,
+  downloadStarted,
+  canceled,
+  failed,
+  unsupported,
+  completed,
+  storeOpened,
+}
+
+class AppUpdateOutcome {
+  const AppUpdateOutcome(this.status, {this.errorCode});
+
+  final AppUpdateStatus status;
+  final String? errorCode;
+}
+
+enum PlayUpdateAvailability { available, unavailable, unsupported }
+
+enum PlayUpdateFlowResult { completed, canceled, failed }
+
+enum AppUpdateInstallStatus {
+  unknown,
+  pending,
+  downloading,
+  installing,
+  installed,
+  failed,
+  canceled,
+  downloaded,
+}
+
+abstract interface class AppUpdateGateway {
+  Future<PlayUpdateAvailability> checkAvailability();
+  Future<PlayUpdateFlowResult> performImmediateUpdate();
+  Future<PlayUpdateFlowResult> startFlexibleUpdate();
+  Future<void> completeFlexibleUpdate();
+  Stream<AppUpdateInstallStatus> get installStatus;
+  Future<bool> openStoreListing(Uri uri);
+}
+
+abstract interface class AppUpdateClient {
+  Future<AppUpdateOutcome> checkForUpdate();
+  Future<AppUpdateOutcome> performImmediateUpdate();
+  Future<AppUpdateOutcome> startFlexibleUpdate();
+  Future<AppUpdateOutcome> completeFlexibleUpdate();
+  Future<AppUpdateOutcome> openStoreFallback();
+  Stream<AppUpdateInstallStatus> get installStatus;
+}

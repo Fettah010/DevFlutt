@@ -1,0 +1,29 @@
+import 'package:go_router/go_router.dart';
+import 'package:{{projectName}}/app/app_routes.dart';
+
+class NotificationRouteHandler {
+  const NotificationRouteHandler(this._router);
+
+  final GoRouter _router;
+
+  bool handle(String? payload) {
+    final route = _validatedRoute(payload);
+    if (route == null) return false;
+    _router.go(route);
+    return true;
+  }
+
+  String? _validatedRoute(String? payload) {
+    if (payload == null || payload.isEmpty) return null;
+    final uri = Uri.tryParse(payload);
+    if (uri == null ||
+        uri.hasScheme ||
+        uri.hasAuthority ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        !AppRoutes.all.contains(uri.path)) {
+      return null;
+    }
+    return uri.path;
+  }
+}

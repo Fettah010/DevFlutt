@@ -44,22 +44,22 @@ function Invoke-Check {
     }
 }
 
-function Invoke-OptionalCheck {
-    param(
-        [Parameter(Mandatory = $true)][string]$Name,
-        [Parameter(Mandatory = $true)][string]$Command,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
-        [Parameter(Mandatory = $true)][string]$SkipReason
-    )
-    if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
-        Write-Host "==> $Name`: SKIP ($SkipReason)"
-        return
-    }
-    Invoke-Check -Name $Name -Command $Command -Arguments $Arguments
-}
-
 $GeneratorDir = Join-Path $ProjectRoot 'tool/ftemplate_cli'
 $ModuleDependencyAuditDir = Join-Path $ProjectRoot 'tool/module_dependency_audit'
+$SecurityToolsDir = Join-Path $env:LOCALAPPDATA 'DevFlutt/security-tools/bin'
+
+function Resolve-SecurityTool {
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $installedCommand = Get-Command $Name -ErrorAction SilentlyContinue
+    if ($installedCommand) {
+        return $installedCommand.Source
+    }
+    $userInstalledCommand = Join-Path $SecurityToolsDir "$Name.exe"
+    if (Test-Path -LiteralPath $userInstalledCommand -PathType Leaf) {
+        return $userInstalledCommand
+    }
+    return $null
+}
 
 Invoke-Check -Name 'pub_get' -Command 'flutter' -Arguments @('pub', 'get')
 Invoke-Check -Name 'format' -Command 'dart' -Arguments @('format', '--output=none', '--set-exit-if-changed', 'lib', 'test')
@@ -77,8 +77,38 @@ Invoke-Check -Name 'module_dependency_audit_pub_get' -Command 'flutter' -Argumen
 
 Invoke-Check -Name 'license_inventory' -Command 'dart' -Arguments @('run', 'tool/ftemplate_cli/tool/license_inventory.dart', '--check')
 
-Invoke-OptionalCheck -Name 'secret_scan' -Command 'gitleaks' -Arguments @('git', '--redact', '--verbose', '--report-format', 'json', '--report-path', (Join-Path $LogDir 'gitleaks.json'), '.') -SkipReason 'gitleaks is not installed; CI performs this check'
-Invoke-OptionalCheck -Name 'dependency_audit' -Command 'osv-scanner' -Arguments @('scan', '--lockfile=pubspec.lock', '--lockfile=tool/ftemplate_cli/pubspec.lock', '--lockfile=tool/module_dependency_audit/pubspec.lock', '--format=json') -SkipReason 'osv-scanner is not installed; CI performs this check'
+$Gitleaks = Resolve-SecurityTool -Name 'gitleaks'
+if ($Gitleaks) {
+    Invoke-Check -Name 'secret_scan_history' -Command $Gitleaks -Arguments @('git', '--redact', '--verbose', '--report-format', 'json', '--report-path', (Join-Path $LogDir 'gitleaks-history.json'), '.')
+    Invoke-Check -Name 'secret_scan_worktree' -Command $Gitleaks -Arguments @('dir', '--redact', '--verbose', '--report-format', 'json', '--report-path', (Join-Path $LogDir 'gitleaks-worktree.json'), '.')
+}
+else {
+    Write-Host '==> secret_scan`: FAIL (Run .\tool\setup\install-security-tools.ps1 to install the pinned scanners.)'
+    $script:Failed++
+}
+$OsvScanner = Resolve-SecurityTool -Name 'osv-scanner'
+if ($OsvScanner) {
+    $OsvReport = Join-Path $LogDir 'osv-scanner.json'
+    $OsvLog = Join-Path $LogDir 'dependency_audit.log'
+    Write-Host "==> dependency_audit`: osv-scanner scan source --lockfile pubspec.lock --lockfile tool/ftemplate_cli/pubspec.lock --lockfile tool/module_dependency_audit/pubspec.lock --format json --output-file $OsvReport"
+    & $OsvScanner scan source --lockfile pubspec.lock --lockfile tool/ftemplate_cli/pubspec.lock --lockfile tool/module_dependency_audit/pubspec.lock --format json --output-file $OsvReport 1> $null 2> $OsvLog
+    $OsvExitCode = $LASTEXITCODE
+    if ($OsvExitCode -eq 0) {
+        Write-Host '    PASS'
+    }
+    else {
+        Write-Host "    FAIL (exit $OsvExitCode). See $OsvLog and $OsvReport"
+        Get-Content $OsvLog
+        if (Test-Path -LiteralPath $OsvReport) {
+            Get-Content $OsvReport
+        }
+        $script:Failed++
+    }
+}
+else {
+    Write-Host '==> dependency_audit`: FAIL (Run .\tool\setup\install-security-tools.ps1 to install the pinned scanners.)'
+    $script:Failed++
+}
 
 Write-Host '==> release_permissions'
 $ReleaseApk = Join-Path $ProjectRoot 'build/app/outputs/flutter-apk/app-prod-release.apk'

@@ -10,6 +10,7 @@ void main() {
   const scheduler = WorkmanagerTaskScheduler();
 
   setUp(() {
+    Workmanager();
     originalPlatform = WorkmanagerPlatform.instance;
     fakePlatform = _FakeWorkmanagerPlatform();
     WorkmanagerPlatform.instance = fakePlatform;

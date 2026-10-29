@@ -75,34 +75,7 @@ jobs:
             adb devices -l
             dart run tool/patrol/run.dart --suite smoke
             dart run tool/patrol/run.dart --suite regression
-            mkdir -p build/patrol-logs
-            trap 'if ! adb -s emulator-5554 logcat -d -v threadtime > "$GITHUB_WORKSPACE/build/patrol-logs/platform-services-logcat.txt"; then echo "Could not capture platform-service emulator logcat." >&2; fi' EXIT
-            if ! generation_output=$(dart run tool/ftemplate_cli/bin/ftemplate.dart create --name "Platform Services CI Smoke" --org com.example --preset blank --module background-work --module local-notifications --module app-updates --output "$RUNNER_TEMP/devflutt-platform-services-smoke" --no-pub 2>&1); then
-              printf '%s\n' "$generation_output" >&2
-              exit 1
-            fi
-            printf '%s\n' "$generation_output"
-            application_id=$(printf '%s\n' "$generation_output" | sed -n 's/^Application ID: //p' | tail -n 1)
-            test -n "$application_id" || { echo "Generator output did not include an application ID." >&2; exit 1; }
-            package_id="${application_id}.dev"
-            cd "$RUNNER_TEMP/devflutt-platform-services-smoke"
-            flutter pub get
-            flutter build apk --debug --flavor dev
-            apk=build/app/outputs/flutter-apk/app-dev-debug.apk
-            test -f "$apk"
-            user_id=$(adb -s emulator-5554 shell am get-current-user | tr -d '\r')
-            test -n "$user_id"
-            adb -s emulator-5554 install --user "$user_id" -r "$apk"
-            if ! adb -s emulator-5554 shell pm list packages --user "$user_id" | grep -Fx "package:$package_id"; then
-              echo "Generated app package $package_id is not installed for Android user $user_id." >&2
-              adb -s emulator-5554 shell pm list packages --user "$user_id" >&2
-              exit 1
-            fi
-            adb -s emulator-5554 shell pm revoke --user "$user_id" "$package_id" android.permission.POST_NOTIFICATIONS
-            flutter drive --no-dds --driver=test_driver/integration_test.dart --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev
-            adb -s emulator-5554 install --user "$user_id" -r "$apk"
-            adb -s emulator-5554 shell pm grant --user "$user_id" "$package_id" android.permission.POST_NOTIFICATIONS
-            flutter drive --no-dds --driver=test_driver/integration_test.dart --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev --dart-define=DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED=true
+            bash "$GITHUB_WORKSPACE/tool/patrol/run_platform_services_smoke.sh"
 
       - name: Upload Patrol diagnostics
         if: always()

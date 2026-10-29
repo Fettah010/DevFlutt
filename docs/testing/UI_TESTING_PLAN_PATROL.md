@@ -82,7 +82,10 @@ The generated v0.8 platform-service selection also has a native integration
 smoke test. It initializes the app, schedules and cancels a WorkManager task,
 checks notification display with permission denied or granted, and invokes the
 Play update availability adapter. Run both notification states on an online
-emulator with this PowerShell sequence from the repository root:
+emulator with this PowerShell sequence from the repository root. CI runs the
+same two states through `tool/patrol/run_platform_services_smoke.sh`, which
+generates the project, derives its flavor application ID, and retains generator
+output and emulator logcat under `build/patrol-logs/`:
 
 ```powershell
 $project = Join-Path $env:TEMP ("devflutt-platform-services-smoke-" + [guid]::NewGuid().ToString("N"))

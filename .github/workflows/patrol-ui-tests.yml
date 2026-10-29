@@ -81,11 +81,22 @@ jobs:
             cd "$RUNNER_TEMP/devflutt-platform-services-smoke"
             flutter pub get
             flutter build apk --debug --flavor dev
-            adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-dev-debug.apk
-            adb -s emulator-5554 shell pm revoke com.example.platform_services_ci_smoke.dev android.permission.POST_NOTIFICATIONS
+            apk=build/app/outputs/flutter-apk/app-dev-debug.apk
+            aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)
+            test -n "$aapt"
+            package_id=$("$aapt" dump badging "$apk" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+            user_id=$(adb -s emulator-5554 shell am get-current-user | tr -d '\r')
+            test -n "$package_id" && test -n "$user_id"
+            adb -s emulator-5554 install --user "$user_id" -r "$apk"
+            if ! adb -s emulator-5554 shell pm list packages --user "$user_id" | grep -Fx "package:$package_id"; then
+              echo "Generated app package $package_id is not installed for Android user $user_id." >&2
+              adb -s emulator-5554 shell pm list packages --user "$user_id" >&2
+              exit 1
+            fi
+            adb -s emulator-5554 shell pm revoke --user "$user_id" "$package_id" android.permission.POST_NOTIFICATIONS
             flutter drive --no-dds --driver=test_driver/integration_test.dart --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev
-            adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-dev-debug.apk
-            adb -s emulator-5554 shell pm grant com.example.platform_services_ci_smoke.dev android.permission.POST_NOTIFICATIONS
+            adb -s emulator-5554 install --user "$user_id" -r "$apk"
+            adb -s emulator-5554 shell pm grant --user "$user_id" "$package_id" android.permission.POST_NOTIFICATIONS
             flutter drive --no-dds --driver=test_driver/integration_test.dart --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev --dart-define=DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED=true
 
       - name: Upload Patrol diagnostics

@@ -76,37 +76,17 @@ jobs:
             dart run tool/patrol/run.dart --suite smoke
             dart run tool/patrol/run.dart --suite regression
             mkdir -p build/patrol-logs
-            trap 'if ! adb -s emulator-5554 logcat -d -v threadtime > build/patrol-logs/platform-services-logcat.txt; then echo "Could not capture platform-service emulator logcat." >&2; fi' EXIT
-            dart run tool/ftemplate_cli/bin/ftemplate.dart create \
-              --name "Platform Services CI Smoke" \
-              --org com.example \
-              --preset blank \
-              --module background-work \
-              --module local-notifications \
-              --module app-updates \
-              --output "$RUNNER_TEMP/devflutt-platform-services-smoke" \
-              --no-pub
-            pushd "$RUNNER_TEMP/devflutt-platform-services-smoke"
+            trap 'if ! adb -s emulator-5554 logcat -d -v threadtime > "$GITHUB_WORKSPACE/build/patrol-logs/platform-services-logcat.txt"; then echo "Could not capture platform-service emulator logcat." >&2; fi' EXIT
+            dart run tool/ftemplate_cli/bin/ftemplate.dart create --name "Platform Services CI Smoke" --org com.example --preset blank --module background-work --module local-notifications --module app-updates --output "$RUNNER_TEMP/devflutt-platform-services-smoke" --no-pub
+            cd "$RUNNER_TEMP/devflutt-platform-services-smoke"
             flutter pub get
             flutter build apk --debug --flavor dev
             adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-dev-debug.apk
-            adb -s emulator-5554 shell pm revoke \
-              com.example.platform_services_ci_smoke.dev android.permission.POST_NOTIFICATIONS
-            flutter drive --no-dds \
-              --driver=test_driver/integration_test.dart \
-              --target=integration_test/platform_services_test.dart \
-              -d emulator-5554 \
-              --flavor dev
+            adb -s emulator-5554 shell pm revoke com.example.platform_services_ci_smoke.dev android.permission.POST_NOTIFICATIONS
+            flutter drive --no-dds --driver=test_driver/integration_test.dart --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev
             adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-dev-debug.apk
-            adb -s emulator-5554 shell pm grant \
-              com.example.platform_services_ci_smoke.dev android.permission.POST_NOTIFICATIONS
-            flutter drive --no-dds \
-              --driver=test_driver/integration_test.dart \
-              --target=integration_test/platform_services_test.dart \
-              -d emulator-5554 \
-              --flavor dev \
-              --dart-define=DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED=true
-            popd
+            adb -s emulator-5554 shell pm grant com.example.platform_services_ci_smoke.dev android.permission.POST_NOTIFICATIONS
+            flutter drive --no-dds --driver=test_driver/integration_test.dart --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev --dart-define=DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED=true
 
       - name: Upload Patrol diagnostics
         if: always()

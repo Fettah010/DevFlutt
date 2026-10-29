@@ -81,18 +81,24 @@ stores videos in `patrol_test/videos/` and failure screenshots in
 The generated v0.8 platform-service selection also has a native integration
 smoke test. It initializes the app, schedules and cancels a WorkManager task,
 checks notification display with permission denied or granted, and invokes the
-Play update availability adapter. Run both notification states on an online
-emulator with this PowerShell sequence from the repository root. CI runs the
-same two states through `tool/patrol/run_platform_services_smoke.sh`, which
-generates the project, derives its flavor application ID, and retains generator
-output and emulator logcat under `build/patrol-logs/`:
+Play update availability adapter. CI additionally taps a notification while
+the app is running and verifies that the declared counter route opens; it then
+terminates the app process, taps a second notification, and verifies that the
+cold-start launch reaches the same route. This generated smoke selection uses
+`feature-example` only to provide a distinct destination for those assertions.
+
+Run the permission-state checks on an online emulator with this PowerShell
+sequence from the repository root. CI runs those states plus the warm/cold tap
+checks through `tool/patrol/run_platform_services_smoke.sh`, which generates
+the project, derives its flavor application ID, and retains generator output,
+UI dumps, integration output, and emulator logcat under `build/patrol-logs/`:
 
 ```powershell
 $project = Join-Path $env:TEMP ("devflutt-platform-services-smoke-" + [guid]::NewGuid().ToString("N"))
 $appId = "com.example.platform_services_smoke.dev"
 dart run tool/ftemplate_cli/bin/ftemplate.dart create `
   --name "Platform Services Smoke" --org com.example --preset blank `
-  --module background-work --module local-notifications --module app-updates `
+  --module feature-example --module background-work --module local-notifications --module app-updates `
   --output $project --no-pub
 Push-Location $project
 try {

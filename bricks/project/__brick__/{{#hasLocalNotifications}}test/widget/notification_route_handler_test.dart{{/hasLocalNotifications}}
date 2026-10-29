@@ -2,33 +2,99 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:{{projectName}}/app/app_routes.dart';
+import 'package:{{projectName}}/core/notifications/local_notification_service.dart';
 import 'package:{{projectName}}/core/notifications/notification_route_handler.dart';
 
 void main() {
-  testWidgets('routes declared internal paths and rejects external or unknown targets', (
+  testWidgets('routes a cold-start notification before the router is mounted', (
     tester,
   ) async {
     final router = GoRouter(
       initialLocation: '/initial',
       routes: <RouteBase>[
-        GoRoute(path: AppRoutes.home, builder: (context, state) => const Text('Home')),
-        GoRoute(path: '/initial', builder: (context, state) => const Text('Initial')),
+        GoRoute(
+          path: AppRoutes.home,
+          builder: (context, state) => const Text('Home'),
+        ),
+        GoRoute(
+          path: '/initial',
+          builder: (context, state) => const Text('Initial'),
+        ),
       ],
     );
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
-    expect(find.text('Initial'), findsOneWidget);
-
+    final service = LocalNotificationService(
+      gateway: _LaunchPayloadGateway(AppRoutes.home),
+    );
     final handler = NotificationRouteHandler(router);
-    expect(handler.handle(AppRoutes.home), isTrue);
-    await tester.pumpAndSettle();
-    expect(find.text('Home'), findsOneWidget);
+    await service.initialize(onTap: handler.handle);
 
-    expect(handler.handle('https://example.com/'), isFalse);
-    expect(handler.handle('/unknown'), isFalse);
-    expect(handler.handle('/?destination=/unknown'), isFalse);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
     await tester.pumpAndSettle();
     expect(find.text('Home'), findsOneWidget);
   });
+
+  testWidgets(
+    'routes declared internal paths and rejects external or unknown targets',
+    (tester) async {
+      final router = GoRouter(
+        initialLocation: '/initial',
+        routes: <RouteBase>[
+          GoRoute(
+            path: AppRoutes.home,
+            builder: (context, state) => const Text('Home'),
+          ),
+          GoRoute(
+            path: '/initial',
+            builder: (context, state) => const Text('Initial'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      expect(find.text('Initial'), findsOneWidget);
+
+      final handler = NotificationRouteHandler(router);
+      expect(handler.handle(AppRoutes.home), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.text('Home'), findsOneWidget);
+
+      expect(handler.handle('https://example.com/'), isFalse);
+      expect(handler.handle('/unknown'), isFalse);
+      expect(handler.handle('/?destination=/unknown'), isFalse);
+      await tester.pumpAndSettle();
+      expect(find.text('Home'), findsOneWidget);
+    },
+  );
+}
+
+class _LaunchPayloadGateway implements LocalNotificationGateway {
+  _LaunchPayloadGateway(this.launchPayload);
+
+  final String launchPayload;
+
+  @override
+  Future<bool?> areNotificationsEnabled() async => null;
+
+  @override
+  Future<void> createChannel() async {}
+
+  @override
+  Future<String?> getLaunchPayload() async => launchPayload;
+
+  @override
+  Future<void> initialize(void Function(String?) onTap) async {}
+
+  @override
+  Future<bool?> requestNotificationsPermission() async => null;
+
+  @override
+  Future<void> show({
+    required int id,
+    required String title,
+    required String body,
+    String? route,
+  }) async {}
 }

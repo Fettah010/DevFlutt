@@ -184,6 +184,9 @@ void main() {
         final app = File('${selected.projectDir.path}/lib/app.dart').readAsStringSync();
         final bootstrap = File('${selected.projectDir.path}/lib/bootstrap/bootstrap.dart')
             .readAsStringSync();
+        final integrationTest = File(
+          '${selected.projectDir.path}/integration_test/platform_services_test.dart',
+        ).readAsStringSync();
         final manifest = File(
           '${selected.projectDir.path}/android/app/src/main/AndroidManifest.xml',
         ).readAsStringSync();
@@ -220,6 +223,9 @@ void main() {
         );
         expect(app, contains('GoRouter? router'));
         expect(bootstrap, contains('NotificationRouteHandler'));
+        expect(integrationTest, contains('route: AppRoutes.home'));
+        expect(integrationTest, isNot(contains('AppRoutes.counter')));
+        expect(integrationTest, contains('requires the feature-example module'));
 
         await selected.projectDir.delete(recursive: true);
       },

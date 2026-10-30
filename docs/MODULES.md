@@ -30,6 +30,7 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `background-work` | platform | `architecture-core` | — | Android WorkManager adapter with named tasks, constraints, and retry backoff |
 | `local-notifications` | platform | `architecture-core`, `navigation` | — | Android local notification channels, explicit permission requests, and validated route hand-off |
 | `app-updates` | platform | `architecture-core` | — | Android Play in-app update adapter and store-listing fallback |
+| `localization` | ui | `architecture-core` | — | Opt-in Flutter `gen-l10n`, English/Arabic ARBs, locale-aware formatters |
 
 ## Presets
 

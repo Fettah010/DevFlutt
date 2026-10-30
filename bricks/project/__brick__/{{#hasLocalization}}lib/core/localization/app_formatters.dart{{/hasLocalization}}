@@ -1,0 +1,26 @@
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+
+/// Locale-aware formatting helpers for dates, numbers, and currency.
+///
+/// Pass the active locale from the generated `AppLocalizations` instance or
+/// `Localizations.localeOf(context)`. No process-global locale is changed.
+abstract final class AppFormatters {
+  /// Loads date symbols for the locales shipped by this generated app.
+  static Future<void> initialize() => Future.wait<void>(<Future<void>>[
+    initializeDateFormatting('en'),
+    initializeDateFormatting('ar'),
+  ]);
+
+  static String number(num value, {required String locale}) =>
+      NumberFormat.decimalPattern(locale).format(value);
+
+  static String currency(
+    num value, {
+    required String locale,
+    required String currencyCode,
+  }) => NumberFormat.simpleCurrency(locale: locale, name: currencyCode).format(value);
+
+  static String date(DateTime value, {required String locale}) =>
+      DateFormat.yMMMd(locale).format(value);
+}

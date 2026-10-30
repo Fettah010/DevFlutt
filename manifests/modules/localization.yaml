@@ -1,0 +1,39 @@
+id: localization
+version: 1
+category: ui
+summary: >-
+  Optional Flutter-generated English and Arabic localization with locale-aware
+  number, currency, and date formatting.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: flutter_localizations
+    source: sdk
+    sdk: flutter
+  - name: intl
+    version: ^0.20.3
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - l10n.yaml
+  - lib/l10n/app_en.arb
+  - lib/l10n/app_ar.arb
+  - lib/core/localization/app_formatters.dart
+  - lib/app.dart
+  - lib/features/home/home_page.dart
+requiredSetup:
+  - Run `flutter pub get` and `flutter gen-l10n` after generation.
+tests:
+  unit: true
+  widget: true
+  integration: none

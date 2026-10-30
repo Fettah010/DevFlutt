@@ -66,6 +66,7 @@ class GenerationEngine {
       'hasStateRiverpod': moduleIds.contains('state-riverpod'),
       'hasGoRouter': moduleIds.contains('navigation'),
       'hasDesignSystem': moduleIds.contains('design-system'),
+      'hasLocalization': moduleIds.contains('localization'),
       'hasFeatureExample': moduleIds.contains('feature-example'),
       'hasShowcase': moduleIds.contains('showcase'),
       'hasLogging': moduleIds.contains('logging'),

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   module, plus generated-project release-manifest checks for `POST_NOTIFICATIONS`.
 - Documentation for platform setup, permission timing, notification route validation,
   background scheduling limits, and Play internal-track testing.
+- Opt-in Flutter localization module with English/Arabic resources, locale-aware number,
+  currency, and date helpers; the blank preset remains localization-free.
 
 ### Security and behavior boundaries
 

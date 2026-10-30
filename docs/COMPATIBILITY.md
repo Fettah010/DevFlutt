@@ -13,6 +13,9 @@
 | compileSdk / targetSdk | 36 |
 | minSdk | 24 |
 
+The optional `localization` module uses the bundled Flutter SDK `flutter_localizations` and
+hosted `intl` `^0.20.3`; its generated-project tests run `flutter gen-l10n` on this toolchain.
+
 ## Android
 
 The Android-only `background-work`, `local-notifications`, and `app-updates` modules are

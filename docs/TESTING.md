@@ -94,6 +94,22 @@ contract suite run against the selected adapter, and the router tests for the
 authentication redirect. The generator runs the canonical Dart formatter over the
 generated files, so CI can format-check every generated project as well.
 
+### Generated localization module
+
+For a project generated with `--module localization`, resolve dependencies and generate
+the localized Dart API before analysis or builds:
+
+```sh
+flutter pub get
+flutter gen-l10n
+flutter analyze --fatal-infos
+flutter test
+```
+
+The module contributes English and Arabic ARB resources, Flutter SDK localization delegates,
+and locale-aware formatters. The blank preset omits the localization dependency, `l10n.yaml`,
+ARB resources, and generated localization imports.
+
 The v0.7 matrix also generates `preferences`, `local-database`, `offline-data`, `commerce`,
 and `commerce-persistence` independently. Each selection is format-checked, analyzed,
 tested, built in debug and release, and checked for expected Android permissions. The

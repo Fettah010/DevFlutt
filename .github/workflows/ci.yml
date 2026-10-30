@@ -109,6 +109,12 @@ jobs:
             module: ''
             expects_network: false
             expects_notifications: false
+          - name: demo-localization
+            preset: demo
+            auth: none
+            module: localization
+            expects_network: false
+            expects_notifications: false
           - name: recommended
             preset: recommended
             auth: none
@@ -230,6 +236,11 @@ jobs:
       - name: Resolve dependencies
         working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter pub get
+
+      - name: Generate localization API
+        if: matrix.module == 'localization' || matrix.module2 == 'localization'
+        working-directory: /tmp/generated-${{ matrix.name }}
+        run: flutter gen-l10n
 
       - name: Check formatting
         working-directory: /tmp/generated-${{ matrix.name }}

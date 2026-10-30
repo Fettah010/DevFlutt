@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   currency, and date helpers; the blank preset remains localization-free.
 - Expanded the optional design system with validated fields, offline and empty/error/loading
   states, list rows, confirmation dialogs, bottom sheets, and high-contrast theme variants.
+- Added shared route motion tokens and reduced-motion-aware page transitions, plus generated
+  widget checks for tap-target size, labels, contrast, keyboard traversal, RTL and text scaling.
+- Added a manual Android accessibility review checklist. Device-level assistive-technology
+  review remains required before release.
 
 ### Security and behavior boundaries
 

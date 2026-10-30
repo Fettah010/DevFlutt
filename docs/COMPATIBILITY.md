@@ -15,6 +15,8 @@
 
 The optional `localization` module uses the bundled Flutter SDK `flutter_localizations` and
 hosted `intl` `^0.20.3`; its generated-project tests run `flutter gen-l10n` on this toolchain.
+The generated-project CI matrix includes the demo design system with localization, runs
+`flutter gen-l10n`, and then formats, analyzes, tests, and builds that composition.
 
 ## Android
 
@@ -71,6 +73,8 @@ in the merged release manifest of an `auth-firebase` project.
 | `flutter_local_notifications` | `^22.3.3` | `local-notifications` |
 | `in_app_update` | `^5.0.0` | `app-updates` |
 | `url_launcher` | `^6.3.3` | `app-updates` |
+| `flutter_localizations` | Flutter SDK | `localization` |
+| `intl` | `^0.20.3` | `localization` |
 
 `go_router` 18 migrated to the `material_ui` and `cupertino_ui` packages internally. The public
 API used by the template (`GoRouter`, `GoRoute`, `GoRouterState`) is unchanged, and generated

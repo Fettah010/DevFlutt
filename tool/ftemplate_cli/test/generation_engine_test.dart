@@ -30,6 +30,54 @@ void main() {
   }
 
   group('GenerationEngine', () {
+    test('localization is opt-in and emits only the selected resource set', () async {
+      final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+      final blankPubspec = File('${blank.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final blankApp = File('${blank.projectDir.path}/lib/app.dart').readAsStringSync();
+      expect(blankPubspec, isNot(contains('flutter_localizations:')));
+      expect(blankPubspec, isNot(contains('generate: true')));
+      expect(File('${blank.projectDir.path}/l10n.yaml').existsSync(), isFalse);
+      expect(Directory('${blank.projectDir.path}/lib/l10n').existsSync(), isFalse);
+      expect(blankApp, isNot(contains('AppLocalizations')));
+      await blank.projectDir.delete(recursive: true);
+
+      final localized = await generate(
+        spec(name: 'Localized App', org: 'com.example', modules: const ['localization']),
+      );
+      final localizedPubspec = File('${localized.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final localizedApp = File('${localized.projectDir.path}/lib/app.dart').readAsStringSync();
+      expect(localizedPubspec, contains('flutter_localizations:\n    sdk: flutter'));
+      expect(localizedPubspec, contains('intl: ^0.20.3'));
+      expect(localizedPubspec, contains('generate: true'));
+      expect(File('${localized.projectDir.path}/l10n.yaml').existsSync(), isTrue);
+      expect(File('${localized.projectDir.path}/lib/l10n/app_en.arb').existsSync(), isTrue);
+      expect(File('${localized.projectDir.path}/lib/l10n/app_ar.arb').existsSync(), isTrue);
+      expect(localizedApp, contains('AppLocalizations.localizationsDelegates'));
+      expect(localizedApp, contains('AppLocalizations.supportedLocales'));
+      await localized.projectDir.delete(recursive: true);
+    });
+
+    test('renders SDK dependency entries in generated pubspec YAML', () async {
+      final base = planner.plan(spec(name: 'SDK Dependency', org: 'com.example'));
+      final plan = GenerationPlan(
+        spec: base.spec,
+        modules: base.modules,
+        dependencies: const <PubDependency>[
+          PubDependency.sdk(name: 'flutter_localizations', sdk: 'flutter'),
+          PubDependency.hosted(name: 'intl', version: '^0.20.3'),
+        ],
+        permissions: base.permissions,
+        configKeys: base.configKeys,
+      );
+      final generated = await GenerationEngine(brickPath: brickPath).generate(plan);
+      final pubspec = File('${generated.projectDir.path}/pubspec.yaml').readAsStringSync();
+
+      expect(pubspec, contains('flutter_localizations:\n    sdk: flutter'));
+      expect(pubspec, contains('intl: ^0.20.3'));
+
+      await generated.projectDir.delete(recursive: true);
+    });
+
     test('the brick declares every known capability identifier', () {
       const brickFile =
           '$brickPath/__brick__/{{#hasAuthCore}}lib/core/auth/'
@@ -376,6 +424,18 @@ void main() {
         '${result.projectDir.path}/lib/features/showcase/presentation/showcase_page.dart',
       );
       expect(showcase.existsSync(), isTrue);
+      for (final component in <String>[
+        'app_offline_banner.dart',
+        'app_list_item.dart',
+        'app_confirmation_dialog.dart',
+        'app_bottom_sheet.dart',
+      ]) {
+        expect(
+          File('${result.projectDir.path}/lib/core/widgets/$component').existsSync(),
+          isTrue,
+          reason: '$component should be contributed by the selected design-system module',
+        );
+      }
 
       final routes = File('${result.projectDir.path}/lib/app/app_routes.dart').readAsStringSync();
       expect(routes, contains('/showcase'));
@@ -391,10 +451,18 @@ void main() {
 
       final router = File('${result.projectDir.path}/lib/app/app_router.dart');
       final button = File('${result.projectDir.path}/lib/core/widgets/app_button.dart');
+      final offlineBanner = File(
+        '${result.projectDir.path}/lib/core/widgets/app_offline_banner.dart',
+      );
+      final confirmation = File(
+        '${result.projectDir.path}/lib/core/widgets/app_confirmation_dialog.dart',
+      );
       final counter = Directory('${result.projectDir.path}/lib/features/counter');
 
       expect(router.existsSync(), isFalse);
       expect(button.existsSync(), isFalse);
+      expect(offlineBanner.existsSync(), isFalse);
+      expect(confirmation.existsSync(), isFalse);
       expect(counter.existsSync(), isFalse);
 
       await result.projectDir.delete(recursive: true);

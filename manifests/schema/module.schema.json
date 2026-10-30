@@ -2,6 +2,31 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://devflutt.com/schemas/module.schema.json",
   "title": "DevFlutt module manifest",
+  "$defs": {
+    "pubDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "source": { "enum": ["hosted", "sdk"] },
+        "sdk": { "type": "string" }
+      },
+      "oneOf": [
+        {
+          "required": ["version"],
+          "properties": { "source": { "enum": ["hosted"] } },
+          "not": { "required": ["sdk"] }
+        },
+        {
+          "required": ["sdk", "source"],
+          "properties": { "source": { "const": "sdk" } },
+          "not": { "required": ["version"] }
+        }
+      ]
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -44,26 +69,14 @@
     "pubDependencies": {
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "version"],
-        "properties": {
-          "name": { "type": "string" },
-          "version": { "type": "string" }
-        }
+        "$ref": "#/$defs/pubDependency"
       }
     },
     "devDependencies": {
       "description": "Optional development dependencies required to regenerate generated source.",
       "type": "array",
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "version"],
-        "properties": {
-          "name": { "type": "string" },
-          "version": { "type": "string" }
-        }
+        "$ref": "#/$defs/pubDependency"
       },
       "uniqueItems": true
     },

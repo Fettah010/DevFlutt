@@ -16,6 +16,16 @@ void main() {
       expect(dark.colorScheme.brightness, Brightness.dark);
     });
 
+    test('provides light and dark high-contrast variants', () {
+      final light = AppTheme.lightHighContrast();
+      final dark = AppTheme.darkHighContrast();
+
+      expect(light.colorScheme.brightness, Brightness.light);
+      expect(dark.colorScheme.brightness, Brightness.dark);
+      expect(light.colorScheme.primary, isNot(AppTheme.light().colorScheme.primary));
+      expect(dark.colorScheme.primary, isNot(AppTheme.dark().colorScheme.primary));
+    });
+
     test('keeps the semantic colours of the two schemes distinct', () {
       final light = AppTheme.light().colorScheme;
       final dark = AppTheme.dark().colorScheme;

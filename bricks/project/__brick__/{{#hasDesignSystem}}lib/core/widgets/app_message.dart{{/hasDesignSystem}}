@@ -24,6 +24,7 @@ class AppMessage extends StatelessWidget {
     required this.text,
     this.severity = AppMessageSeverity.info,
     this.onDismiss,
+    this.dismissLabel = 'Dismiss',
   });
 
   /// The message body.
@@ -34,6 +35,9 @@ class AppMessage extends StatelessWidget {
 
   /// Called when the dismiss button is pressed.
   final VoidCallback? onDismiss;
+
+  /// Localized tooltip for the dismiss action.
+  final String dismissLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +78,7 @@ class AppMessage extends StatelessWidget {
               onPressed: dismiss,
               icon: const Icon(Icons.close),
               color: foreground,
-              tooltip: 'Dismiss',
+              tooltip: dismissLabel,
             ),
         ],
       ),

@@ -1,0 +1,22 @@
+import 'package:flutter/material.dart';
+
+/// Shared safe-area and keyboard behavior for modal bottom sheets.
+abstract final class AppBottomSheet {
+  static Future<T?> show<T>(
+    BuildContext context, {
+    required WidgetBuilder builder,
+    bool isScrollControlled = false,
+  }) =>
+      showModalBottomSheet<T>(
+        context: context,
+        useSafeArea: true,
+        isScrollControlled: isScrollControlled,
+        builder: (context) => SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+            child: builder(context),
+          ),
+        ),
+      );
+}

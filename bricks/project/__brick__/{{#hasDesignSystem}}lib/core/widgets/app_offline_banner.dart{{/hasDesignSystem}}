@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_tokens.dart';
+
+/// A compact, persistent message that explains limited connectivity.
+class AppOfflineBanner extends StatelessWidget {
+  const AppOfflineBanner({super.key, required this.message});
+
+  /// Localized explanation of what is unavailable offline.
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        color: scheme.tertiaryContainer,
+        child: Row(
+          children: [
+            Icon(Icons.wifi_off, color: scheme.onTertiaryContainer),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(message, style: TextStyle(color: scheme.onTertiaryContainer)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

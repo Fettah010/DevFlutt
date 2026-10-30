@@ -11,6 +11,8 @@ import '../app.dart';
 {{/hasServices}}{{#hasAuthFirebase}}import '../core/auth/firebase/firebase_auth_port_impl.dart';
 {{/hasAuthFirebase}}{{#hasAuthSupabase}}import '../core/auth/supabase/supabase_auth_port_impl.dart';
 {{/hasAuthSupabase}}import '../core/config/app_config.dart';
+{{#hasLocalization}}import '../core/localization/app_formatters.dart';
+{{/hasLocalization}}
 {{#hasStateRiverpod}}import '../core/state/provider_scope.dart';
 {{/hasStateRiverpod}}
 /// Starts the application.
@@ -23,6 +25,8 @@ Future<void> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final config = AppConfig.fromEnvironment();
+{{#hasLocalization}}  await AppFormatters.initialize();
+{{/hasLocalization}}
 {{#hasBackgroundWork}}  debugPrint('Generated app bootstrap initializing background work.');
   await Workmanager().initialize(backgroundTaskDispatcher);
   debugPrint('Generated app bootstrap background work is ready.');

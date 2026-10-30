@@ -66,6 +66,7 @@ class GenerationEngine {
       'hasStateRiverpod': moduleIds.contains('state-riverpod'),
       'hasGoRouter': moduleIds.contains('navigation'),
       'hasDesignSystem': moduleIds.contains('design-system'),
+      'hasLocalization': moduleIds.contains('localization'),
       'hasFeatureExample': moduleIds.contains('feature-example'),
       'hasShowcase': moduleIds.contains('showcase'),
       'hasLogging': moduleIds.contains('logging'),
@@ -103,10 +104,10 @@ class GenerationEngine {
       'hasVibratePermission': plan.permissions.contains('android.permission.VIBRATE'),
       'hasServices': _serviceModuleIds.any(moduleIds.contains),
       'extraDependencies': plan.dependencies
-          .map((dependency) => '${dependency.name}: ${dependency.version}')
+          .map((dependency) => dependency.toPubspecEntry())
           .toList(),
       'extraDevDependencies': plan.devDependencies
-          .map((dependency) => '${dependency.name}: ${dependency.version}')
+          .map((dependency) => dependency.toPubspecEntry())
           .toList(),
     };
   }

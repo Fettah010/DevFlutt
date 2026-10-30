@@ -1,3 +1,5 @@
+import 'package:flutter/animation.dart';
+
 /// The spacing scale used across the application.
 ///
 /// Every layout gap is a multiple of these values so that the vertical and
@@ -41,4 +43,10 @@ abstract final class AppDurations {
 
   /// Slow transition, for example a large content reveal.
   static const Duration slow = Duration(milliseconds: 400);
+}
+
+/// Curves used by template-owned transitions.
+abstract final class AppCurves {
+  /// A restrained ease-in/ease-out curve for route changes.
+  static const Curve standard = Curves.easeInOut;
 }

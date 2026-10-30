@@ -1,0 +1,9 @@
+{
+  "@@locale": "ar",
+  "appTitle": "تطبيق DevFlutt",
+  "homeTitle": "الرئيسية",
+  "homeGreeting": "تطبيقك جاهز",
+  "homeDescription": "تم إنشاؤه باستخدام قالب DevFlutt.",
+  "counterAction": "افتح مثال العداد",
+  "mixedDirectionSample": "DevFlutt 2026 — مرحبًا Flutter"
+}

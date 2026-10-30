@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+{{#hasLocalization}}import 'l10n/generated/app_localizations.dart';
+{{/hasLocalization}}
 {{#hasGoRouter}}import 'package:go_router/go_router.dart';
 {{/hasGoRouter}}
 
@@ -29,17 +31,29 @@ class DevFluttApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 {{#hasGoRouter}}    return MaterialApp.router(
-      title: config.appName,
+{{#hasLocalization}}      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+{{/hasLocalization}}{{^hasLocalization}}      title: config.appName,
+{{/hasLocalization}}
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      highContrastTheme: AppTheme.lightHighContrast(),
+      highContrastDarkTheme: AppTheme.darkHighContrast(),
       routerConfig: _router,
     );
 {{/hasGoRouter}}{{^hasGoRouter}}    return MaterialApp(
-      title: config.appName,
+{{#hasLocalization}}      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+{{/hasLocalization}}{{^hasLocalization}}      title: config.appName,
+{{/hasLocalization}}
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      highContrastTheme: AppTheme.lightHighContrast(),
+      highContrastDarkTheme: AppTheme.darkHighContrast(),
       home: const HomePage(),
     );
 {{/hasGoRouter}}  }

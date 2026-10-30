@@ -1,0 +1,58 @@
+import 'package:{{projectName}}/features/home/home_page.dart';
+import 'package:{{projectName}}/l10n/generated/app_localizations.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('Arabic home content uses RTL direction with mixed-script text', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('ar'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomePage(),
+      ),
+    );
+
+    expect(find.text('الرئيسية'), findsOneWidget);
+    expect(find.text('تطبيقك جاهز'), findsOneWidget);
+    expect(find.text('DevFlutt 2026 — مرحبًا Flutter'), findsOneWidget);
+    expect(Directionality.of(tester.element(find.byType(HomePage))), TextDirection.rtl);
+  });
+
+  testWidgets('English home content uses LTR direction', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomePage(),
+      ),
+    );
+
+    expect(find.text('Your app is ready'), findsOneWidget);
+    expect(Directionality.of(tester.element(find.byType(HomePage))), TextDirection.ltr);
+  });
+
+  testWidgets('Arabic mixed-direction home content fits at large text scaling', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: const MaterialApp(
+          locale: Locale('ar'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: HomePage(),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('DevFlutt 2026 — مرحبًا Flutter'), findsOneWidget);
+  });
+}

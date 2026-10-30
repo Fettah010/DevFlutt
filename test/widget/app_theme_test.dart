@@ -69,5 +69,9 @@ void main() {
       expect(AppDurations.fast, lessThan(AppDurations.normal));
       expect(AppDurations.normal, lessThan(AppDurations.slow));
     });
+
+    test('exposes a shared route motion curve', () {
+      expect(AppCurves.standard, Curves.easeInOut);
+    });
   });
 }

@@ -20,8 +20,18 @@ class AppTheme {
   /// Dark theme for the application.
   static ThemeData dark() => _build(Brightness.dark);
 
-  static ThemeData _build(Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(seedColor: seedColor, brightness: brightness);
+  /// High-contrast light variant used when the platform requests it.
+  static ThemeData lightHighContrast() => _build(Brightness.light, contrastLevel: 1);
+
+  /// High-contrast dark variant used when the platform requests it.
+  static ThemeData darkHighContrast() => _build(Brightness.dark, contrastLevel: 1);
+
+  static ThemeData _build(Brightness brightness, {double contrastLevel = 0}) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: brightness,
+      contrastLevel: contrastLevel,
+    );
 
     return ThemeData(
       useMaterial3: true,

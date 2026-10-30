@@ -10,8 +10,8 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 |---|---|---|---|---|
 | `architecture-core` | core | — | — | Bootstrap, config boundary, design tokens, theme, test structure |
 | `state-riverpod` | state | `architecture-core` | — | `flutter_riverpod`, provider scope, shared app state |
-| `navigation` | routing | `architecture-core`, `state-riverpod` | — | `go_router`, route registry, redirect hook, unknown-route screen |
-| `design-system` | ui | `architecture-core` | — | Reusable buttons, text field, card, message, and state views |
+| `navigation` | routing | `architecture-core`, `state-riverpod` | — | `go_router`, route registry, redirect hook, unknown-route screen, reduced-motion-aware transitions |
+| `design-system` | ui | `architecture-core` | — | Theme-aware buttons, validated fields, cards/list rows, messages, offline/loading/error/empty states, confirmation dialogs, and bottom sheets |
 | `feature-example` | feature | `architecture-core`, `state-riverpod`, `navigation` | — | Counter feature across domain, data, application, and presentation |
 | `showcase` | feature | `architecture-core`, `state-riverpod`, `navigation`, `design-system` | — | Component showcase page |
 | `logging` | diagnostics | `architecture-core` | — | `AppLogger`, `LogRecord`, `Redactor`, console and memory sinks |
@@ -30,6 +30,7 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `background-work` | platform | `architecture-core` | — | Android WorkManager adapter with named tasks, constraints, and retry backoff |
 | `local-notifications` | platform | `architecture-core`, `navigation` | — | Android local notification channels, explicit permission requests, and validated route hand-off |
 | `app-updates` | platform | `architecture-core` | — | Android Play in-app update adapter and store-listing fallback |
+| `localization` | ui | `architecture-core` | — | Opt-in Flutter `gen-l10n`, English/Arabic ARBs, locale-aware formatters |
 
 ## Presets
 
@@ -92,6 +93,20 @@ validated by `ftemplate validate --manifest <file>` before any files are written
 
 The `outputs` list is the contract between a module and the generator: it names every file
 the module contributes to a generated project.
+
+## Localization and accessibility
+
+The optional `localization` module provides English and Arabic ARB resources, generated
+Flutter localization delegates, and locale-aware number, currency, and date formatters.
+After generating the app, run `flutter pub get` and `flutter gen-l10n` before analysis,
+tests, or builds. The blank preset has no localization dependency or ARB resources.
+
+The `navigation` module applies a short route fade and uses an immediate page change when
+`MediaQuery.disableAnimations` is enabled. Reusable button, field, message, list, dialog,
+and sheet components from `design-system` are covered by representative automated
+accessibility tests.
+See the [manual accessibility checklist](ACCESSIBILITY_CHECKLIST.md) for device review
+steps and the limits of automated evidence.
 
 ## Removal
 

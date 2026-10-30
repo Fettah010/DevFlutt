@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   background scheduling limits, and Play internal-track testing.
 - Opt-in Flutter localization module with English/Arabic resources, locale-aware number,
   currency, and date helpers; the blank preset remains localization-free.
+- Expanded the optional design system with validated fields, offline and empty/error/loading
+  states, list rows, confirmation dialogs, bottom sheets, and high-contrast theme variants.
 
 ### Security and behavior boundaries
 

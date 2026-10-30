@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:{{projectName}}/core/widgets/app_button.dart';
+import 'package:{{projectName}}/core/widgets/app_bottom_sheet.dart';
 import 'package:{{projectName}}/core/widgets/app_card.dart';
+import 'package:{{projectName}}/core/widgets/app_confirmation_dialog.dart';
+import 'package:{{projectName}}/core/widgets/app_list_item.dart';
 import 'package:{{projectName}}/core/widgets/app_message.dart';
+import 'package:{{projectName}}/core/widgets/app_offline_banner.dart';
 import 'package:{{projectName}}/core/widgets/app_state_view.dart';
 import 'package:{{projectName}}/core/widgets/app_text_field.dart';
 
@@ -66,6 +70,28 @@ void main() {
 
       expect(value, 'Ada');
     });
+
+    testWidgets('supports Form validation', (tester) async {
+      final formKey = GlobalKey<FormState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Form(
+              key: formKey,
+              child: const AppTextField(
+                label: 'Email',
+                validator: _requiredValidator,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(formKey.currentState!.validate(), isFalse);
+      await tester.pump();
+      expect(find.text('Required'), findsOneWidget);
+    });
   });
 
   group('AppCard', () {
@@ -117,6 +143,87 @@ void main() {
     });
   });
 
+  testWidgets('offline banner provides a persistent message', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: AppOfflineBanner(message: 'Saved locally'))),
+    );
+
+    expect(find.text('Saved locally'), findsOneWidget);
+    expect(find.byIcon(Icons.wifi_off), findsOneWidget);
+    expect(tester.getSemantics(find.text('Saved locally')).flagsCollection.isLiveRegion, isTrue);
+  });
+
+  testWidgets('list item renders content and handles taps', (tester) async {
+    var tapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AppListItem(
+            title: 'Profile',
+            subtitle: 'Account settings',
+            onTap: () => tapped = true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('Account settings'), findsOneWidget);
+    await tester.tap(find.text('Profile'));
+    expect(tapped, isTrue);
+  });
+
+  testWidgets('confirmation dialog returns the chosen result', (tester) async {
+    bool? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              result = await showAppConfirmationDialog(
+                context: context,
+                title: 'Delete item?',
+                message: 'This cannot be undone.',
+                confirmLabel: 'Delete',
+                cancelLabel: 'Cancel',
+                destructive: true,
+              );
+            },
+            child: const Text('Open dialog'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open dialog'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(result, isTrue);
+  });
+
+  testWidgets('bottom sheet uses the shared modal presentation', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => AppBottomSheet.show<void>(
+              context,
+              builder: (_) => const Text('Sheet content'),
+            ),
+            child: const Text('Open sheet'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open sheet'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sheet content'), findsOneWidget);
+  });
+
   group('App state views', () {
     testWidgets('render their default content', (tester) async {
       await tester.pumpWidget(
@@ -156,3 +263,5 @@ void main() {
     });
   });
 }
+
+String? _requiredValidator(String? value) => value == null || value.isEmpty ? 'Required' : null;

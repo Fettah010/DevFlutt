@@ -39,6 +39,8 @@ class DevFluttApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      highContrastTheme: AppTheme.lightHighContrast(),
+      highContrastDarkTheme: AppTheme.darkHighContrast(),
       routerConfig: _router,
     );
 {{/hasGoRouter}}{{^hasGoRouter}}    return MaterialApp(
@@ -50,6 +52,8 @@ class DevFluttApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      highContrastTheme: AppTheme.lightHighContrast(),
+      highContrastDarkTheme: AppTheme.darkHighContrast(),
       home: const HomePage(),
     );
 {{/hasGoRouter}}  }

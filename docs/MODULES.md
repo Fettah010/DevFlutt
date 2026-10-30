@@ -11,7 +11,7 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `architecture-core` | core | — | — | Bootstrap, config boundary, design tokens, theme, test structure |
 | `state-riverpod` | state | `architecture-core` | — | `flutter_riverpod`, provider scope, shared app state |
 | `navigation` | routing | `architecture-core`, `state-riverpod` | — | `go_router`, route registry, redirect hook, unknown-route screen |
-| `design-system` | ui | `architecture-core` | — | Reusable buttons, text field, card, message, and state views |
+| `design-system` | ui | `architecture-core` | — | Theme-aware buttons, validated fields, cards/list rows, messages, offline/loading/error/empty states, confirmation dialogs, and bottom sheets |
 | `feature-example` | feature | `architecture-core`, `state-riverpod`, `navigation` | — | Counter feature across domain, data, application, and presentation |
 | `showcase` | feature | `architecture-core`, `state-riverpod`, `navigation`, `design-system` | — | Component showcase page |
 | `logging` | diagnostics | `architecture-core` | — | `AppLogger`, `LogRecord`, `Redactor`, console and memory sinks |

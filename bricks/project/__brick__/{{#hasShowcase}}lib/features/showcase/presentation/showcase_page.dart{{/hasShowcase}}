@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_bottom_sheet.dart';
+import '../../../core/widgets/app_confirmation_dialog.dart';
+import '../../../core/widgets/app_list_item.dart';
 import '../../../core/widgets/app_message.dart';
+import '../../../core/widgets/app_offline_banner.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_text_field.dart';
 
@@ -43,6 +47,42 @@ class _ShowcasePageState extends State<ShowcasePage> {
         child: Column(
           children: [
             AppCard(title: 'Message', child: AppMessage(text: _message)),
+            const AppOfflineBanner(message: 'Offline changes are saved on this device.'),
+            const AppCard(
+              title: 'List item',
+              child: AppListItem(title: 'Example row', subtitle: 'Direction-aware layout'),
+            ),
+            AppCard(
+              title: 'Dialogs and sheets',
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      final confirmed = await showAppConfirmationDialog(
+                        context: context,
+                        title: 'Confirm action?',
+                        message: 'This is a sample confirmation.',
+                        confirmLabel: 'Confirm',
+                        cancelLabel: 'Cancel',
+                      );
+                      if (confirmed == true && context.mounted) _show('Confirmed.');
+                    },
+                    child: const Text('Confirmation'),
+                  ),
+                  TextButton(
+                    onPressed: () => AppBottomSheet.show<void>(
+                      context,
+                      builder: (_) => const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text('Sample bottom sheet'),
+                      ),
+                    ),
+                    child: const Text('Bottom sheet'),
+                  ),
+                ],
+              ),
+            ),
             AppCard(
               title: 'Buttons',
               child: Column(

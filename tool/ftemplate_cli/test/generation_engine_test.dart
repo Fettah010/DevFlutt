@@ -424,6 +424,18 @@ void main() {
         '${result.projectDir.path}/lib/features/showcase/presentation/showcase_page.dart',
       );
       expect(showcase.existsSync(), isTrue);
+      for (final component in <String>[
+        'app_offline_banner.dart',
+        'app_list_item.dart',
+        'app_confirmation_dialog.dart',
+        'app_bottom_sheet.dart',
+      ]) {
+        expect(
+          File('${result.projectDir.path}/lib/core/widgets/$component').existsSync(),
+          isTrue,
+          reason: '$component should be contributed by the selected design-system module',
+        );
+      }
 
       final routes = File('${result.projectDir.path}/lib/app/app_routes.dart').readAsStringSync();
       expect(routes, contains('/showcase'));
@@ -439,10 +451,18 @@ void main() {
 
       final router = File('${result.projectDir.path}/lib/app/app_router.dart');
       final button = File('${result.projectDir.path}/lib/core/widgets/app_button.dart');
+      final offlineBanner = File(
+        '${result.projectDir.path}/lib/core/widgets/app_offline_banner.dart',
+      );
+      final confirmation = File(
+        '${result.projectDir.path}/lib/core/widgets/app_confirmation_dialog.dart',
+      );
       final counter = Directory('${result.projectDir.path}/lib/features/counter');
 
       expect(router.existsSync(), isFalse);
       expect(button.existsSync(), isFalse);
+      expect(offlineBanner.existsSync(), isFalse);
+      expect(confirmation.existsSync(), isFalse);
       expect(counter.existsSync(), isFalse);
 
       await result.projectDir.delete(recursive: true);

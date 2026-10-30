@@ -103,10 +103,10 @@ class GenerationEngine {
       'hasVibratePermission': plan.permissions.contains('android.permission.VIBRATE'),
       'hasServices': _serviceModuleIds.any(moduleIds.contains),
       'extraDependencies': plan.dependencies
-          .map((dependency) => '${dependency.name}: ${dependency.version}')
+          .map((dependency) => dependency.toPubspecEntry())
           .toList(),
       'extraDevDependencies': plan.devDependencies
-          .map((dependency) => '${dependency.name}: ${dependency.version}')
+          .map((dependency) => dependency.toPubspecEntry())
           .toList(),
     };
   }

@@ -38,6 +38,18 @@ tests:
 ''') as YamlMap;
 
   group('ManifestValidator', () {
+    test('parses hosted and SDK dependency forms without losing their source', () {
+      final hosted = PubDependency.fromYaml(loadYaml('name: intl\nversion: ^0.20.3') as YamlMap);
+      final sdk = PubDependency.fromYaml(
+        loadYaml('name: flutter_localizations\nsource: sdk\nsdk: flutter') as YamlMap,
+      );
+
+      expect(hosted.toPubspecEntry(), 'intl: ^0.20.3');
+      expect(sdk.toPubspecEntry(), 'flutter_localizations:\n    sdk: flutter');
+      expect(sdk.toString(), 'flutter_localizations (SDK: flutter)');
+      expect(sdk, PubDependency.sdk(name: 'flutter_localizations', sdk: 'flutter'));
+    });
+
     test('accepts a valid manifest', () {
       expect(validator.validate(validManifest), isEmpty);
     });
@@ -48,6 +60,39 @@ tests:
       ]);
       expect(validator.validate(manifest), isEmpty);
       expect(ManifestValidator.requiredFields, isNot(contains('devDependencies')));
+    });
+
+    test('accepts SDK dependencies alongside legacy hosted dependencies', () {
+      final manifest = _with(validManifest, 'pubDependencies', [
+        {'name': 'intl', 'version': '^0.20.3'},
+        {'name': 'flutter_localizations', 'source': 'sdk', 'sdk': 'flutter'},
+      ]);
+
+      expect(validator.validate(manifest), isEmpty);
+    });
+
+    test('rejects unknown dependency sources and SDK entries without an SDK name', () {
+      final unknownSource = _with(validManifest, 'pubDependencies', [
+        {'name': 'intl', 'version': '^0.20.3', 'source': 'git'},
+      ]);
+      final missingSdk = _with(validManifest, 'pubDependencies', [
+        {'name': 'flutter_localizations', 'source': 'sdk'},
+      ]);
+
+      expect(validator.validate(unknownSource).join('\n'), contains('source'));
+      expect(validator.validate(missingSdk).join('\n'), contains('sdk'));
+    });
+
+    test('rejects hosted entries without a version and SDK entries with a version', () {
+      final missingVersion = _with(validManifest, 'pubDependencies', [
+        {'name': 'intl'},
+      ]);
+      final sdkWithVersion = _with(validManifest, 'pubDependencies', [
+        {'name': 'flutter_localizations', 'source': 'sdk', 'sdk': 'flutter', 'version': '^0.0.0'},
+      ]);
+
+      expect(validator.validate(missingVersion).join('\n'), contains('version'));
+      expect(validator.validate(sdkWithVersion).join('\n'), contains('version'));
     });
 
     test('reports missing required fields', () {

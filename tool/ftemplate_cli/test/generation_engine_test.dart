@@ -30,6 +30,27 @@ void main() {
   }
 
   group('GenerationEngine', () {
+    test('renders SDK dependency entries in generated pubspec YAML', () async {
+      final base = planner.plan(spec(name: 'SDK Dependency', org: 'com.example'));
+      final plan = GenerationPlan(
+        spec: base.spec,
+        modules: base.modules,
+        dependencies: const <PubDependency>[
+          PubDependency.sdk(name: 'flutter_localizations', sdk: 'flutter'),
+          PubDependency.hosted(name: 'intl', version: '^0.20.3'),
+        ],
+        permissions: base.permissions,
+        configKeys: base.configKeys,
+      );
+      final generated = await GenerationEngine(brickPath: brickPath).generate(plan);
+      final pubspec = File('${generated.projectDir.path}/pubspec.yaml').readAsStringSync();
+
+      expect(pubspec, contains('flutter_localizations:\n    sdk: flutter'));
+      expect(pubspec, contains('intl: ^0.20.3'));
+
+      await generated.projectDir.delete(recursive: true);
+    });
+
     test('the brick declares every known capability identifier', () {
       const brickFile =
           '$brickPath/__brick__/{{#hasAuthCore}}lib/core/auth/'

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:{{projectName}}/app/app_router.dart';
 import 'package:{{projectName}}/app/app_routes.dart';
@@ -11,11 +12,19 @@ import 'package:{{projectName}}/core/auth/auth_session.dart';
 import 'package:{{projectName}}/core/auth/fake_auth_adapter.dart';
 {{/hasAuthRouter}}
 
-Widget _routerApp(GoRouter router) => MaterialApp.router(
-  routerConfig: router,
-{{#hasLocalization}}  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
-{{/hasLocalization}});
+Widget _routerApp(GoRouter router, {bool disableAnimations = false}) =>
+    ProviderScope(
+      child: MaterialApp.router(
+        routerConfig: router,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(disableAnimations: disableAnimations),
+          child: child!,
+        ),
+{{#hasLocalization}}        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+{{/hasLocalization}}      ),
+    );
 
 void main() {
   group('buildAppRouter', () {
@@ -53,6 +62,33 @@ void main() {
 
       expect(find.text('Home'), findsOneWidget);
     });
+
+{{#hasFeatureExample}}    testWidgets('shows the destination immediately when motion is disabled', (tester) async {
+      final router = buildAppRouter();
+
+      await tester.pumpWidget(_routerApp(router, disableAnimations: true));
+      await tester.pumpAndSettle();
+      router.go(AppRoutes.counter);
+      await tester.pump();
+
+      expect(find.text('Counter'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('uses a bounded fade transition when motion is enabled', (tester) async {
+      final router = buildAppRouter();
+
+      await tester.pumpWidget(_routerApp(router));
+      await tester.pumpAndSettle();
+      router.go(AppRoutes.counter);
+      await tester.pump();
+
+      expect(find.byType(FadeTransition), findsWidgets);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Counter'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+{{/hasFeatureExample}}
   });
 
   group('AppRoutes', () {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:{{projectName}}/core/widgets/app_button.dart';
@@ -10,10 +11,80 @@ import 'package:{{projectName}}/core/widgets/app_message.dart';
 import 'package:{{projectName}}/core/widgets/app_offline_banner.dart';
 import 'package:{{projectName}}/core/widgets/app_state_view.dart';
 import 'package:{{projectName}}/core/widgets/app_text_field.dart';
+import 'package:{{projectName}}/core/theme/app_theme.dart';
 
 void _noop() {}
 
 void main() {
+  testWidgets('representative controls meet tap target, label and contrast guidelines', (tester) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: const Scaffold(
+          body: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppTextField(label: 'Email address'),
+                AppPrimaryButton(label: 'Continue', onPressed: _noop),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('controls follow reading order during keyboard focus traversal', (tester) async {
+    final firstFocus = FocusNode(debugLabel: 'first');
+    final secondFocus = FocusNode(debugLabel: 'second');
+    addTearDown(firstFocus.dispose);
+    addTearDown(secondFocus.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusTraversalGroup(
+            child: Column(
+              children: [
+                AppPrimaryButton(
+                  key: const ValueKey('first-control'),
+                  label: 'First',
+                  onPressed: _noop,
+                  focusNode: firstFocus,
+                ),
+                AppPrimaryButton(
+                  key: const ValueKey('second-control'),
+                  label: 'Second',
+                  onPressed: _noop,
+                  focusNode: secondFocus,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    firstFocus.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+
+    expect(secondFocus.hasPrimaryFocus, isTrue);
+  });
+
   group('AppPrimaryButton', () {
     testWidgets('calls the action when pressed', (tester) async {
       var pressed = false;

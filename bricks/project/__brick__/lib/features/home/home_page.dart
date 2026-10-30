@@ -21,12 +21,14 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text({{#hasLocalization}}l10n.homeTitle{{/hasLocalization}}{{^hasLocalization}}'Home'{{/hasLocalization}})),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Icon(
                 Icons.flutter_dash,
                 size: 72,
@@ -67,7 +69,8 @@ class HomePage extends StatelessWidget {
                 onPressed: () => context.go(AppRoutes.commerce),
                 child: const Text('Open demo commerce'),
               ),
-{{/hasCommerce}}            ],
+{{/hasCommerce}}              ],
+            ),
           ),
         ),
       ),

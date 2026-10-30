@@ -13,10 +13,16 @@ void main() {
         locale: 'en_US',
         currencyCode: 'USD',
       );
+      final arabicCurrency = AppFormatters.currency(
+        1234.5,
+        locale: 'ar_EG',
+        currencyCode: 'EGP',
+      );
 
       expect(englishNumber, contains(','));
       expect(arabicNumber, isNot(englishNumber));
       expect(englishCurrency, contains(r'$'));
+      expect(arabicCurrency, isNot(englishCurrency));
     });
 
     test('formats dates with locale-specific conventions', () {
@@ -24,6 +30,7 @@ void main() {
 
       expect(AppFormatters.date(date, locale: 'en_US'), 'Oct 30, 2026');
       expect(AppFormatters.date(date, locale: 'en_GB'), '30 Oct 2026');
+      expect(AppFormatters.date(date, locale: 'ar_EG'), isNot('Oct 30, 2026'));
     });
   });
 }

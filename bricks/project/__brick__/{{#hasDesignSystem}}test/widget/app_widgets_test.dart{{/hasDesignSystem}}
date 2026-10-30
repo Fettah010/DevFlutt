@@ -173,6 +173,27 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('list item places leading and trailing content by text direction', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            body: AppListItem(
+              title: 'عنوان',
+              leading: Icon(Icons.star),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final leading = tester.getCenter(find.byIcon(Icons.star));
+    final trailing = tester.getCenter(find.byIcon(Icons.chevron_right));
+    expect(leading.dx, greaterThan(trailing.dx));
+  });
+
   testWidgets('confirmation dialog returns the chosen result', (tester) async {
     bool? result;
     await tester.pumpWidget(

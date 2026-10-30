@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:{{projectName}}/app/app_router.dart';
 import 'package:{{projectName}}/app/app_routes.dart';
+{{#hasLocalization}}import 'package:{{projectName}}/l10n/generated/app_localizations.dart';
+{{/hasLocalization}}
 {{#hasAuthRouter}}import 'package:{{projectName}}/app/route_guard.dart';
 import 'package:{{projectName}}/core/auth/auth_session.dart';
 import 'package:{{projectName}}/core/auth/fake_auth_adapter.dart';
 {{/hasAuthRouter}}
+
+Widget _routerApp(GoRouter router) => MaterialApp.router(
+  routerConfig: router,
+{{#hasLocalization}}  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+{{/hasLocalization}});
 
 void main() {
   group('buildAppRouter', () {
     testWidgets('renders the home screen for the initial location', (tester) async {
       final router = buildAppRouter();
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       expect(find.text('Home'), findsOneWidget);
@@ -22,7 +31,7 @@ void main() {
     testWidgets('renders the not-found screen for an unknown location', (tester) async {
       final router = buildAppRouter();
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       router.go('/does-not-exist');
@@ -36,7 +45,7 @@ void main() {
         redirect: (state) => state.uri.path == '/blocked' ? AppRoutes.home : null,
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       router.go('/blocked');
@@ -75,7 +84,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       router.go(protectedLocation);
@@ -95,7 +104,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       router.go(protectedLocation);
@@ -115,7 +124,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       router.go('/login');
@@ -141,7 +150,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(_routerApp(router));
       await tester.pumpAndSettle();
 
       router.go(protectedLocation);

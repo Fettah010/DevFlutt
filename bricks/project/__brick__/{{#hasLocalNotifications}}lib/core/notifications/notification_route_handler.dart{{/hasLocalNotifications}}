@@ -1,16 +1,45 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:{{projectName}}/app/app_routes.dart';
 
 class NotificationRouteHandler {
-  const NotificationRouteHandler(this._router);
+  NotificationRouteHandler(this._router);
 
   final GoRouter _router;
+  String? _pendingRoute;
 
   bool handle(String? payload) {
     final route = _validatedRoute(payload);
-    if (route == null) return false;
+    if (route == null) {
+      debugPrint('Notification route hand-off rejected an invalid target.');
+      return false;
+    }
+
+    if (_router.routerDelegate.navigatorKey.currentState == null) {
+      final isNewPendingRoute = _pendingRoute != route;
+      _pendingRoute = route;
+      if (isNewPendingRoute) {
+        debugPrint('Notification route hand-off queued a validated cold-start target.');
+      }
+      return true;
+    }
+
+    debugPrint('Notification route hand-off navigating to a validated target.');
     _router.go(route);
     return true;
+  }
+
+  void applyPendingRouteAfterFirstFrame() {
+    final route = _pendingRoute;
+    if (route == null) return;
+    _pendingRoute = null;
+
+    debugPrint('Notification route hand-off waiting for the first app frame.');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('Notification route hand-off applying the cold-start target.');
+      _router.go(route);
+    });
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   String? _validatedRoute(String? payload) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 enum NotificationPermissionStatus { granted, denied, notRequired }
@@ -72,10 +73,16 @@ class LocalNotificationService {
   }
 
   Future<void> _initialize(void Function(String?) onTap) async {
+    debugPrint('Local notification service initializing its platform gateway.');
     await _gateway.initialize(onTap);
     await _gateway.createChannel();
     final launchPayload = await _gateway.getLaunchPayload();
     _initialized = true;
+    debugPrint(
+      launchPayload == null
+          ? 'Local notification service found no notification launch payload.'
+          : 'Local notification service found a notification launch payload.',
+    );
     if (launchPayload != null) onTap(launchPayload);
   }
 

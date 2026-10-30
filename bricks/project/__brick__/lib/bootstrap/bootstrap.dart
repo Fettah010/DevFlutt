@@ -19,21 +19,28 @@ import '../app.dart';
 /// prepares the authentication provider, composes the selected services, wraps
 /// the app in the provider scope when Riverpod is enabled, and runs it.
 Future<void> bootstrap() async {
+  debugPrint('Generated app bootstrap started.');
   WidgetsFlutterBinding.ensureInitialized();
 
   final config = AppConfig.fromEnvironment();
-{{#hasBackgroundWork}}  await Workmanager().initialize(backgroundTaskDispatcher);
+{{#hasBackgroundWork}}  debugPrint('Generated app bootstrap initializing background work.');
+  await Workmanager().initialize(backgroundTaskDispatcher);
+  debugPrint('Generated app bootstrap background work is ready.');
 {{/hasBackgroundWork}}{{#hasLocalNotifications}}  final router = buildAppRouter();
   final routeHandler = NotificationRouteHandler(router);
+  debugPrint('Generated app bootstrap initializing local notifications.');
   await LocalNotificationService().initialize(
     onTap: (payload) {
       routeHandler.handle(payload);
     },
   );
+  debugPrint('Generated app bootstrap local notifications are ready.');
 {{/hasLocalNotifications}}
 {{#hasAuthFirebase}}  await initializeFirebaseAuth();
 {{/hasAuthFirebase}}{{#hasAuthSupabase}}  await initializeSupabaseAuth();
 {{/hasAuthSupabase}}{{#hasServices}}  final services = buildAppServices(config);
 {{/hasServices}}{{#hasStateRiverpod}}  runApp(AppProviderScope(child: DevFluttApp(config: config{{#hasServices}}, services: services{{/hasServices}}{{#hasLocalNotifications}}, router: router{{/hasLocalNotifications}})));
 {{/hasStateRiverpod}}{{^hasStateRiverpod}}  runApp(DevFluttApp(config: config{{#hasServices}}, services: services{{/hasServices}}{{#hasLocalNotifications}}, router: router{{/hasLocalNotifications}}));
-{{/hasStateRiverpod}}}
+{{/hasStateRiverpod}}{{#hasLocalNotifications}}  routeHandler.applyPendingRouteAfterFirstFrame();
+{{/hasLocalNotifications}}  debugPrint('Generated app bootstrap completed.');
+}

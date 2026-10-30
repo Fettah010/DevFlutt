@@ -81,17 +81,26 @@ stores videos in `patrol_test/videos/` and failure screenshots in
 The generated v0.8 platform-service selection also has a native integration
 smoke test. It initializes the app, schedules and cancels a WorkManager task,
 checks notification display with permission denied or granted, and invokes the
-Play update availability adapter. CI additionally taps a notification while
-the app is running and verifies that the declared counter route opens; it then
-terminates the app process, taps a second notification, and verifies that the
-cold-start launch reaches the same route. This generated smoke selection uses
-`feature-example` only to provide a distinct destination for those assertions.
+Play update availability adapter. The smoke runner taps a notification while
+the integration-test app is running and verifies that the declared counter
+route opens. `flutter drive` installs an integration-test Dart entrypoint, which
+cannot be used to verify a normal app launch after the driver exits. The harness
+therefore builds a temporary normal Flutter entrypoint in the generated project,
+posts a fresh notification, sends the app to Home, kills its process, taps the
+notification, and checks the new process, bootstrap, launch payload, route
+application, and Counter accessibility label. This generated smoke selection
+uses `feature-example` only to provide a distinct destination for those
+assertions. The temporary entrypoint stays in the runner's generated project
+and is not part of repository output.
 
 Run the permission-state checks on an online emulator with this PowerShell
 sequence from the repository root. CI runs those states plus the warm/cold tap
 checks through `tool/patrol/run_platform_services_smoke.sh`, which generates
 the project, derives its flavor application ID, and retains generator output,
-UI dumps, integration output, and emulator logcat under `build/patrol-logs/`:
+UI dumps, integration output, notification snapshots, Flutter startup logs,
+activity/window state, and emulator logcat under `build/patrol-logs/`. A
+transport-only Flutter-driver failure gets one bounded reconnect attempt;
+other failures stop with device diagnostics:
 
 ```powershell
 $project = Join-Path $env:TEMP ("devflutt-platform-services-smoke-" + [guid]::NewGuid().ToString("N"))
@@ -135,7 +144,8 @@ settings, and Android's test orchestrator clears app data between tests.
 generated-project checks for the same pull request, starts one pinned
 Android emulator, and runs `smoke` and `regression` separately. It also
 generates the v0.8 composite project and runs the native service smoke with
-notification permission explicitly denied and granted. Failures remain failures.
+notification permission explicitly denied and granted, including warm- and
+cold-start notification routing. Failures remain failures.
 The workflow uploads runner logs, Android test reports, emulator logcat, videos,
 and screenshots even when the test step fails. Logcat artifacts use test-only
 data; never put real credentials or personal data into UI test fixtures.

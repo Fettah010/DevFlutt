@@ -31,6 +31,8 @@ void main() {
     await service.initialize(onTap: handler.handle);
 
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    expect(find.text('Initial'), findsOneWidget);
+    handler.applyPendingRouteAfterFirstFrame();
     await tester.pumpAndSettle();
     expect(find.text('Home'), findsOneWidget);
   });

@@ -34,6 +34,21 @@ dart run tool/patrol/run.dart --suite regression
 dart run tool/patrol/run.dart --suite all
 ```
 
+For an agent-managed local emulator, let the runner check the SDK and create a
+dedicated API 36 Google APIs AVD from an already-installed image:
+
+```powershell
+dart run tool/patrol/run.dart --suite smoke --prepare-emulator --keep-emulator
+```
+
+`--prepare-emulator` defaults to API 36 and names the AVD
+`DevFluttAgent_API36_GoogleAPIs`. It does not modify existing AVDs, install
+images, or accept SDK licenses. If the image is not installed, install it
+yourself with SDK Manager and accept any license prompts, or explicitly opt into
+the download with `--install-emulator-image`. Choose another API with
+`--emulator-api <level>` (33 or newer). The runner stops an emulator it started
+when the suite finishes unless `--keep-emulator` is supplied.
+
 The runner selects a single online Android device. If none is online, it starts
 the only available AVD. If there are multiple devices or AVDs, select one
 explicitly:
@@ -46,10 +61,15 @@ dart run tool/patrol/run.dart --suite smoke --emulator Pixel_6_API_35
 It waits for Android boot completion, runs `patrol doctor`, then invokes Patrol
 with the chosen device and `dev` flavor. A missing device, ambiguous selection,
 boot timeout, Patrol error, or test failure returns a nonzero exit code. Test
-output and tool versions go to `build/patrol-logs/`; after a test failure, the
-runner adds filtered Patrol, Flutter, and Android runtime logcat. An AVD launched by the runner is shut down when the run ends;
-an already-online device is left running. Patrol stores videos in `patrol_test/videos/` and failure
-screenshots in `patrol_test/screenshots/`.
+output and tool versions go to `build/patrol-logs/`. Each subprocess log entry
+includes a UTC start time, separately labeled stdout/stderr, exit status, and
+elapsed time. If setup or test execution fails after a device is selected, the
+runner adds filtered Patrol, Flutter, and Android runtime logcat; a logcat
+collection failure is recorded without replacing the original test error. An
+AVD launched by the runner is shut down when the run ends unless
+`--keep-emulator` is supplied; an already-online device is left running. Patrol
+stores videos in `patrol_test/videos/` and failure screenshots in
+`patrol_test/screenshots/`.
 
 ## Current test coverage
 
@@ -57,6 +77,60 @@ screenshots in `patrol_test/screenshots/`.
 |---|---|
 | `smoke` | Launch the actual `DevFluttApp`; check home title, description, subtitle, and Flutter logo semantics. |
 | `regression` | Return to the same home screen after Android background/resume; verify the app follows system light/dark mode; launch and render the blank home screen with Wi-Fi disabled. |
+
+The generated v0.8 platform-service selection also has a native integration
+smoke test. It initializes the app, schedules and cancels a WorkManager task,
+checks notification display with permission denied or granted, and invokes the
+Play update availability adapter. The smoke runner taps a notification while
+the integration-test app is running and verifies that the declared counter
+route opens. `flutter drive` installs an integration-test Dart entrypoint, which
+cannot be used to verify a normal app launch after the driver exits. The harness
+therefore builds a temporary normal Flutter entrypoint in the generated project,
+posts a fresh notification, sends the app to Home, kills its process, taps the
+notification, and checks the new process, bootstrap, launch payload, route
+application, and Counter accessibility label. This generated smoke selection
+uses `feature-example` only to provide a distinct destination for those
+assertions. The temporary entrypoint stays in the runner's generated project
+and is not part of repository output.
+
+Run the permission-state checks on an online emulator with this PowerShell
+sequence from the repository root. CI runs those states plus the warm/cold tap
+checks through `tool/patrol/run_platform_services_smoke.sh`, which generates
+the project, derives its flavor application ID, and retains generator output,
+UI dumps, integration output, notification snapshots, Flutter startup logs,
+activity/window state, and emulator logcat under `build/patrol-logs/`. A
+transport-only Flutter-driver failure gets one bounded reconnect attempt;
+other failures stop with device diagnostics:
+
+```powershell
+$project = Join-Path $env:TEMP ("devflutt-platform-services-smoke-" + [guid]::NewGuid().ToString("N"))
+$appId = "com.example.platform_services_smoke.dev"
+dart run tool/ftemplate_cli/bin/ftemplate.dart create `
+  --name "Platform Services Smoke" --org com.example --preset blank `
+  --module feature-example --module background-work --module local-notifications --module app-updates `
+  --output $project --no-pub
+Push-Location $project
+try {
+  flutter pub get
+  flutter build apk --debug --flavor dev
+  adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-dev-debug.apk
+  adb -s emulator-5554 shell pm revoke $appId android.permission.POST_NOTIFICATIONS
+  flutter drive --no-dds --driver=test_driver/integration_test.dart `
+    --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev
+  adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-dev-debug.apk
+  adb -s emulator-5554 shell pm grant $appId android.permission.POST_NOTIFICATIONS
+  flutter drive --no-dds --driver=test_driver/integration_test.dart `
+    --target=integration_test/platform_services_test.dart -d emulator-5554 --flavor dev `
+    --dart-define=DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED=true
+} finally {
+  Pop-Location
+}
+```
+
+The generated debug manifest includes `INTERNET` so Flutter's VM service can
+bind during device tests; this permission is debug-only and does not change the
+release permission contract. The tested `flutter drive --no-dds` invocation
+avoids relying on DDS when an agent host cannot establish its local service.
 
 The home screen has no buttons, permission requests, authenticated flows, or
 network-backed states. Tests for those behaviors belong with the app feature that
@@ -68,20 +142,26 @@ settings, and Android's test orchestrator clears app data between tests.
 
 `.github/workflows/patrol-ui-tests.yml` runs alongside the standard quality and
 generated-project checks for the same pull request, starts one pinned
-Android emulator, and runs `smoke` and `regression` separately. Failures remain
-failures. The workflow uploads runner logs, Android test reports, videos, and
-screenshots even when the test step fails. Logcat artifacts use test-only data;
-never put real credentials or personal data into UI test fixtures.
+Android emulator, and runs `smoke` and `regression` separately. It also
+generates the v0.8 composite project and runs the native service smoke with
+notification permission explicitly denied and granted, including warm- and
+cold-start notification routing. Failures remain failures.
+The workflow uploads runner logs, Android test reports, emulator logcat, videos,
+and screenshots even when the test step fails. Logcat artifacts use test-only
+data; never put real credentials or personal data into UI test fixtures.
 
 The former version matrix generated synthetic `Hello Patrol` widgets rather than
-launching generated apps and suppressed failures. It was removed. Patrol checks
-for generated-project combinations remain deferred until the harness can import
-and exercise each generated app's real entry point. The existing generated
+launching generated apps and suppressed failures. It was removed. The targeted
+v0.8 native integration test now exercises its generated composite app; broad
+generated-project Patrol coverage remains deferred until the harness can import
+and exercise every generated app's real entry point. The existing generated
 project build/test matrix remains in `.github/workflows/ci.yml`.
 
 ## Limits
 
 This is Android emulator evidence. It does not claim physical-device, iOS, Play
-distribution, or generated-project Patrol coverage. Add scenarios when the
-corresponding product UI or native feature exists, and keep test assertions tied
-to visible app behavior or verified system state.
+distribution, or generated-project Patrol coverage. The v0.8 update check can
+return a typed failure on a Google APIs emulator without Play Store services;
+live update availability requires an owner-provided Play internal-testing track.
+Add scenarios when the corresponding product UI or native feature exists, and
+keep test assertions tied to visible app behavior or verified system state.

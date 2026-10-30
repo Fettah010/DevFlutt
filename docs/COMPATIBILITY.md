@@ -15,6 +15,17 @@
 
 ## Android
 
+The Android-only `background-work`, `local-notifications`, and `app-updates` modules are
+rejected for unsupported target platforms before generation. `background-work` declares
+the WorkManager boot, wake-lock, and network-state permissions and removes the plugin's
+unused foreground-service permissions. `local-notifications` alone declares
+`POST_NOTIFICATIONS` and `VIBRATE`, and enables core-library desugaring required by its
+plugin. The notification permission is requested at runtime only after an explicit
+application action.
+`app-updates` requires an installation distributed through Google Play for Play availability
+and update flows to work. Its HTTPS listing fallback can be used when the Play API is
+unavailable; the module does not add the `INTERNET` permission.
+
 The template targets Android API 24 or newer. The `INTERNET` permission is declared only by
 a module that ships a network client - `networking`, `auth-firebase`, and `auth-supabase` -
 and is written into the main manifest, so a release build can reach the network. A project
@@ -53,6 +64,10 @@ in the merged release manifest of an `auth-firebase` project.
 | `drift_flutter` | `^0.3.1` | `local-database` |
 | `drift_dev` | `^2.35.2` | `local-database` development dependency |
 | `build_runner` | `^2.17.1` | `local-database` development dependency |
+| `workmanager` | `^0.10.10` | `background-work` |
+| `flutter_local_notifications` | `^22.3.3` | `local-notifications` |
+| `in_app_update` | `^5.0.0` | `app-updates` |
+| `url_launcher` | `^6.3.3` | `app-updates` |
 
 `go_router` 18 migrated to the `material_ui` and `cupertino_ui` packages internally. The public
 API used by the template (`GoRouter`, `GoRoute`, `GoRouterState`) is unchanged, and generated
@@ -95,22 +110,27 @@ dependency of the package.
 | `offline-data` | pass | pass | pass | pass | pass |
 | `commerce` | pass | pass | pass | pass | pass |
 | `commerce-persistence` | pass | pass | pass | pass | pass |
+| `background-work` | pass (local) | pass (local) | pass (local) | pass (local) | pass (local) |
+| `local-notifications` | pass (local) | pass (local) | pass (local) | pass (local) | pass (local) |
+| `app-updates` | pass (local) | pass (local) | pass (local) | pass (local) | pass (local) |
+| `background-work` + `local-notifications` | pass (local) | pass (local) | pass (local) | pass (local) | pass (local) |
 
 The release APK column is exercised for the three authentication presets and the five
-v0.7 persistence/commerce compositions, and those merged release manifests are reviewed
-for permissions.
+v0.7 persistence/commerce compositions in CI, and those merged release manifests are reviewed
+for permissions. The v0.8 module rows record local generated-project validation; release
+manifest permission checks and the WorkManager component presence/absence check are wired
+into CI, whose run evidence is pending.
 
 ## Coverage method
 
 The matrix is exercised in CI on every pull request. Each named preset is generated
 into a temporary directory and then resolved, format-checked, analyzed, tested, and
-fully built with debug and release APKs. Individual module manifests
-are validated separately. The generator's own tests enumerate the acceptance and
-absence rules for the four service modules: a blank project has no service file, no
-service dependency, and no service import; a core project has the logger and no
-transport or store; a recommended project has every service file, the composition
-root, and the Android backup rules. Pairwise and maximum-coverage combinations are
-scheduled for v0.10.0.
+fully built with debug and release APKs. Individual module manifests are validated
+separately. The generator's own tests enumerate acceptance and absence rules for service
+and platform modules: a blank project has no optional service files, dependencies,
+imports, or module-specific permissions; selected projects receive only their declared
+files and native configuration. Pairwise and maximum-coverage combinations are scheduled
+for v0.10.0.
 
 The three authentication presets are covered by the same method. Every adapter is verified
 against one shared contract-test suite, and the generator's own tests enumerate the
@@ -118,11 +138,11 @@ selection rules: an unknown provider is refused, two providers are refused, an u
 capability is refused, and a capability the chosen provider does not implement is refused
 with a message that names the providers that do.
 
-**The gap.** The matrix covers the four presets, the three authentication presets, and the
-five v0.7 compositions (`preferences`, `local-database`, `offline-data`, `commerce`,
-`commerce-persistence`). It does not cover every combination of the modules that can
-coexist, and it does not cover the maximum-capability composition. The exhaustive pairwise
-set is v0.10.0 work, and the remaining gap is recorded in `docs/DEFERRED.md`.
+**The gap.** The matrix covers the four presets, the three authentication presets, the
+five v0.7 compositions, and the three v0.8 platform modules individually. It does not
+cover every combination of the modules that can coexist, and it does not cover the
+maximum-capability composition. The exhaustive pairwise set is v0.10.0 work, and the
+remaining gap is recorded in `docs/DEFERRED.md`.
 
 ## Generator dependencies
 
@@ -147,16 +167,20 @@ optional generated-app dependencies, not a reusable-library lockfile.
 
 ## Known gaps
 
-- iOS build smoke is scheduled for v0.10.0. The new modules are platform-neutral in
-  their Dart, but no iOS build has been observed.
-- Emulator/device smoke and performance baselines are scheduled for v0.10.0.
+- The v0.8 API 33+ emulator and physical-device permission/tap/background smoke, and the
+  Play internal-track update test, remain unverified. The local AVD entries could not be
+  started because their configuration files contain unresolved placeholders.
+- v0.8 release APK sizes are recorded as single-build reference values in the completion
+  report; no repeated performance measurement or size budget is claimed.
+- iOS build smoke is scheduled for v0.10.0. The three v0.8 modules are Android-only and
+  are rejected for iOS before generation.
 - The `DioApiClient` error mapping is verified by review and by the contract tests over
   the fake client; the Dio transport itself is not exercised against a live server.
 - The live Firebase and Supabase auth flows are not exercised: no provider project was
   available, so every provider behaviour is verified by contract tests over a fake. The
   provider configuration placeholders and the start-up configuration check are verified.
-- The built matrix covers the four presets, the three authentication presets, and the five
-  v0.7 compositions individually, not every combination of the modules that can coexist.
-  The exhaustive pairwise set is v0.10.0 work.
+- The built matrix covers the four presets, the three authentication presets, the five
+  v0.7 compositions, and the three v0.8 platform modules individually, not every
+  combination of the modules that can coexist. The exhaustive pairwise set is v0.10.0 work.
 - The generator is a CLI proof of scope; `doctor` and `update-guide` arrive later.
 - The release signing configuration is still the debug key; real signing arrives later.

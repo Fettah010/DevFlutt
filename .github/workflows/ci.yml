@@ -96,61 +96,98 @@ jobs:
             auth: none
             module: ''
             expects_network: false
+            expects_notifications: false
           - name: core
             preset: core
             auth: none
             module: ''
             expects_network: false
+            expects_notifications: false
           - name: demo
             preset: demo
             auth: none
             module: ''
             expects_network: false
+            expects_notifications: false
           - name: recommended
             preset: recommended
             auth: none
             module: ''
             expects_network: true
+            expects_notifications: false
           - name: auth-rest
             preset: core
             auth: rest
             module: ''
             expects_network: true
+            expects_notifications: false
           - name: auth-firebase
             preset: core
             auth: firebase
             module: ''
             expects_network: true
+            expects_notifications: false
           - name: auth-supabase
             preset: core
             auth: supabase
             module: ''
             expects_network: true
+            expects_notifications: false
           - name: preferences
             preset: blank
             auth: none
             module: preferences
             expects_network: false
+            expects_notifications: false
           - name: local-database
             preset: blank
             auth: none
             module: local-database
             expects_network: false
+            expects_notifications: false
           - name: offline-data
             preset: blank
             auth: none
             module: offline-data
             expects_network: true
+            expects_notifications: false
           - name: commerce
             preset: blank
             auth: none
             module: commerce
             expects_network: false
+            expects_notifications: false
           - name: commerce-persistence
             preset: blank
             auth: none
             module: commerce-persistence
             expects_network: false
+            expects_notifications: false
+          - name: background-work
+            preset: blank
+            auth: none
+            module: background-work
+            expects_network: false
+            expects_notifications: false
+          - name: local-notifications
+            preset: blank
+            auth: none
+            module: local-notifications
+            expects_network: false
+            expects_notifications: true
+          - name: app-updates
+            preset: blank
+            auth: none
+            module: app-updates
+            expects_network: false
+            expects_notifications: false
+          - name: background-work-notifications
+            preset: blank
+            auth: none
+            module: background-work
+            module2: local-notifications
+            expects_network: false
+            expects_notifications: true
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -177,6 +214,9 @@ jobs:
           MODULE_ARGS=()
           if [ -n "${{ matrix.module }}" ]; then
             MODULE_ARGS+=(--module "${{ matrix.module }}")
+          fi
+          if [ -n "${{ matrix.module2 }}" ]; then
+            MODULE_ARGS+=(--module "${{ matrix.module2 }}")
           fi
           dart run tool/ftemplate_cli/bin/ftemplate.dart create \
             --name "Generated App" \
@@ -211,7 +251,7 @@ jobs:
         working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter build apk --release --flavor prod
 
-      - name: Review the release manifest permissions
+      - name: Review release manifest permissions and components
         working-directory: /tmp/generated-${{ matrix.name }}
         run: |
           AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2"
@@ -221,6 +261,7 @@ jobs:
             exit 1
           fi
           "$AAPT2" dump permissions "$APK" > release-permissions.log
+          "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" > release-components.log
           cat release-permissions.log
           if [ "${{ matrix.expects_network }}" = "true" ]; then
             if ! grep -q "android.permission.INTERNET" release-permissions.log; then
@@ -232,6 +273,39 @@ jobs:
               echo "The release manifest requests the INTERNET permission, but the selection has no network client."
               exit 1
             fi
+          fi
+          if [ "${{ matrix.expects_notifications }}" = "true" ]; then
+            if ! grep -q "android.permission.POST_NOTIFICATIONS" release-permissions.log; then
+              echo "The local-notifications selection does not request POST_NOTIFICATIONS."
+              exit 1
+            fi
+          else
+            if grep -q "android.permission.POST_NOTIFICATIONS" release-permissions.log; then
+              echo "The selection does not include local-notifications but requests POST_NOTIFICATIONS."
+              exit 1
+            fi
+          fi
+          if [ "${{ matrix.expects_notifications }}" = "true" ]; then
+            if ! grep -q "android.permission.VIBRATE" release-permissions.log; then
+              echo "The local-notifications selection does not request VIBRATE."
+              exit 1
+            fi
+          elif grep -q "android.permission.VIBRATE" release-permissions.log; then
+            echo "The selection does not include local-notifications but requests VIBRATE."
+            exit 1
+          fi
+          if [ "${{ matrix.module }}" = "background-work" ] || [ "${{ matrix.module2 }}" = "background-work" ]; then
+            if ! grep -q "androidx.work.impl.background.systemjob.SystemJobService" release-components.log; then
+              echo "The background-work selection is missing the WorkManager job service."
+              exit 1
+            fi
+            if grep -Eq "android.permission.FOREGROUND_SERVICE(_SHORT_SERVICE)?" release-permissions.log; then
+              echo "The background-work adapter does not expose foreground work and must not request foreground-service permissions."
+              exit 1
+            fi
+          elif grep -q "androidx.work.impl.background.systemjob.SystemJobService" release-components.log; then
+            echo "The release manifest includes a WorkManager service without the background-work module."
+            exit 1
           fi
 
   secret-scan:

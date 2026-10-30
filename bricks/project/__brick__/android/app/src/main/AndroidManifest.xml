@@ -1,6 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"{{#hasBackgroundWork}}
+    xmlns:tools="http://schemas.android.com/tools"{{/hasBackgroundWork}}>
 {{#hasNetworkPermission}}    <uses-permission android:name="android.permission.INTERNET" />
-{{/hasNetworkPermission}}    <application
+{{/hasNetworkPermission}}{{#hasNotificationPermission}}    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+{{/hasNotificationPermission}}{{#hasVibratePermission}}    <uses-permission android:name="android.permission.VIBRATE" />
+{{/hasVibratePermission}}{{#hasBackgroundWork}}    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SHORT_SERVICE" tools:node="remove" />
+{{^hasLocalNotifications}}    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove" />
+{{/hasLocalNotifications}}{{/hasBackgroundWork}}
+    <application
         android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"{{#hasSecureStorage}}

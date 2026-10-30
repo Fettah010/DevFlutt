@@ -1,0 +1,21 @@
+import 'package:workmanager/workmanager.dart';
+
+import 'background_task.dart';
+
+const sampleBackgroundTaskName = 'sample.background_task';
+
+Future<BackgroundTaskResult> handleBackgroundTask(
+  String taskName,
+  Map<String, dynamic>? inputData,
+) async {
+  if (taskName == sampleBackgroundTaskName) return BackgroundTaskResult.success;
+  return BackgroundTaskResult.retry;
+}
+
+Future<bool> executeBackgroundTask(String taskName, Map<String, dynamic>? inputData) async =>
+    await handleBackgroundTask(taskName, inputData) == BackgroundTaskResult.success;
+
+@pragma('vm:entry-point')
+void backgroundTaskDispatcher() {
+  Workmanager().executeTask(executeBackgroundTask);
+}

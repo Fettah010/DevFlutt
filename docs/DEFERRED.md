@@ -106,3 +106,31 @@ Depends on: a generated-project Patrol harness that uses the generated test bund
 Android host configuration.
 Risk: medium. Running a full generated UI matrix adds emulator time and maintenance; keep
 the fast generator build/test matrix as the baseline.
+
+## Scheduled v0.7.0 release job lacks Git identity
+
+Problem: the scheduled release workflow cannot create its annotated tag because its Git
+runner has no committer identity configured.
+Evidence: GitHub Actions run
+[40537208016](https://github.com/Fettah010/DevFlutt/actions/runs/40537208016) failed at
+the tag step with `fatal: empty ident name`; the `v0.7.0` tag and pre-release were later
+published and verified at `e3584db`.
+Value: scheduled releases can complete without relying on a separate manual recovery.
+Likely milestone: maintenance before the next release workflow is used.
+Depends on: the release workflow's Git tag creation and repository identity policy.
+Risk: low for the already-published v0.7.0 release; medium for a future release if the
+workflow still attempts to create a tag without configuring an identity.
+
+## v0.8.0 physical-device and Play-track verification
+
+Problem: local generated-project checks cannot prove notification lifecycle behavior on
+physical hardware or a real Play in-app update flow.
+Evidence: generated-module tests and Android builds pass locally; the available API 36 AVD
+configuration files contain unresolved placeholders and fail to start. No physical device
+or Play internal-testing track is available in this environment.
+Value: confirms permission prompts, notification tap routing, background execution, and
+Play update behavior beyond fake-backed tests and build-time evidence.
+Likely milestone: v0.8.0 release gate.
+Depends on: a valid API 33+ emulator or owner-provided Android device and a signed build
+published to a Google Play internal-testing track.
+Risk: high; the release must remain blocked until these behaviors are tested and recorded.

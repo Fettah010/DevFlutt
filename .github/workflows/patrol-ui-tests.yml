@@ -37,6 +37,10 @@ jobs:
       - name: Resolve dependencies
         run: flutter pub get
 
+      - name: Resolve generator dependencies
+        working-directory: tool/ftemplate_cli
+        run: dart pub get
+
       - name: Install pinned Patrol CLI
         run: dart pub global activate patrol_cli 4.8.0
 
@@ -71,6 +75,7 @@ jobs:
             adb devices -l
             dart run tool/patrol/run.dart --suite smoke
             dart run tool/patrol/run.dart --suite regression
+            bash "$GITHUB_WORKSPACE/tool/patrol/run_platform_services_smoke.sh"
 
       - name: Upload Patrol diagnostics
         if: always()

@@ -17,6 +17,18 @@ class ProjectPlanner {
     final modules = _repository.loadModules();
     final presets = _repository.loadPresets();
 
+    if (spec.platforms.isEmpty) {
+      throw CompatibilityException('Select at least one target platform: android or ios.');
+    }
+    for (final platform in spec.platforms.toSet()) {
+      if (!_supportedPlatforms.contains(platform)) {
+        throw CompatibilityException(
+          'Unsupported target platform "$platform". Supported platforms: '
+          '${_supportedPlatforms.join(', ')}.',
+        );
+      }
+    }
+
     final preset = _repository.presetById(spec.preset, presets);
     if (preset == null) {
       throw CompatibilityException(
@@ -29,10 +41,22 @@ class ProjectPlanner {
     final graph = CompatibilityGraph(modules);
     final resolved = graph.resolve(selected);
 
+    for (final module in resolved) {
+      final unsupported = spec.platforms.toSet().difference(module.platforms.toSet());
+      if (unsupported.isNotEmpty) {
+        throw CompatibilityException(
+          'Module "${module.id}" does not support the requested platform(s): '
+          '${unsupported.join(', ')}. Supported platforms: ${module.platforms.join(', ')}.',
+        );
+      }
+    }
+
     final dependencies = <PubDependency>[];
     final devDependencies = <PubDependency>[];
     final permissions = <String>[];
     final configKeys = <String>[];
+    final androidNativeChanges = <String>[];
+    final iosNativeChanges = <String>[];
     for (final module in resolved) {
       for (final dependency in module.pubDependencies) {
         if (!dependencies.contains(dependency)) {
@@ -54,6 +78,20 @@ class ProjectPlanner {
           configKeys.add(key);
         }
       }
+      if (spec.platforms.contains('android')) {
+        for (final change in module.nativeChanges.android) {
+          if (!androidNativeChanges.contains(change)) {
+            androidNativeChanges.add(change);
+          }
+        }
+      }
+      if (spec.platforms.contains('ios')) {
+        for (final change in module.nativeChanges.ios) {
+          if (!iosNativeChanges.contains(change)) {
+            iosNativeChanges.add(change);
+          }
+        }
+      }
     }
 
     return GenerationPlan(
@@ -63,6 +101,8 @@ class ProjectPlanner {
       devDependencies: devDependencies,
       permissions: permissions,
       configKeys: configKeys,
+      androidNativeChanges: androidNativeChanges,
+      iosNativeChanges: iosNativeChanges,
     );
   }
 
@@ -74,4 +114,6 @@ class ProjectPlanner {
     final modules = _repository.loadModules();
     CompatibilityGraph(modules).validateCapabilities(plan.modules, required);
   }
+
+  static const List<String> _supportedPlatforms = <String>['android', 'ios'];
 }

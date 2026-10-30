@@ -58,8 +58,215 @@ void main() {
       expect(pubspec, isNot(contains('shared_preferences')));
       expect(pubspec, isNot(contains('drift')));
       expect(pubspec, isNot(contains('build_runner')));
+      expect(pubspec, isNot(contains('integration_test:')));
+      expect(
+        File('${result.projectDir.path}/integration_test/platform_services_test.dart').existsSync(),
+        isFalse,
+      );
+      expect(
+        File('${result.projectDir.path}/test_driver/integration_test.dart').existsSync(),
+        isFalse,
+      );
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml')
+          .readAsStringSync();
+      final debugManifest = File(
+        '${result.projectDir.path}/android/app/src/debug/AndroidManifest.xml',
+      ).readAsStringSync();
+      expect(manifest, isNot(contains('android.permission.POST_NOTIFICATIONS')));
+      expect(manifest, isNot(contains('android.permission.VIBRATE')));
+      expect(debugManifest, contains('android.permission.INTERNET'));
 
       await result.projectDir.delete(recursive: true);
+    });
+
+    test('notification permission appears only when the module is selected', () async {
+      final result = await generate(
+        spec(name: 'Alerts App', org: 'com.example', modules: const ['local-notifications']),
+      );
+      final manifest = File('${result.projectDir.path}/android/app/src/main/AndroidManifest.xml')
+          .readAsStringSync();
+
+      expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+      expect(manifest, contains('android.permission.VIBRATE'));
+
+      await result.projectDir.delete(recursive: true);
+    });
+
+    test('background work files and dependencies are opt-in', () async {
+      final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+      final blankPubspec = File('${blank.projectDir.path}/pubspec.yaml').readAsStringSync();
+
+      expect(blankPubspec, isNot(contains('workmanager:')));
+      expect(
+        File('${blank.projectDir.path}/lib/core/background_work/workmanager_task_scheduler.dart')
+            .existsSync(),
+        isFalse,
+      );
+      await blank.projectDir.delete(recursive: true);
+
+      final selected = await generate(
+        spec(name: 'Background App', org: 'com.example', modules: const ['background-work']),
+      );
+      final selectedPubspec = File('${selected.projectDir.path}/pubspec.yaml').readAsStringSync();
+
+      expect(selectedPubspec, contains('workmanager: ^0.10.10'));
+      expect(selectedPubspec, contains('integration_test:'));
+      final selectedManifest = File(
+        '${selected.projectDir.path}/android/app/src/main/AndroidManifest.xml',
+      ).readAsStringSync();
+      expect(selectedManifest, contains('tools:node="remove"'));
+      expect(
+        selectedManifest,
+        contains('android.permission.POST_NOTIFICATIONS" tools:node="remove"'),
+      );
+      expect(
+        File('${selected.projectDir.path}/lib/core/background_work/workmanager_task_scheduler.dart')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${selected.projectDir.path}/test/unit/background_task_scheduler_test.dart')
+            .existsSync(),
+        isTrue,
+      );
+      await selected.projectDir.delete(recursive: true);
+
+      final combined = await generate(
+        spec(
+          name: 'Background Notifications App',
+          org: 'com.example',
+          modules: const ['background-work', 'local-notifications'],
+        ),
+      );
+      final combinedManifest = File(
+        '${combined.projectDir.path}/android/app/src/main/AndroidManifest.xml',
+      ).readAsStringSync();
+      expect(combinedManifest, contains('android.permission.POST_NOTIFICATIONS'));
+      expect(combinedManifest, contains('android.permission.VIBRATE'));
+      expect(
+        combinedManifest,
+        isNot(contains('android.permission.POST_NOTIFICATIONS" tools:node="remove"')),
+      );
+      expect(
+        combinedManifest,
+        contains('android.permission.FOREGROUND_SERVICE" tools:node="remove"'),
+      );
+      await combined.projectDir.delete(recursive: true);
+    });
+
+    test(
+      'local notifications generate the service and router hand-off only when selected',
+      () async {
+        final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+        final blankPubspec = File('${blank.projectDir.path}/pubspec.yaml').readAsStringSync();
+        final blankGradle = File('${blank.projectDir.path}/android/app/build.gradle.kts')
+            .readAsStringSync();
+
+        expect(blankPubspec, isNot(contains('flutter_local_notifications:')));
+        expect(blankGradle, isNot(contains('coreLibraryDesugaring')));
+        expect(
+          File('${blank.projectDir.path}/lib/core/notifications/local_notification_service.dart')
+              .existsSync(),
+          isFalse,
+        );
+        await blank.projectDir.delete(recursive: true);
+
+        final selected = await generate(
+          spec(
+            name: 'Notifications App',
+            org: 'com.example',
+            modules: const ['local-notifications'],
+          ),
+        );
+        final pubspec = File('${selected.projectDir.path}/pubspec.yaml').readAsStringSync();
+        final gradle = File('${selected.projectDir.path}/android/app/build.gradle.kts')
+            .readAsStringSync();
+        final app = File('${selected.projectDir.path}/lib/app.dart').readAsStringSync();
+        final bootstrap = File('${selected.projectDir.path}/lib/bootstrap/bootstrap.dart')
+            .readAsStringSync();
+        final integrationTest = File(
+          '${selected.projectDir.path}/integration_test/platform_services_test.dart',
+        ).readAsStringSync();
+        final manifest = File(
+          '${selected.projectDir.path}/android/app/src/main/AndroidManifest.xml',
+        ).readAsStringSync();
+
+        expect(pubspec, contains('flutter_local_notifications: ^22.3.3'));
+        expect(gradle, contains('isCoreLibraryDesugaringEnabled = true'));
+        expect(gradle, contains('desugar_jdk_libs:2.1.4'));
+        expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+        expect(manifest, contains('android.permission.VIBRATE'));
+        expect(manifest, isNot(contains('tools:node="remove"')));
+        expect(
+          File('${selected.projectDir.path}/lib/core/notifications/local_notification_service.dart')
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          File('${selected.projectDir.path}/test/unit/local_notification_service_test.dart')
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          File('${selected.projectDir.path}/test/widget/notification_route_handler_test.dart')
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          File('${selected.projectDir.path}/integration_test/platform_services_test.dart')
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          File('${selected.projectDir.path}/test_driver/integration_test.dart').existsSync(),
+          isTrue,
+        );
+        expect(app, contains('GoRouter? router'));
+        expect(bootstrap, contains('NotificationRouteHandler'));
+        expect(integrationTest, contains('route: AppRoutes.home'));
+        expect(integrationTest, isNot(contains('AppRoutes.counter')));
+        expect(integrationTest, contains('requires the feature-example module'));
+
+        await selected.projectDir.delete(recursive: true);
+      },
+    );
+
+    test('Play update files and dependencies are opt-in', () async {
+      final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+      final blankPubspec = File('${blank.projectDir.path}/pubspec.yaml').readAsStringSync();
+
+      expect(blankPubspec, isNot(contains('in_app_update:')));
+      expect(blankPubspec, isNot(contains('url_launcher:')));
+      expect(
+        File('${blank.projectDir.path}/lib/core/app_updates/play_app_update_client.dart')
+            .existsSync(),
+        isFalse,
+      );
+      await blank.projectDir.delete(recursive: true);
+
+      final selected = await generate(
+        spec(name: 'Updates App', org: 'com.example', modules: const ['app-updates']),
+      );
+      final pubspec = File('${selected.projectDir.path}/pubspec.yaml').readAsStringSync();
+
+      expect(pubspec, contains('in_app_update: ^5.0.0'));
+      expect(pubspec, contains('url_launcher: ^6.3.3'));
+      expect(pubspec, contains('integration_test:'));
+      expect(
+        File('${selected.projectDir.path}/integration_test/platform_services_test.dart')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${selected.projectDir.path}/lib/core/app_updates/play_app_update_client.dart')
+            .existsSync(),
+        isTrue,
+      );
+      expect(
+        File('${selected.projectDir.path}/test/unit/app_update_client_test.dart').existsSync(),
+        isTrue,
+      );
+      await selected.projectDir.delete(recursive: true);
     });
 
     test('keeps database runtime and development dependencies in their sections', () async {

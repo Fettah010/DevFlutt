@@ -1,0 +1,168 @@
+import 'package:flutter/services.dart';
+import 'package:in_app_update/in_app_update.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'app_update_client.dart';
+
+class PlayAppUpdateClient implements AppUpdateClient {
+  PlayAppUpdateClient({
+    required String applicationId,
+    AppUpdateGateway? gateway,
+  }) : _applicationId = _validateApplicationId(applicationId),
+       _gateway = gateway ?? FlutterAppUpdateGateway();
+
+  final String _applicationId;
+  final AppUpdateGateway _gateway;
+
+  @override
+  Stream<AppUpdateInstallStatus> get installStatus => _gateway.installStatus;
+
+  @override
+  Future<AppUpdateOutcome> checkForUpdate() async {
+    try {
+      return switch (await _gateway.checkAvailability()) {
+        PlayUpdateAvailability.available => const AppUpdateOutcome(AppUpdateStatus.available),
+        PlayUpdateAvailability.unavailable =>
+          const AppUpdateOutcome(AppUpdateStatus.unavailable),
+        PlayUpdateAvailability.unsupported =>
+          const AppUpdateOutcome(AppUpdateStatus.unsupported),
+      };
+    } on MissingPluginException {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported, errorCode: 'plugin_unavailable');
+    } on UnsupportedError {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported);
+    } on PlatformException catch (error) {
+      return AppUpdateOutcome(AppUpdateStatus.failed, errorCode: error.code);
+    }
+  }
+
+  @override
+  Future<AppUpdateOutcome> performImmediateUpdate() => _runUpdateFlow(
+    _gateway.performImmediateUpdate,
+    successStatus: AppUpdateStatus.completed,
+  );
+
+  @override
+  Future<AppUpdateOutcome> startFlexibleUpdate() => _runUpdateFlow(
+    _gateway.startFlexibleUpdate,
+    successStatus: AppUpdateStatus.downloadStarted,
+  );
+
+  @override
+  Future<AppUpdateOutcome> completeFlexibleUpdate() async {
+    try {
+      await _gateway.completeFlexibleUpdate();
+      return const AppUpdateOutcome(AppUpdateStatus.completed);
+    } on MissingPluginException {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported, errorCode: 'plugin_unavailable');
+    } on UnsupportedError {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported);
+    } on PlatformException catch (error) {
+      return AppUpdateOutcome(AppUpdateStatus.failed, errorCode: error.code);
+    }
+  }
+
+  @override
+  Future<AppUpdateOutcome> openStoreFallback() async {
+    final uri = Uri.https(
+      'play.google.com',
+      '/store/apps/details',
+      <String, String>{'id': _applicationId},
+    );
+    try {
+      final launched = await _gateway.openStoreListing(uri);
+      return launched
+          ? const AppUpdateOutcome(AppUpdateStatus.storeOpened)
+          : const AppUpdateOutcome(AppUpdateStatus.failed, errorCode: 'store_launch_failed');
+    } on MissingPluginException {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported, errorCode: 'plugin_unavailable');
+    } on UnsupportedError {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported);
+    } on PlatformException catch (error) {
+      return AppUpdateOutcome(AppUpdateStatus.failed, errorCode: error.code);
+    }
+  }
+
+  Future<AppUpdateOutcome> _runUpdateFlow(
+    Future<PlayUpdateFlowResult> Function() flow, {
+    required AppUpdateStatus successStatus,
+  }) async {
+    final availability = await checkForUpdate();
+    if (availability.status != AppUpdateStatus.available) return availability;
+
+    try {
+      return switch (await flow()) {
+        PlayUpdateFlowResult.completed => AppUpdateOutcome(successStatus),
+        PlayUpdateFlowResult.canceled => const AppUpdateOutcome(AppUpdateStatus.canceled),
+        PlayUpdateFlowResult.failed =>
+          const AppUpdateOutcome(AppUpdateStatus.failed, errorCode: 'in_app_update_failed'),
+      };
+    } on MissingPluginException {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported, errorCode: 'plugin_unavailable');
+    } on UnsupportedError {
+      return const AppUpdateOutcome(AppUpdateStatus.unsupported);
+    } on PlatformException catch (error) {
+      return AppUpdateOutcome(AppUpdateStatus.failed, errorCode: error.code);
+    }
+  }
+
+  static String _validateApplicationId(String value) {
+    final valid = RegExp(r'^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$');
+    if (!valid.hasMatch(value)) {
+      throw ArgumentError.value(value, 'applicationId', 'Must be a valid Android application ID.');
+    }
+    return value;
+  }
+}
+
+class FlutterAppUpdateGateway implements AppUpdateGateway {
+  const FlutterAppUpdateGateway();
+
+  @override
+  Future<PlayUpdateAvailability> checkAvailability() async {
+    final info = await InAppUpdate.checkForUpdate();
+    return switch (info.updateAvailability) {
+      UpdateAvailability.updateAvailable ||
+      UpdateAvailability.developerTriggeredUpdateInProgress =>
+        PlayUpdateAvailability.available,
+      UpdateAvailability.updateNotAvailable => PlayUpdateAvailability.unavailable,
+      UpdateAvailability.unknown => PlayUpdateAvailability.unsupported,
+    };
+  }
+
+  @override
+  Future<PlayUpdateFlowResult> performImmediateUpdate() async =>
+      _mapResult(await InAppUpdate.performImmediateUpdate());
+
+  @override
+  Future<PlayUpdateFlowResult> startFlexibleUpdate() async =>
+      _mapResult(await InAppUpdate.startFlexibleUpdate());
+
+  @override
+  Future<void> completeFlexibleUpdate() => InAppUpdate.completeFlexibleUpdate();
+
+  @override
+  Stream<AppUpdateInstallStatus> get installStatus =>
+      InAppUpdate.installUpdateListener.map(_mapInstallStatus);
+
+  @override
+  Future<bool> openStoreListing(Uri uri) =>
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+
+  PlayUpdateFlowResult _mapResult(AppUpdateResult result) => switch (result) {
+    AppUpdateResult.success => PlayUpdateFlowResult.completed,
+    AppUpdateResult.userDeniedUpdate => PlayUpdateFlowResult.canceled,
+    AppUpdateResult.inAppUpdateFailed => PlayUpdateFlowResult.failed,
+  };
+
+  AppUpdateInstallStatus _mapInstallStatus(InstallStatus status) => switch (status) {
+    InstallStatus.unknown => AppUpdateInstallStatus.unknown,
+    InstallStatus.pending => AppUpdateInstallStatus.pending,
+    InstallStatus.downloading => AppUpdateInstallStatus.downloading,
+    InstallStatus.installing => AppUpdateInstallStatus.installing,
+    InstallStatus.installed => AppUpdateInstallStatus.installed,
+    InstallStatus.failed => AppUpdateInstallStatus.failed,
+    InstallStatus.canceled => AppUpdateInstallStatus.canceled,
+    InstallStatus.downloaded => AppUpdateInstallStatus.downloaded,
+  };
+}

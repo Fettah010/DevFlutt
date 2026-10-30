@@ -1,0 +1,74 @@
+import 'package:workmanager/workmanager.dart';
+
+import 'background_task.dart';
+
+class WorkmanagerTaskScheduler {
+  const WorkmanagerTaskScheduler();
+
+  Future<void> scheduleOneOff(BackgroundTask task) {
+    _validate(task);
+    return Workmanager().registerOneOffTask(
+      task.uniqueName,
+      task.taskName,
+      inputData: task.inputData,
+      initialDelay: task.initialDelay,
+      constraints: Constraints(
+        networkType: switch (task.constraints.network) {
+          BackgroundNetworkRequirement.none => NetworkType.notRequired,
+          BackgroundNetworkRequirement.connected => NetworkType.connected,
+          BackgroundNetworkRequirement.unmetered => NetworkType.unmetered,
+        },
+        requiresBatteryNotLow: task.constraints.requiresBatteryNotLow,
+        requiresCharging: task.constraints.requiresCharging,
+        requiresDeviceIdle: task.constraints.requiresDeviceIdle,
+        requiresStorageNotLow: task.constraints.requiresStorageNotLow,
+      ),
+      backoffPolicy: switch (task.retryPolicy) {
+        BackgroundRetryPolicy.exponential => BackoffPolicy.exponential,
+        BackgroundRetryPolicy.linear => BackoffPolicy.linear,
+      },
+      backoffPolicyDelay: task.backoffDelay,
+    );
+  }
+
+  Future<void> cancel(String uniqueName) {
+    if (uniqueName.trim().isEmpty) {
+      throw ArgumentError.value(uniqueName, 'uniqueName', 'Must not be empty.');
+    }
+    return Workmanager().cancelByUniqueName(uniqueName);
+  }
+
+  void _validate(BackgroundTask task) {
+    if (task.uniqueName.trim().isEmpty) {
+      throw ArgumentError.value(task.uniqueName, 'uniqueName', 'Must not be empty.');
+    }
+    if (task.taskName.trim().isEmpty) {
+      throw ArgumentError.value(task.taskName, 'taskName', 'Must not be empty.');
+    }
+    if (task.initialDelay.isNegative) {
+      throw ArgumentError.value(task.initialDelay, 'initialDelay', 'Must not be negative.');
+    }
+    if (task.backoffDelay < const Duration(seconds: 10)) {
+      throw ArgumentError.value(
+        task.backoffDelay,
+        'backoffDelay',
+        'Android WorkManager requires a backoff delay of at least 10 seconds.',
+      );
+    }
+    for (final entry in task.inputData.entries) {
+      if (entry.key.isEmpty || !_isSupportedInputValue(entry.value)) {
+        throw ArgumentError.value(
+          entry.value,
+          'inputData[${entry.key}]',
+          'Use a non-empty key and a scalar value or a list of scalar values.',
+        );
+      }
+    }
+  }
+
+  bool _isSupportedInputValue(Object? value) {
+    if (value is String || value is num || value is bool) return true;
+    return value is List &&
+        value.every((item) => item is String || item is num || item is bool);
+  }
+}

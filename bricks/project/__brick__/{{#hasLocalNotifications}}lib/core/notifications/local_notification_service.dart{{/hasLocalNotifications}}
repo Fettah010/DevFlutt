@@ -1,0 +1,171 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+enum NotificationPermissionStatus { granted, denied, notRequired }
+
+abstract interface class LocalNotificationGateway {
+  Future<void> initialize(void Function(String?) onTap);
+  Future<void> createChannel();
+  Future<String?> getLaunchPayload();
+  Future<bool?> areNotificationsEnabled();
+  Future<bool?> requestNotificationsPermission();
+  Future<void> show({
+    required int id,
+    required String title,
+    required String body,
+    String? route,
+  });
+}
+
+class LocalNotificationService {
+  factory LocalNotificationService({LocalNotificationGateway? gateway}) =>
+      gateway == null ? _instance : LocalNotificationService._(gateway);
+
+  LocalNotificationService._(this._gateway);
+
+  static final LocalNotificationService _instance =
+      LocalNotificationService._(FlutterLocalNotificationGateway());
+
+  final LocalNotificationGateway _gateway;
+  Future<void>? _initializeFuture;
+  var _initialized = false;
+
+  Future<void> initialize({required void Function(String?) onTap}) =>
+      _initializeFuture ??= _initialize(onTap);
+
+  Future<NotificationPermissionStatus> requestPermission() async {
+    _requireInitialized();
+    if (await _gateway.areNotificationsEnabled() == true) {
+      return NotificationPermissionStatus.granted;
+    }
+
+    final requestResult = await _gateway.requestNotificationsPermission();
+    if (requestResult != null) {
+      return requestResult
+          ? NotificationPermissionStatus.granted
+          : NotificationPermissionStatus.denied;
+    }
+
+    return switch (await _gateway.areNotificationsEnabled()) {
+      true => NotificationPermissionStatus.granted,
+      false => NotificationPermissionStatus.denied,
+      null => NotificationPermissionStatus.notRequired,
+    };
+  }
+
+  Future<bool> show({
+    required int id,
+    required String title,
+    required String body,
+    String? route,
+  }) async {
+    _requireInitialized();
+    if (title.trim().isEmpty) {
+      throw ArgumentError.value(title, 'title', 'Must not be empty.');
+    }
+    if (body.trim().isEmpty) {
+      throw ArgumentError.value(body, 'body', 'Must not be empty.');
+    }
+    if (await _gateway.areNotificationsEnabled() == false) return false;
+
+    await _gateway.show(id: id, title: title, body: body, route: route);
+    return true;
+  }
+
+  Future<void> _initialize(void Function(String?) onTap) async {
+    debugPrint('Local notification service initializing its platform gateway.');
+    await _gateway.initialize(onTap);
+    await _gateway.createChannel();
+    final launchPayload = await _gateway.getLaunchPayload();
+    _initialized = true;
+    debugPrint(
+      launchPayload == null
+          ? 'Local notification service found no notification launch payload.'
+          : 'Local notification service found a notification launch payload.',
+    );
+    if (launchPayload != null) onTap(launchPayload);
+  }
+
+  void _requireInitialized() {
+    if (!_initialized) {
+      throw StateError('Call initialize before requesting permission or showing notifications.');
+    }
+  }
+}
+
+class FlutterLocalNotificationGateway implements LocalNotificationGateway {
+  FlutterLocalNotificationGateway({FlutterLocalNotificationsPlugin? plugin})
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  static const String channelId = 'devflutt_general';
+  static const String channelName = 'General';
+  static const String channelDescription = 'General app notifications.';
+
+  final FlutterLocalNotificationsPlugin _plugin;
+
+  @override
+  Future<void> initialize(void Function(String?) onTap) async {
+    final initialized = await _plugin.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      ),
+      onDidReceiveNotificationResponse: (response) => onTap(response.payload),
+    );
+    if (initialized == false) {
+      throw StateError('The local notification plugin did not initialize.');
+    }
+  }
+
+  @override
+  Future<void> createChannel() async {
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) {
+      throw UnsupportedError('Local notifications are supported on Android only.');
+    }
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        channelId,
+        channelName,
+        description: channelDescription,
+      ),
+    );
+  }
+
+  @override
+  Future<String?> getLaunchPayload() async {
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp != true) return null;
+    return details?.notificationResponse?.payload;
+  }
+
+  @override
+  Future<bool?> areNotificationsEnabled() async => _androidPlugin()?.areNotificationsEnabled();
+
+  @override
+  Future<bool?> requestNotificationsPermission() async =>
+      _androidPlugin()?.requestNotificationsPermission();
+
+  @override
+  Future<void> show({
+    required int id,
+    required String title,
+    required String body,
+    String? route,
+  }) => _plugin.show(
+    id: id,
+    title: title,
+    body: body,
+    notificationDetails: const NotificationDetails(
+      android: AndroidNotificationDetails(
+        channelId,
+        channelName,
+        channelDescription: channelDescription,
+      ),
+    ),
+    payload: route,
+  );
+
+  AndroidFlutterLocalNotificationsPlugin? _androidPlugin() =>
+      _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+}

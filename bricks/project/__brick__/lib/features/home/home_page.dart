@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-{{#hasGoRouter}}import 'package:go_router/go_router.dart';
+{{#hasHomeNavigationLinks}}import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-{{/hasGoRouter}}
+{{/hasHomeNavigationLinks}}
 /// The application home screen.
 ///
 /// It is the first destination of the router and the fallback screen when the

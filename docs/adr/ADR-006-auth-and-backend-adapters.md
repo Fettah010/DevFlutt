@@ -134,6 +134,32 @@ caller awaits the same future; a successful refresh completes every waiter with 
 failed refresh signs the user out exactly once and rejects every waiter. There is no timer, no
 retry, and no re-arm, so the coordinator cannot loop.
 
+## Addendum — data-backend milestone (2026-11-01)
+
+The v0.9.1 data-backend milestone introduces `--backend` independently of `--auth`:
+
+| `--backend` value | Generated capability |
+|---|---|
+| `none` | No provider data SDK; this does not remove a networking module already included by a preset. |
+| `rest` | Existing `networking` module for a custom REST API. |
+| `firebase` | Firebase Firestore only, via `backend-firestore`. |
+| `supabase` | Supabase Postgres/PostgREST only, via `backend-supabase`. |
+
+Firebase and Supabase provider-core modules own configuration and one-time SDK
+initialization so their data modules can coexist with matching auth modules without
+duplicate setup. Supabase data-only projects use `EmptyLocalStorage`; selecting
+`auth-supabase` supplies the existing secure-storage-backed session persistence. These
+adapters remain provider-specific; no universal CRUD API or service parity is claimed.
+Firebase Storage/Realtime/Analytics and Supabase Storage/Realtime/Edge Functions/Analytics
+remain deferred.
+
+The pinned Firestore package's Android Gradle project omits a namespace on AGP 9.1.0. The
+generated Android root project therefore supplies the manifest package as the namespace
+only when Firestore is selected, using the typed AGP library extension before variant
+creation. The exact generated debug and release builds are regression gates. Do not patch
+the package cache or broaden the workaround to unrelated modules; remove it only after an
+upstream version builds without it on the supported toolchain.
+
 `auth-rest` uses the coordinator, because it talks to an arbitrary backend and owns its refresh.
 Firebase and Supabase refresh inside their own SDKs, so the coordinator is not wrapped around
 them; the adapter documentation says so, and the contract suite asserts the observable

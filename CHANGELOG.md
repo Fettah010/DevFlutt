@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Independent data-backend selection with `--backend none|rest|firebase|supabase`, shared
+  Firebase/Supabase initialization cores, and provider-specific Firestore and
+  Postgres/PostgREST modules. Added the `commerce` and Android-only `full` presets without
+  implicitly selecting an auth or data provider.
+- A required 25-case generated-project CI matrix covering all named presets, each data
+  backend, matching auth/data pairs, and the maximum-capability Android composition; matrix
+  enumeration verifies each case's exact selection and permission expectations, and
+  generated test runs fail on missing cases, zero tests, or skipped tests.
+- Module setup guides for the Firebase and Supabase shared cores and generated-project
+  validation reports as CI artifacts.
 - Opt-in Android WorkManager, local notification, and Google Play in-app update modules,
   with app-owned interfaces and fake-backed tests. Existing presets remain unchanged.
 - Conditional notification permission and core-library desugaring for the local-notifications

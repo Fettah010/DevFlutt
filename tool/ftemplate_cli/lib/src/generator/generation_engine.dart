@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:mason/mason.dart';
-import 'package:path/path.dart' as p;
 
 import '../models/generation_plan.dart';
 import '../metadata/template_metadata.dart';
@@ -35,8 +34,8 @@ class GenerationEngine {
   ///
   /// The caller is responsible for moving [GenerationResult.projectDir] into
   /// place and for cleaning it up on failure.
-  Future<GenerationResult> generate(GenerationPlan plan) async {
-    final tempDir = await Directory.systemTemp.createTemp('ftemplate_');
+  Future<GenerationResult> generate(GenerationPlan plan, {Directory? tempParent}) async {
+    final tempDir = await (tempParent ?? Directory.systemTemp).createTemp('ftemplate_');
     try {
       final generator = await MasonGenerator.fromBrick(Brick.path(brickPath));
       final target = DirectoryGeneratorTarget(tempDir);
@@ -86,6 +85,10 @@ class GenerationEngine {
       'hasAuthRest': moduleIds.contains('auth-rest'),
       'hasAuthFirebase': moduleIds.contains('auth-firebase'),
       'hasAuthSupabase': moduleIds.contains('auth-supabase'),
+      'hasFirebaseCore': moduleIds.contains('firebase-core'),
+      'hasSupabaseCore': moduleIds.contains('supabase-core'),
+      'hasBackendFirestore': moduleIds.contains('backend-firestore'),
+      'hasBackendSupabase': moduleIds.contains('backend-supabase'),
       'hasBackgroundWork': moduleIds.contains('background-work'),
       'hasLocalNotifications': moduleIds.contains('local-notifications'),
       'hasAppUpdates': moduleIds.contains('app-updates'),
@@ -116,6 +119,8 @@ class GenerationEngine {
   static const List<String> _serviceModuleIds = <String>[
     'logging',
     'networking',
+    'backend-firestore',
+    'backend-supabase',
     'secure-storage',
     'diagnostics',
   ];
@@ -140,11 +145,13 @@ class GenerationEngine {
 
   /// Moves the contents of [source] into [destination].
   static Future<void> moveInto(Directory source, Directory destination) async {
-    await destination.create(recursive: true);
-    await for (final entity in source.list()) {
-      final targetPath = p.join(destination.path, p.basename(entity.path));
-      await entity.rename(targetPath);
+    await destination.parent.create(recursive: true);
+    if (destination.existsSync()) {
+      if (isNonEmpty(destination)) {
+        throw FileSystemException('Destination is not empty.', destination.path);
+      }
+      await destination.delete();
     }
-    await source.delete();
+    await source.rename(destination.path);
   }
 }

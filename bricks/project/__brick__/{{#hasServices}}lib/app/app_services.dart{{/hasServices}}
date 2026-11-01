@@ -7,7 +7,11 @@ import '../core/logging/console_logger.dart';
 import '../core/networking/dio_api_client.dart';
 import '../core/networking/retry_policy.dart';
 import '../core/networking/retrying_api_client.dart';
-{{/hasNetworking}}{{#hasSecureStorage}}import '../core/secure_storage/flutter_secure_store.dart';
+{{/hasNetworking}}{{#hasBackendFirestore}}import '../core/firestore/firebase_firestore_document_port.dart';
+import '../core/firestore/firestore_document_client.dart';
+{{/hasBackendFirestore}}{{#hasBackendSupabase}}import '../core/supabase_data/supabase_data_client.dart';
+import '../core/supabase_data/supabase_data_port_impl.dart';
+{{/hasBackendSupabase}}{{#hasSecureStorage}}import '../core/secure_storage/flutter_secure_store.dart';
 import '../core/secure_storage/secure_store.dart';
 {{/hasSecureStorage}}{{#hasAuth}}import '../core/auth/auth_adapter.dart';
 {{/hasAuth}}{{#hasAuthRest}}import '../core/auth/rest/dio_rest_auth_port.dart';
@@ -29,7 +33,9 @@ class AppServices {
   AppServices({
 {{#hasLogging}}    required this.logger,
 {{/hasLogging}}{{#hasNetworking}}    required this.apiClient,
-{{/hasNetworking}}{{#hasSecureStorage}}    required this.secureStore,
+{{/hasNetworking}}{{#hasBackendFirestore}}    required this.firestoreClient,
+{{/hasBackendFirestore}}{{#hasBackendSupabase}}    required this.supabaseDataClient,
+{{/hasBackendSupabase}}{{#hasSecureStorage}}    required this.secureStore,
 {{/hasSecureStorage}}{{#hasDiagnostics}}    required this.errorReporter,
 {{/hasDiagnostics}}{{#hasAuth}}    required this.authAdapter,
 {{/hasAuth}}  });
@@ -39,7 +45,13 @@ class AppServices {
 {{/hasLogging}}{{#hasNetworking}}
   /// The HTTP client used by the features.
   final ApiClient apiClient;
-{{/hasNetworking}}{{#hasSecureStorage}}
+{{/hasNetworking}}{{#hasBackendFirestore}}
+  /// The Firebase Firestore document client.
+  final FirestoreDocumentClient firestoreClient;
+{{/hasBackendFirestore}}{{#hasBackendSupabase}}
+  /// The Supabase Postgres/PostgREST data client.
+  final SupabaseDataClient supabaseDataClient;
+{{/hasBackendSupabase}}{{#hasSecureStorage}}
   /// The store for sensitive values.
   final SecureStore secureStore;
 {{/hasSecureStorage}}{{#hasDiagnostics}}
@@ -68,7 +80,13 @@ AppServices buildAppServices(AppConfig config) {
     policy: const RetryPolicy(maxAttempts: 3),
     logger: logger,
   );
-{{/hasNetworking}}{{#hasSecureStorage}}  final secureStore = const FlutterSecureStore();
+{{/hasNetworking}}{{#hasBackendFirestore}}  final firestoreClient = FirestoreDocumentClient(
+    port: FirebaseFirestoreDocumentPort(),
+  );
+{{/hasBackendFirestore}}{{#hasBackendSupabase}}  final supabaseDataClient = SupabaseDataClient(
+    port: SupabaseDataPortImpl(),
+  );
+{{/hasBackendSupabase}}{{#hasSecureStorage}}  final secureStore = const FlutterSecureStore();
 {{/hasSecureStorage}}{{#hasAuthRest}}  final restAuthConfig = defaultRestAuthConfig;
   final authAdapter = RestAuthAdapter(
     port: DioRestAuthPort(client: apiClient, config: restAuthConfig),
@@ -85,7 +103,9 @@ AppServices buildAppServices(AppConfig config) {
   return AppServices(
 {{#hasLogging}}    logger: logger,
 {{/hasLogging}}{{#hasNetworking}}    apiClient: apiClient,
-{{/hasNetworking}}{{#hasSecureStorage}}    secureStore: secureStore,
+{{/hasNetworking}}{{#hasBackendFirestore}}    firestoreClient: firestoreClient,
+{{/hasBackendFirestore}}{{#hasBackendSupabase}}    supabaseDataClient: supabaseDataClient,
+{{/hasBackendSupabase}}{{#hasSecureStorage}}    secureStore: secureStore,
 {{/hasSecureStorage}}{{#hasDiagnostics}}    errorReporter: LocalErrorReporter(logger: logger),
 {{/hasDiagnostics}}{{#hasAuth}}    authAdapter: authAdapter,
 {{/hasAuth}}  );

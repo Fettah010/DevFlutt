@@ -1,0 +1,37 @@
+import 'supabase_data_error.dart';
+
+/// The typed outcome of a Supabase data operation.
+sealed class SupabaseDataResult<T> {
+  const SupabaseDataResult();
+
+  /// Whether the operation succeeded.
+  bool get isSuccess => this is SupabaseDataSuccess<T>;
+
+  /// The result value when the operation succeeded.
+  T? get valueOrNull => switch (this) {
+    SupabaseDataSuccess<T>(:final value) => value,
+    SupabaseDataFailure<T>() => null,
+  };
+
+  /// The safe failure when the operation did not succeed.
+  SupabaseDataError? get errorOrNull => switch (this) {
+    SupabaseDataSuccess<T>() => null,
+    SupabaseDataFailure<T>(:final error) => error,
+  };
+}
+
+/// A successful Supabase data operation.
+final class SupabaseDataSuccess<T> extends SupabaseDataResult<T> {
+  const SupabaseDataSuccess(this.value);
+
+  /// The operation result.
+  final T value;
+}
+
+/// A failed Supabase data operation.
+final class SupabaseDataFailure<T> extends SupabaseDataResult<T> {
+  const SupabaseDataFailure(this.error);
+
+  /// The provider-independent failure.
+  final SupabaseDataError error;
+}

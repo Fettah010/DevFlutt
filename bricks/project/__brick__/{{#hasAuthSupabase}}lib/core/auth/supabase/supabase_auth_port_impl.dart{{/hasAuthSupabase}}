@@ -1,42 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
-import '../../secure_storage/flutter_secure_store.dart';
 import '../auth_error.dart';
 import '../auth_session.dart';
-import 'secure_storage_local_storage.dart';
 import 'supabase_auth_port.dart';
-import 'supabase_config.dart';
-
-/// Prepares Supabase for use.
-///
-/// The call is idempotent: a second call in the same process does nothing.
-/// It throws a [StateError] with an actionable message when the project's
-/// configuration still carries the placeholder values.
-Future<void> initializeSupabaseAuth({
-  SupabaseConfig config = defaultSupabaseConfig,
-}) async {
-  if (!config.isConfigured) {
-    throw StateError(
-      'Supabase is not configured. Replace the values in '
-      'lib/core/auth/supabase/supabase_config.dart with the project URL and '
-      'the publishable key from your Supabase project settings.',
-    );
-  }
-  try {
-    await supabase.Supabase.initialize(
-      url: config.url,
-      publishableKey: config.publishableKey,
-      authOptions: supabase.FlutterAuthClientOptions(
-        localStorage: SecureStorageLocalStorage(const FlutterSecureStore()),
-      ),
-    );
-  } on supabase.AuthException catch (error) {
-    // A second initialization in the same process is not a failure.
-    if (!error.message.toLowerCase().contains('already')) {
-      rethrow;
-    }
-  }
-}
 
 /// The [SupabaseAuthPort] that talks to Supabase Auth.
 ///

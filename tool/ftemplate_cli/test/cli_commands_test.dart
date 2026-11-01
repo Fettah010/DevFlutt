@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:ftemplate_cli/ftemplate_cli.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -22,6 +23,9 @@ void main() {
       expect(out.toString(), contains('design-system'));
       expect(out.toString(), contains('feature-example'));
       expect(out.toString(), contains('showcase'));
+      expect(out.toString(), contains('backend-supabase'));
+      expect(out.toString(), contains('commerce'));
+      expect(out.toString(), contains('full'));
     });
   });
 
@@ -102,7 +106,188 @@ void main() {
       expect(out.toString(), contains('Package: my_app'));
       expect(out.toString(), contains('Application ID: com.example.my_app'));
       expect(out.toString(), contains('Modules: architecture-core'));
+      expect(out.toString(), contains('Backend: none'));
       expect(out.toString(), contains('Dry run'));
+    });
+
+    test('maps the REST backend to the existing networking module', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'REST App',
+        '--org',
+        'com.example',
+        '--backend',
+        'rest',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('Backend: rest'));
+      expect(out.toString(), contains('networking'));
+      expect(out.toString(), contains('dio: ^5.11.1'));
+    });
+
+    test('selects Firestore independently from Supabase authentication', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'Firebase Data App',
+        '--org',
+        'com.example',
+        '--backend',
+        'firebase',
+        '--auth',
+        'supabase',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('Backend: firebase'));
+      expect(out.toString(), contains('Authentication: auth-supabase'));
+      expect(out.toString(), contains('backend-firestore'));
+      expect(out.toString(), contains('auth-supabase'));
+    });
+
+    test('selects the Supabase backend without selecting its auth adapter', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'Supabase Data App',
+        '--org',
+        'com.example',
+        '--backend',
+        'supabase',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('Backend: supabase'));
+      expect(out.toString(), contains('backend-supabase'));
+      expect(out.toString(), contains('Authentication: none'));
+      expect(out.toString(), isNot(contains('auth-supabase')));
+    });
+
+    test('reports a provider backend selected directly as a module', () async {
+      final out = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'Direct Backend App',
+        '--org',
+        'com.example',
+        '--module',
+        'backend-firestore',
+        '--dry-run',
+      ], out: out.writeln);
+
+      expect(code, 0);
+      expect(out.toString(), contains('Backend: firebase'));
+    });
+
+    test('rejects unknown backend choices', () async {
+      final err = StringBuffer();
+      final code = await runner.run([
+        'create',
+        '--name',
+        'My App',
+        '--org',
+        'com.example',
+        '--backend',
+        'magic',
+        '--dry-run',
+      ], err: err.writeln);
+
+      expect(code, 64);
+      expect(err.toString(), contains('Invalid --backend value "magic"'));
+      expect(err.toString(), contains('none, rest, firebase, supabase'));
+    });
+
+    test('rejects conflicting provider backends before writing output', () async {
+      final parent = await Directory.systemTemp.createTemp('ftemplate_backend_conflict_');
+      try {
+        for (final scenario in <String, String>{
+          'firebase': 'backend-supabase',
+          'supabase': 'backend-firestore',
+        }.entries) {
+          final destination = Directory(p.join(parent.path, scenario.key));
+          final err = StringBuffer();
+          final code = await runner.run([
+            'create',
+            '--name',
+            'Conflict App',
+            '--org',
+            'com.example',
+            '--backend',
+            scenario.key,
+            '--module',
+            scenario.value,
+            '--output',
+            destination.path,
+          ], err: err.writeln);
+
+          expect(code, 64);
+          expect(err.toString(), contains('conflict'));
+          expect(destination.existsSync(), isFalse);
+        }
+      } finally {
+        await parent.delete(recursive: true);
+      }
+    });
+
+    test('explicit no-backend selection rejects provider modules before writing', () async {
+      final parent = await Directory.systemTemp.createTemp('ftemplate_backend_none_');
+      final destination = Directory(p.join(parent.path, 'generated'));
+      final err = StringBuffer();
+      try {
+        final code = await runner.run([
+          'create',
+          '--name',
+          'No Backend App',
+          '--org',
+          'com.example',
+          '--backend',
+          'none',
+          '--module',
+          'backend-firestore',
+          '--output',
+          destination.path,
+        ], err: err.writeln);
+
+        expect(code, 64);
+        expect(err.toString(), contains('--backend none'));
+        expect(destination.existsSync(), isFalse);
+      } finally {
+        await parent.delete(recursive: true);
+      }
+    });
+
+    test('creates output on the requested filesystem', () async {
+      final parent = await Directory.current.createTemp('ftemplate_output_volume_');
+      final destination = Directory(p.join(parent.path, 'generated'));
+      try {
+        final code = await runner.run([
+          'create',
+          '--name',
+          'Generated App',
+          '--org',
+          'com.example',
+          '--preset',
+          'blank',
+          '--brick-dir',
+          '../../bricks/project',
+          '--output',
+          destination.path,
+        ]);
+
+        expect(code, 0);
+        expect(File(p.join(destination.path, 'pubspec.yaml')).existsSync(), isTrue);
+      } finally {
+        await parent.delete(recursive: true);
+      }
     });
 
     test('reports selected Android permissions and native changes in dry-run output', () async {
@@ -155,6 +340,64 @@ void main() {
 
         expect(code, 64);
         expect(err.toString(), contains('local-notifications'));
+        expect(err.toString(), contains('ios'));
+        expect(destination.existsSync(), isFalse);
+      } finally {
+        await parent.delete(recursive: true);
+      }
+    });
+
+    test('rejects the full Android preset for iOS before writing output', () async {
+      final parent = await Directory.systemTemp.createTemp('ftemplate_full_preset_platform_');
+      final destination = Directory(p.join(parent.path, 'generated'));
+      final err = StringBuffer();
+      try {
+        final code = await runner.run([
+          'create',
+          '--name',
+          'Full App',
+          '--org',
+          'com.example',
+          '--preset',
+          'full',
+          '--platforms',
+          'ios',
+          '--output',
+          destination.path,
+        ], err: err.writeln);
+
+        expect(code, 64);
+        expect(err.toString(), contains('does not support'));
+        expect(err.toString(), contains('ios'));
+        expect(destination.existsSync(), isFalse);
+      } finally {
+        await parent.delete(recursive: true);
+      }
+    });
+
+    test('rejects Firestore for iOS before writing output', () async {
+      final parent = await Directory.systemTemp.createTemp('ftemplate_firestore_platform_test_');
+      final destination = Directory('${parent.path}/generated');
+      final err = StringBuffer();
+      try {
+        final code = await runner.run([
+          'create',
+          '--name',
+          'Firestore App',
+          '--org',
+          'com.example',
+          '--platforms',
+          'ios',
+          '--module',
+          'backend-firestore',
+          '--brick-dir',
+          '../../bricks/project',
+          '--output',
+          destination.path,
+        ], err: err.writeln);
+
+        expect(code, 64);
+        expect(err.toString(), contains('backend-firestore'));
         expect(err.toString(), contains('ios'));
         expect(destination.existsSync(), isFalse);
       } finally {

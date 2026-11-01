@@ -1,0 +1,15 @@
+/// Provider boundary for the PostgREST table operations this module supports.
+abstract interface class SupabaseDataPort {
+  /// Selects rows matching [filters], limited to [limit] rows.
+  Future<Object?> selectRows({
+    required String table,
+    required Map<String, Object> filters,
+    required int limit,
+  });
+
+  /// Inserts [values] as one table row.
+  Future<void> insertRow({required String table, required Map<String, Object?> values});
+
+  /// Deletes rows matching [filters].
+  Future<void> deleteRows({required String table, required Map<String, Object> filters});
+}

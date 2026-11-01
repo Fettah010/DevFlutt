@@ -56,19 +56,19 @@ run_required_security_check() {
   run_check "$name" "$@"
 }
 
-run_check pub_get flutter pub get
+run_check pub_get flutter pub get --enforce-lockfile
 run_check format dart format --output=none --set-exit-if-changed lib test
 run_check analyze flutter analyze --fatal-infos
 run_check test flutter test
 run_check apk_debug flutter build apk --debug --flavor dev
 run_check apk_release flutter build apk --release --flavor prod
 
-run_check_in generator_pub_get "$GENERATOR_DIR" dart pub get
+run_check_in generator_pub_get "$GENERATOR_DIR" dart pub get --enforce-lockfile
 run_check_in generator_format "$GENERATOR_DIR" dart format --output=none --set-exit-if-changed .
 run_check_in generator_analyze "$GENERATOR_DIR" dart analyze --fatal-infos
 run_check_in generator_test "$GENERATOR_DIR" dart test
 
-run_check_in module_dependency_audit_pub_get "$MODULE_DEPENDENCY_AUDIT_DIR" flutter pub get
+run_check_in module_dependency_audit_pub_get "$MODULE_DEPENDENCY_AUDIT_DIR" flutter pub get --enforce-lockfile
 
 run_check license_inventory dart run tool/ftemplate_cli/tool/license_inventory.dart --check
 

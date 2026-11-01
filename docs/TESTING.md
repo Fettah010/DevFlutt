@@ -36,21 +36,22 @@ three committed lockfiles.
 
 | Check | Command |
 |-------|---------|
-| Resolve dependencies | `flutter pub get` |
+| Resolve dependencies | `flutter pub get --enforce-lockfile` |
 | Format check | `dart format --output=none --set-exit-if-changed lib test` |
 | Static analysis | `flutter analyze --fatal-infos` |
 | Unit and widget tests | `flutter test` |
 | Android debug build | `flutter build apk --debug --flavor dev` |
 | Android release build | `flutter build apk --release --flavor prod` |
 | Release permission check | `aapt2 dump permissions build/app/outputs/flutter-apk/app-prod-release.apk` |
-| Resolve generator dependencies | `cd tool/ftemplate_cli && dart pub get` |
+| Resolve generator dependencies | `cd tool/ftemplate_cli && dart pub get --enforce-lockfile` |
 | Generator format check | `cd tool/ftemplate_cli && dart format --output=none --set-exit-if-changed .` |
 | Generator analysis | `cd tool/ftemplate_cli && dart analyze --fatal-infos` |
 | Generator tests | `cd tool/ftemplate_cli && dart test` |
 | Patrol smoke UI test | `dart run tool/patrol/run.dart --suite smoke` |
 | Patrol Android regression tests | `dart run tool/patrol/run.dart --suite regression` |
+| Generated-project matrix guard | `dart tool/verify/generated_project_matrix.dart --check` |
 | Third-party notices | `dart run tool/ftemplate_cli/tool/license_inventory.dart --check` |
-| Optional module dependency graph | `cd tool/module_dependency_audit && flutter pub get` |
+| Optional module dependency graph | `cd tool/module_dependency_audit && flutter pub get --enforce-lockfile` |
 | Secret scan history | `gitleaks git --redact --verbose .` |
 | Secret scan working tree | `gitleaks dir --redact --verbose .` |
 | Dependency audit | `osv-scanner scan source --lockfile pubspec.lock --lockfile tool/ftemplate_cli/pubspec.lock --lockfile tool/module_dependency_audit/pubspec.lock --format json` |
@@ -94,6 +95,16 @@ contract suite run against the selected adapter, and the router tests for the
 authentication redirect. The generator runs the canonical Dart formatter over the
 generated files, so CI can format-check every generated project as well.
 
+The generated-project matrix is defined in
+[`tool/verify/generated_project_matrix.json`](../tool/verify/generated_project_matrix.json).
+Its validator requires all six named presets, each data backend in isolation, both
+provider-matching auth/data compositions, the maximum-capability Android composition, and
+the standalone module cases, with exact preset/auth/backend/module selections and
+permission expectations. CI fails if a required case is missing, unexpected, or
+misconfigured and records the enumerated case count. Each generated test run uses the JSON
+reporter; the guard rejects unsuccessful completion, zero executed tests, and skipped tests.
+Per-case test events and release manifest reports are uploaded as CI artifacts.
+
 ### Generated localization module
 
 For a project generated with `--module localization`, resolve dependencies and generate
@@ -123,6 +134,14 @@ offline sample's unit tests cover freshness invalidation, local persistence, que
 IDs, offline behavior, and local-wins conflict policy; widget tests cover refresh states.
 The commerce tests check money arithmetic, checkout request fields, and failure/success UI.
 These are generated-project widget tests; Patrol still targets the reference app.
+
+The v0.9.1 matrix adds the `commerce` and `full` presets, `--backend
+rest|firebase|supabase` as standalone selections, Firebase Auth + Firestore, Supabase Auth
++ Postgres/PostgREST, and a full Android Firebase composition. `full` runs
+`flutter gen-l10n` before format, analysis, tests, and builds. Each case checks release
+permissions and platform components. AndroidX may contribute an app-scoped
+`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` to every merged release manifest; it is
+platform-generated and distinct from optional runtime permissions.
 
 The v0.8 `background-work` selection adds fake-backed tests for task constraints,
 retry/backoff mapping, supported persisted input values, cancellation, and callback
@@ -162,6 +181,20 @@ has: the session store and the refresh coordinator for `auth-rest`, the forced r
 and the email link for `auth-firebase`, and the forced refresh and the one-time
 password for `auth-supabase`. No provider SDK is contacted, and no provider project is
 needed to run the suite.
+
+The Android-only `backend-firestore` selection adds fake-backed document read, replace,
+delete, malformed-payload, invalid-address, and error-mapping tests. Its generated Android
+debug and release builds verify that the `cloud_firestore` namespace hook is emitted only
+for this selection. Firebase Auth and Firestore compositions share `firebase-core` and one
+startup initializer; no live Firebase project or Security Rules behavior is claimed.
+
+Firebase and Supabase configuration and initialization live in their shared provider-core
+modules. Generated auth projects check that startup initializes the selected provider once;
+Supabase Auth uses secure session storage, while a Supabase data-only selection disables
+session persistence.
+The generated-project matrix also covers the Firestore and Supabase data adapters alone and
+with their matching auth adapter. Those tests use provider fakes; they do not contact live
+Firebase or Supabase projects.
 
 ## Android UI tests
 

@@ -1,0 +1,7 @@
+/// A provider failure reduced to its stable Postgres/PostgREST code.
+final class SupabasePortException implements Exception {
+  const SupabasePortException(this.code);
+
+  /// The provider error code, without provider-supplied messages or data.
+  final String code;
+}

@@ -1,0 +1,15 @@
+/// Provider boundary for the document operations this module supports.
+abstract interface class FirestoreDocumentPort {
+  /// Reads a document, returning null when it does not exist.
+  Future<Object?> getDocument({required String collection, required String documentId});
+
+  /// Replaces all fields in a document.
+  Future<void> setDocument({
+    required String collection,
+    required String documentId,
+    required Map<String, Object?> fields,
+  });
+
+  /// Deletes a document.
+  Future<void> deleteDocument({required String collection, required String documentId});
+}

@@ -1,35 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 
-import '../../../firebase_options.dart';
 import '../auth_error.dart';
 import '../auth_session.dart';
 import 'firebase_auth_port.dart';
-
-/// The project identifier of the placeholder configuration the template ships.
-///
-/// The application refuses to start while the configuration still carries it.
-const String placeholderFirebaseProjectId = 'devflutt-placeholder-project';
-
-/// Prepares Firebase for use.
-///
-/// The call is idempotent: a second call in the same process does nothing.
-/// It throws a [StateError] with an actionable message when the project's
-/// configuration file is still the placeholder the template ships.
-Future<void> initializeFirebaseAuth() async {
-  final options = DefaultFirebaseOptions.currentPlatform;
-  if (options.projectId == placeholderFirebaseProjectId) {
-    throw StateError(
-      'Firebase is not configured. Run "flutterfire configure" in this '
-      'project to replace lib/firebase_options.dart with your own '
-      'configuration.',
-    );
-  }
-  if (Firebase.apps.isNotEmpty) {
-    return;
-  }
-  await Firebase.initializeApp(options: options);
-}
 
 /// The [FirebaseAuthPort] that talks to Firebase Authentication.
 ///

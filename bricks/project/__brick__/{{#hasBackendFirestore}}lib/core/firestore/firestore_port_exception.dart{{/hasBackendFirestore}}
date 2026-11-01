@@ -1,0 +1,9 @@
+/// A provider error code crossing the Firestore port boundary.
+///
+/// The SDK message is intentionally discarded so it cannot leak document data.
+final class FirestorePortException implements Exception {
+  const FirestorePortException(this.code);
+
+  /// The SDK's stable error code.
+  final String code;
+}

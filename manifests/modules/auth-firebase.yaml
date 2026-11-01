@@ -7,6 +7,7 @@ summary: >-
   token refresh.
 requires:
   - auth-core
+  - firebase-core
 conflictsWith:
   - auth-rest
   - auth-supabase
@@ -16,8 +17,6 @@ platforms:
 pubDependencies:
   - name: firebase_auth
     version: ^7.0.0
-  - name: firebase_core
-    version: ^5.0.0
 nativeChanges:
   android: []
   ios: []
@@ -41,10 +40,10 @@ outputs:
   - lib/core/auth/firebase/firebase_auth_port.dart
   - lib/core/auth/firebase/firebase_auth_port_impl.dart
 requiredSetup:
-  - The module adds no permission and no configuration key.
-  - The shipped lib/firebase_options.dart is an inert placeholder. Replace it by running
-    "flutterfire configure" in the generated project, which registers the Android app
-    with your Firebase project and writes the real configuration file.
+  - Firebase-core owns provider configuration and initialization; this adapter adds no auth-specific configuration.
+  - Firebase network access is declared through this module's INTERNET permission.
+  - firebase-core supplies the inert lib/firebase_options.dart placeholder and the
+    one-time Firebase initializer shared with Firebase data modules.
   - The Flutter path needs no google-services.json and no
     com.google.gms.google-services Gradle plugin. Those belong to the native Android
     SDK, not to the Flutter SDK.

@@ -8,8 +8,10 @@ import '../core/notifications/notification_route_handler.dart';
 
 import '../app.dart';
 {{#hasServices}}import '../app/app_services.dart';
-{{/hasServices}}{{#hasAuthFirebase}}import '../core/auth/firebase/firebase_auth_port_impl.dart';
-{{/hasAuthFirebase}}{{#hasAuthSupabase}}import '../core/auth/supabase/supabase_auth_port_impl.dart';
+{{/hasServices}}{{#hasFirebaseCore}}import '../core/firebase/firebase_initializer.dart';
+{{/hasFirebaseCore}}{{#hasSupabaseCore}}import '../core/supabase/supabase_initializer.dart';
+{{/hasSupabaseCore}}{{#hasAuthSupabase}}import '../core/auth/supabase/secure_storage_local_storage.dart';
+import '../core/secure_storage/flutter_secure_store.dart';
 {{/hasAuthSupabase}}import '../core/config/app_config.dart';
 {{#hasLocalization}}import '../core/localization/app_formatters.dart';
 {{/hasLocalization}}
@@ -40,9 +42,12 @@ Future<void> bootstrap() async {
   );
   debugPrint('Generated app bootstrap local notifications are ready.');
 {{/hasLocalNotifications}}
-{{#hasAuthFirebase}}  await initializeFirebaseAuth();
-{{/hasAuthFirebase}}{{#hasAuthSupabase}}  await initializeSupabaseAuth();
-{{/hasAuthSupabase}}{{#hasServices}}  final services = buildAppServices(config);
+{{#hasFirebaseCore}}  await initializeFirebase();
+{{/hasFirebaseCore}}{{#hasSupabaseCore}}{{#hasAuthSupabase}}  await initializeSupabaseCore(
+    localStorage: SecureStorageLocalStorage(const FlutterSecureStore()),
+  );
+{{/hasAuthSupabase}}{{^hasAuthSupabase}}  await initializeSupabaseCore();
+{{/hasAuthSupabase}}{{/hasSupabaseCore}}{{#hasServices}}  final services = buildAppServices(config);
 {{/hasServices}}{{#hasStateRiverpod}}  runApp(AppProviderScope(child: DevFluttApp(config: config{{#hasServices}}, services: services{{/hasServices}}{{#hasLocalNotifications}}, router: router{{/hasLocalNotifications}})));
 {{/hasStateRiverpod}}{{^hasStateRiverpod}}  runApp(DevFluttApp(config: config{{#hasServices}}, services: services{{/hasServices}}{{#hasLocalNotifications}}, router: router{{/hasLocalNotifications}}));
 {{/hasStateRiverpod}}{{#hasLocalNotifications}}  routeHandler.applyPendingRouteAfterFirstFrame();

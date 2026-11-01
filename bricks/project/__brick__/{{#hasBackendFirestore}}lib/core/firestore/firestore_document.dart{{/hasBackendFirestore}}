@@ -1,0 +1,11 @@
+/// A Firestore document with a decoded, immutable field map.
+final class FirestoreDocument {
+  FirestoreDocument({required this.id, required Map<String, Object?> fields})
+    : fields = Map<String, Object?>.unmodifiable(fields);
+
+  /// The document's ID within its collection.
+  final String id;
+
+  /// The document fields.
+  final Map<String, Object?> fields;
+}

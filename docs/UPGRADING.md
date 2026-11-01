@@ -107,6 +107,10 @@ apply what you want.
   is unaffected. **No preset changes**: the road map says the provider is chosen explicitly
   rather than guessed, so `blank`, `core`, `demo`, and `recommended` still select no
   provider.
+- Firebase and Supabase setup is owned by shared `firebase-core` and `supabase-core`
+  modules. The auth adapters depend on those modules, allowing a later provider data module
+  to share configuration and initialize its SDK only once. Supabase data-only projects do
+  not persist an auth session; selecting `auth-supabase` retains secure session storage.
 - New generator options: `--auth none|rest|firebase|supabase` selects a provider, and
   `--auth-capability` declares a capability the application needs. A selection whose
   provider cannot satisfy a declared capability is refused before anything is written, with
@@ -118,7 +122,7 @@ apply what you want.
 - The routing module gains an `authRouteGuard` helper when an adapter is selected too. The
   default redirect hook is unchanged, so the behaviour of an existing project does not
   change until the application opts in.
-- `firebase_auth` 7.0.0 and `firebase_core` 5.0.0 apply the Kotlin Gradle Plugin, and
+- `firebase_auth` 7.0.0 and `firebase_core` 5.1.0 apply the Kotlin Gradle Plugin, and
   Flutter 3.47 warns that future Flutter versions will refuse such plugins. The build
   succeeds on the pinned toolchain. `supabase_flutter` 2.18.3 is the pinned version; the
   3.0.0 pre-release is not used.
@@ -128,11 +132,13 @@ apply what you want.
 1. Compare against the new template as described above.
 2. Authentication is opt-in, so nothing changes unless you want it. To add it, regenerate
    with `--auth firebase`, `--auth supabase`, or `--auth rest`, and copy the new
-   `lib/core/auth/` tree into the project.
+   `lib/core/auth/` tree plus the selected provider-core outputs into the project.
 3. For `auth-firebase`, run `flutterfire configure` in the project. It replaces the
-   placeholder `lib/firebase_options.dart` with your own configuration. Until then the
-   application refuses to start with a message that names the command.
-4. For `auth-supabase`, replace the values in `lib/core/auth/supabase/supabase_config.dart`
+   `firebase-core` placeholder at `lib/firebase_options.dart` with your own configuration.
+   Until then the shared Firebase initializer refuses to start with a message that names the
+   command. Preserve `firebase-core` if another Firebase module uses it.
+4. For `auth-supabase`, replace the values in
+   `lib/core/supabase/supabase_config.dart`
    with your project URL and publishable key.
 5. For `auth-rest`, fill in `defaultRestAuthConfig` in
    `lib/core/auth/rest/rest_auth_config.dart` with your backend's paths and field names.

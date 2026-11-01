@@ -1,0 +1,31 @@
+/// A safe, provider-independent Firestore operation failure.
+enum FirestoreDataErrorCode {
+  permissionDenied,
+  unauthenticated,
+  unavailable,
+  deadlineExceeded,
+  notFound,
+  invalidArgument,
+  malformedData,
+  unknown,
+}
+
+/// A Firestore failure that does not retain provider text or document data.
+final class FirestoreDataError {
+  const FirestoreDataError(this.code);
+
+  /// The stable category of the failure.
+  final FirestoreDataErrorCode code;
+
+  /// A safe message suitable for application handling.
+  String get message => switch (code) {
+    FirestoreDataErrorCode.permissionDenied => 'The operation is not permitted.',
+    FirestoreDataErrorCode.unauthenticated => 'Authentication is required.',
+    FirestoreDataErrorCode.unavailable => 'The data service is unavailable.',
+    FirestoreDataErrorCode.deadlineExceeded => 'The data operation timed out.',
+    FirestoreDataErrorCode.notFound => 'The requested resource was not found.',
+    FirestoreDataErrorCode.invalidArgument => 'The data request is invalid.',
+    FirestoreDataErrorCode.malformedData => 'The document data could not be read.',
+    FirestoreDataErrorCode.unknown => 'The data operation failed.',
+  };
+}

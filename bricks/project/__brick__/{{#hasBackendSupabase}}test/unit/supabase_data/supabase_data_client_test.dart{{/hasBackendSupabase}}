@@ -1,0 +1,111 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/supabase_data/fake_supabase_data_port.dart';
+import 'package:{{projectName}}/core/supabase_data/supabase_data_client.dart';
+import 'package:{{projectName}}/core/supabase_data/supabase_data_error.dart';
+import 'package:{{projectName}}/core/supabase_data/supabase_port_exception.dart';
+
+void main() {
+  group('SupabaseDataClient', () {
+    test('selects matching rows within the requested limit', () async {
+      final port = FakeSupabaseDataPort(
+        rowsByTable: <String, List<Object?>>{
+          'profiles': <Object?>[
+            <String, Object?>{'id': 'user-1', 'name': 'Ada'},
+            <String, Object?>{'id': 'user-2', 'name': 'Grace'},
+            <String, Object?>{'id': 'user-3', 'name': 'Lin'},
+          ],
+        },
+      );
+      final result = await SupabaseDataClient(port: port)
+          .selectRows(table: 'profiles', filters: const <String, Object>{'id': 'user-2'}, limit: 1);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull?.map((row) => row.fields).toList(), <Map<String, Object?>>[
+        <String, Object?>{'id': 'user-2', 'name': 'Grace'},
+      ]);
+    });
+
+    test('inserts a row', () async {
+      final port = FakeSupabaseDataPort();
+      final result = await SupabaseDataClient(port: port).insertRow(
+        table: 'profiles',
+        values: const <String, Object?>{'id': 'user-1', 'name': 'Ada'},
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(port.rowsByTable['profiles'], <Map<String, Object?>>[
+        <String, Object?>{'id': 'user-1', 'name': 'Ada'},
+      ]);
+    });
+
+    test('deletes only rows matching the required filter', () async {
+      final port = FakeSupabaseDataPort(
+        rowsByTable: <String, List<Object?>>{
+          'profiles': <Object?>[
+            <String, Object?>{'id': 'user-1'},
+            <String, Object?>{'id': 'user-2'},
+          ],
+        },
+      );
+      final result = await SupabaseDataClient(port: port)
+          .deleteRows(table: 'profiles', filters: const <String, Object>{'id': 'user-1'});
+
+      expect(result.isSuccess, isTrue);
+      expect(port.rowsByTable['profiles'], <Map<String, Object?>>[
+        <String, Object?>{'id': 'user-2'},
+      ]);
+    });
+
+    test('malformed provider payloads return a typed failure', () async {
+      final port = FakeSupabaseDataPort(
+        rowsByTable: <String, List<Object?>>{
+          'profiles': <Object?>[
+            <Object?, Object?>{1: 'bad key'},
+          ],
+        },
+      );
+      final result = await SupabaseDataClient(port: port).selectRows(table: 'profiles', limit: 5);
+
+      expect(result.errorOrNull?.code, SupabaseDataErrorCode.malformedData);
+    });
+
+    test('invalid requests are rejected before reaching the port', () async {
+      final port = FakeSupabaseDataPort();
+      final client = SupabaseDataClient(port: port);
+
+      final selectResult = await client.selectRows(table: ' ', limit: 0);
+      final insertResult = await client.insertRow(table: 'profiles', values: const {});
+      final deleteResult = await client.deleteRows(table: 'profiles', filters: const {});
+
+      expect(selectResult.errorOrNull?.code, SupabaseDataErrorCode.invalidArgument);
+      expect(insertResult.errorOrNull?.code, SupabaseDataErrorCode.invalidArgument);
+      expect(deleteResult.errorOrNull?.code, SupabaseDataErrorCode.invalidArgument);
+      expect(port.rowsByTable, isEmpty);
+    });
+
+    test('Postgres permission errors map to safe typed failures', () async {
+      final port = FakeSupabaseDataPort()..failure = const SupabasePortException('42501');
+      final result = await SupabaseDataClient(port: port).selectRows(table: 'profiles', limit: 10);
+
+      expect(result.errorOrNull?.code, SupabaseDataErrorCode.permissionDenied);
+      expect(result.errorOrNull?.message, 'The operation is not permitted.');
+    });
+
+    test('authentication errors map to safe typed failures', () async {
+      final port = FakeSupabaseDataPort()..failure = const SupabasePortException('PGRST301');
+      final result = await SupabaseDataClient(port: port).selectRows(table: 'profiles', limit: 10);
+
+      expect(result.errorOrNull?.code, SupabaseDataErrorCode.unauthenticated);
+    });
+
+    test('unknown provider errors do not expose provider codes', () async {
+      final port = FakeSupabaseDataPort()
+        ..failure = const SupabasePortException('sensitive-provider-code');
+      final result = await SupabaseDataClient(port: port).selectRows(table: 'profiles', limit: 10);
+
+      expect(result.errorOrNull?.code, SupabaseDataErrorCode.unknown);
+      expect(result.errorOrNull?.message, isNot(contains('sensitive-provider-code')));
+    });
+  });
+}

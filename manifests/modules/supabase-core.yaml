@@ -1,0 +1,32 @@
+id: supabase-core
+version: 1
+category: provider-core
+summary: Shared Supabase configuration and one-time client initialization for Supabase modules.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: supabase_flutter
+    version: ^2.18.3
+nativeChanges:
+  android: []
+  ios: []
+permissions:
+  - android.permission.INTERNET
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+outputs:
+  - lib/core/supabase/supabase_config.dart
+  - lib/core/supabase/supabase_initializer.dart
+requiredSetup:
+  - Replace the inert project URL and publishable key in lib/core/supabase/supabase_config.dart.
+  - Data-only projects use EmptyLocalStorage; Supabase Auth supplies secure storage when selected.
+tests:
+  unit: false
+  widget: false
+  integration: none

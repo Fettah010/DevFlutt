@@ -1,0 +1,103 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:{{projectName}}/core/firestore/fake_firestore_document_port.dart';
+import 'package:{{projectName}}/core/firestore/firestore_data_error.dart';
+import 'package:{{projectName}}/core/firestore/firestore_document_client.dart';
+import 'package:{{projectName}}/core/firestore/firestore_port_exception.dart';
+
+void main() {
+  group('FirestoreDocumentClient', () {
+    test('reads a document with its ID and fields', () async {
+      final port = FakeFirestoreDocumentPort(
+        documents: <String, Object?>{
+          'profiles/user-1': <String, Object?>{'name': 'Ada', 'active': true},
+        },
+      );
+      final result = await FirestoreDocumentClient(port: port).getDocument(
+        collection: 'profiles',
+        documentId: 'user-1',
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull?.id, 'user-1');
+      expect(result.valueOrNull?.fields, <String, Object?>{'name': 'Ada', 'active': true});
+    });
+
+    test('a missing document is a successful null result', () async {
+      final result = await FirestoreDocumentClient(
+        port: FakeFirestoreDocumentPort(),
+      ).getDocument(collection: 'profiles', documentId: 'missing');
+
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull, isNull);
+    });
+
+    test('set replaces the fields and delete removes the document', () async {
+      final port = FakeFirestoreDocumentPort();
+      final client = FirestoreDocumentClient(port: port);
+
+      final setResult = await client.setDocument(
+        collection: 'profiles',
+        documentId: 'user-1',
+        fields: <String, Object?>{'name': 'Ada'},
+      );
+      expect(setResult.isSuccess, isTrue);
+      expect(port.documents['profiles/user-1'], <String, Object?>{'name': 'Ada'});
+
+      final deleteResult = await client.deleteDocument(
+        collection: 'profiles',
+        documentId: 'user-1',
+      );
+
+      expect(deleteResult.isSuccess, isTrue);
+      expect(port.documents, isEmpty);
+    });
+
+    test('malformed provider payloads return a typed failure', () async {
+      final port = FakeFirestoreDocumentPort(
+        documents: <String, Object?>{'profiles/user-1': <Object?, Object?>{1: 'bad key'}},
+      );
+
+      final result = await FirestoreDocumentClient(port: port).getDocument(
+        collection: 'profiles',
+        documentId: 'user-1',
+      );
+
+      expect(result.errorOrNull?.code, FirestoreDataErrorCode.malformedData);
+    });
+
+    test('invalid document addresses are rejected before reaching the port', () async {
+      final port = FakeFirestoreDocumentPort();
+      final result = await FirestoreDocumentClient(
+        port: port,
+      ).getDocument(collection: ' ', documentId: 'user-1');
+
+      expect(result.errorOrNull?.code, FirestoreDataErrorCode.invalidArgument);
+      expect(port.documents, isEmpty);
+    });
+
+    test('provider error codes map to safe typed failures', () async {
+      final port = FakeFirestoreDocumentPort()
+        ..failure = const FirestorePortException('permission-denied');
+
+      final result = await FirestoreDocumentClient(
+        port: port,
+      ).getDocument(collection: 'profiles', documentId: 'user-1');
+
+      expect(result.errorOrNull?.code, FirestoreDataErrorCode.permissionDenied);
+      expect(result.errorOrNull?.message, 'The operation is not permitted.');
+    });
+
+    test('unknown provider errors map without exposing provider text', () async {
+      final port = FakeFirestoreDocumentPort()
+        ..failure = const FirestorePortException('some-sensitive-provider-code');
+
+      final result = await FirestoreDocumentClient(
+        port: port,
+      ).getDocument(collection: 'profiles', documentId: 'user-1');
+
+      expect(result.errorOrNull?.code, FirestoreDataErrorCode.unknown);
+      expect(result.errorOrNull?.message, isNot(contains('some-sensitive-provider-code')));
+    });
+  });
+}

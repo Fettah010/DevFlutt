@@ -93,6 +93,22 @@ vars:
     type: boolean
     description: Include the Supabase Auth adapter.
     default: false
+  hasFirebaseCore:
+    type: boolean
+    description: Include shared Firebase configuration and initialization.
+    default: false
+  hasSupabaseCore:
+    type: boolean
+    description: Include shared Supabase configuration and initialization.
+    default: false
+  hasBackendFirestore:
+    type: boolean
+    description: Include the Firebase Firestore document client.
+    default: false
+  hasBackendSupabase:
+    type: boolean
+    description: Include the Supabase Postgres/PostgREST data client.
+    default: false
   hasAuth:
     type: boolean
     description: Include the selected authentication adapter in the composition root.

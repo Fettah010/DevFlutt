@@ -1,0 +1,31 @@
+id: firebase-core
+version: 1
+category: provider-core
+summary: Shared Firebase configuration and one-time initialization for Firebase modules.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+  - ios
+pubDependencies:
+  - name: firebase_core
+    version: ^5.1.0
+nativeChanges:
+  android: []
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/firebase_options.dart
+  - lib/core/firebase/firebase_initializer.dart
+requiredSetup:
+  - The shipped lib/firebase_options.dart is inert. Run "flutterfire configure" in the generated project.
+  - Firebase initializes once and is shared by the selected Firebase auth and data modules.
+tests:
+  unit: false
+  widget: false
+  integration: none

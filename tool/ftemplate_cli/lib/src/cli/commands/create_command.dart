@@ -38,6 +38,11 @@ class CreateCommand extends FtemplateCommand {
     ..addOption('platforms', defaultsTo: 'android', help: 'Comma-separated target platforms.')
     ..addMultiOption('module', abbr: 'm', help: 'Additional module IDs (repeatable).')
     ..addOption(
+      'backend',
+      defaultsTo: 'none',
+      help: 'Data backend: none, rest, firebase, or supabase.',
+    )
+    ..addOption(
       'auth',
       defaultsTo: 'none',
       help: 'Authentication provider: none, rest, firebase, or supabase.',
@@ -74,6 +79,15 @@ class CreateCommand extends FtemplateCommand {
     }
 
     try {
+      final backendChoice = results.option('backend') as String;
+      if (!_backendChoices.contains(backendChoice)) {
+        error(
+          'Invalid --backend value "$backendChoice". Expected one of: '
+          '${_backendChoices.join(', ')}.',
+        );
+        return 64;
+      }
+
       final authChoice = results.option('auth') as String;
       final authModule = _authModuleFor(authChoice);
       if (authModule == null && authChoice != 'none') {
@@ -85,7 +99,8 @@ class CreateCommand extends FtemplateCommand {
       }
 
       final requestedCapabilities = results.multiOption('auth-capability');
-      final modules = <String>[...results.multiOption('module'), ?authModule];
+      final backendModule = _backendModuleFor(backendChoice);
+      final modules = <String>[...results.multiOption('module'), ?backendModule, ?authModule];
 
       final spec = ProjectSpec(
         name: name,
@@ -100,6 +115,17 @@ class CreateCommand extends FtemplateCommand {
       );
       final plan = _planner.plan(spec);
       _planner.validateCapabilities(plan, requestedCapabilities);
+      if (backendChoice == 'none' &&
+          results.wasParsed('backend') &&
+          _providerBackendModuleIds.any(
+            (moduleId) => plan.modules.any((module) => module.id == moduleId),
+          )) {
+        error(
+          'Error: --backend none cannot be combined with a provider data-backend module. '
+          'Remove the module or choose --backend firebase or --backend supabase.',
+        );
+        return 64;
+      }
 
       emit('Project: ${spec.name}');
       emit('Package: ${spec.projectName}');
@@ -109,6 +135,7 @@ class CreateCommand extends FtemplateCommand {
       emit('Platforms: ${spec.platforms.join(', ')}');
       emit('Modules: ${_formatIds(plan.modules.map((module) => module.id))}');
       emit('Dependencies: ${_formatDeps(plan.dependencies)}');
+      emit('Backend: ${_effectiveBackendOf(backendChoice, plan.modules)}');
       final authModule_ = _authModuleOf(plan.modules);
       if (authModule_ != null) {
         final capabilities = authModule_.capabilities;
@@ -149,11 +176,20 @@ class CreateCommand extends FtemplateCommand {
       }
 
       emit('Generating...');
-      final result = await engine.generate(plan);
-      if (spec.force && destination.existsSync()) {
-        await destination.delete(recursive: true);
+      final result = await engine.generate(
+        plan,
+        tempParent: _nearestExistingParent(destination.parent),
+      );
+      try {
+        if (spec.force && destination.existsSync()) {
+          await destination.delete(recursive: true);
+        }
+        await GenerationEngine.moveInto(result.projectDir, destination);
+      } finally {
+        if (result.projectDir.existsSync()) {
+          await result.projectDir.delete(recursive: true);
+        }
       }
-      await GenerationEngine.moveInto(result.projectDir, destination);
 
       emit('Generated ${result.files.length} files into ${spec.output}.');
       if (!spec.skipPub) {
@@ -172,8 +208,32 @@ class CreateCommand extends FtemplateCommand {
   List<String> _parsePlatforms(String value) =>
       value.split(',').map((entry) => entry.trim()).where((entry) => entry.isNotEmpty).toList();
 
+  Directory _nearestExistingParent(Directory directory) {
+    var candidate = Directory(p.absolute(directory.path));
+    while (!candidate.existsSync()) {
+      final parentPath = p.dirname(candidate.path);
+      if (parentPath == candidate.path) {
+        throw FileSystemException(
+          'No existing parent directory for the output path.',
+          directory.path,
+        );
+      }
+      candidate = Directory(parentPath);
+    }
+    return candidate;
+  }
+
   /// The authentication providers the command accepts.
   static const List<String> _authChoices = <String>['none', 'rest', 'firebase', 'supabase'];
+
+  /// The data backends the command accepts.
+  static const List<String> _backendChoices = <String>['none', 'rest', 'firebase', 'supabase'];
+
+  /// Provider-specific data modules that cannot be selected together.
+  static const List<String> _providerBackendModuleIds = <String>[
+    'backend-firestore',
+    'backend-supabase',
+  ];
 
   /// The module an authentication choice selects, or null for `none`.
   static String? _authModuleFor(String choice) => switch (choice) {
@@ -182,6 +242,29 @@ class CreateCommand extends FtemplateCommand {
     'supabase' => 'auth-supabase',
     _ => null,
   };
+
+  /// The module a data-backend choice selects, or null for `none`.
+  static String? _backendModuleFor(String choice) => switch (choice) {
+    'rest' => 'networking',
+    'firebase' => 'backend-firestore',
+    'supabase' => 'backend-supabase',
+    _ => null,
+  };
+
+  /// Resolves the displayed backend when it was selected through `--module`.
+  String _effectiveBackendOf(String choice, List<ModuleManifest> modules) {
+    if (choice != 'none') {
+      return choice;
+    }
+    final moduleIds = modules.map((module) => module.id).toSet();
+    if (moduleIds.contains('backend-firestore')) {
+      return 'firebase';
+    }
+    if (moduleIds.contains('backend-supabase')) {
+      return 'supabase';
+    }
+    return 'none';
+  }
 
   /// The selected authentication adapter, or null when there is none.
   static ModuleManifest? _authModuleOf(List<ModuleManifest> modules) {

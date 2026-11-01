@@ -1,7 +1,7 @@
 # Flutter Android App Template — Product & Engineering Roadmap
 
 **Roadmap:** `v0.1.0` → `v1.0.0`  
-**Research snapshot:** 18 October 2026  
+**Research snapshot:** 1 November 2026
 **Status:** Proposed product and implementation plan; package versions and Android policies must be revalidated at implementation time.  
 **Product shape:** A GitHub template repository with a working blank starter and a bundled project generator.  
 **Primary target:** Android-first Flutter applications, while keeping the shared app architecture portable to iOS where packages and native capabilities allow it.
@@ -343,8 +343,8 @@ Rules:
 |---|---|---|
 | `backend-none` | Blank/local app | No remote SDK or API dependency. |
 | `backend-rest` | Custom backend | Typed client, error mapping, timeouts, cancellation, optional auth middleware, and generated/configured base URL. |
-| `backend-firebase` | Firebase services | Each Firebase capability (Auth, Crashlytics, Messaging, Analytics, Database) is selected independently when technically possible. Do not add the entire Firebase surface because one Firebase package is selected. |
-| `backend-supabase` | Supabase services | Separate auth, data, storage, realtime, and analytics considerations; do not silently select all of them. |
+| `backend-firestore` | Firebase Firestore data | Firestore is the first Firebase data capability; Auth, Storage, Realtime, Analytics, and other services remain independently selected and are not implied. |
+| `backend-supabase` | Supabase Postgres/PostgREST data | Data access is separate from Auth, Storage, Realtime, Edge Functions, and Analytics; do not silently select those services. |
 
 Backend selection is not always identical to auth selection: for example, an app can consume a custom REST API while using a third-party identity provider. The generator must represent these decisions clearly instead of using one overloaded `backend` flag.
 
@@ -958,6 +958,39 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - Reduced-motion preference is respected for template-owned animations.
 - Loading/error/empty/offline states are consistent and testable.
 - Blank output remains minimal and excludes localization/gallery assets unless chosen.
+
+## `v0.9.1` — Data backends and stable presets
+
+**Outcome:** developers can explicitly select a data service independently from authentication,
+and the generator ships the complete named preset set before the v0.10 feature freeze.
+
+### Implement
+
+- Add `--backend none|rest|firebase|supabase`; `rest` maps to the existing `networking`
+  module, `firebase` selects Firestore, and `supabase` selects Postgres/PostgREST.
+- Add provider-specific Firebase Firestore and Supabase data modules with provider-core
+  initialization shared by matching auth modules. Do not create a universal backend
+  abstraction or imply parity between providers.
+- Add the `commerce` and Android `full` presets without changing existing `blank`, `core`,
+  `demo`, and `recommended` contracts. Presets do not implicitly choose an auth or data
+  provider.
+- Verify selected-only dependencies/configuration/permissions, provider-composition builds,
+  backend selection diagnostics, package/license/security inventory, module guides, and the
+  generated-project matrix.
+- Document that Firebase Storage/Realtime/Analytics and Supabase Storage/Realtime/Edge
+  Functions/Analytics are not included.
+
+### Exit criteria
+
+- Each named preset and each supported backend module resolves, analyzes, tests, and builds
+  with its declared prerequisites on the pinned Android toolchain.
+- A matching auth+data provider composition initializes its SDK once; unrelated providers
+  remain independently selectable.
+- No provider SDK, config, permissions, or Gradle workaround leaks into unselected output.
+- The Firestore namespace compatibility hook is covered by an AGP 9.1 debug/release
+  regression and is scoped to the selected Firestore module.
+- `docs/COMPATIBILITY.md` and the generated CI matrix state exact coverage and remaining
+  owner/live-provider limits.
 
 ## `v0.10.0` — Integration hardening and release-grade verification
 

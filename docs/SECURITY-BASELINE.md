@@ -17,7 +17,7 @@ to the controls the template ships and the steps that verify them.
 | Session secrets go through a small interface, not through the plugin directly | `core/secure_storage/secure_store.dart` | `secure_store_test.dart` |
 | An access token and a refresh token never reach a log sink | `core/logging/redactor.dart`, the `core/auth` contract | `logging_test.dart` redaction corpus, the auth tests |
 | A session is written only to the secure store, never to ordinary preferences | `core/auth/session_store.dart` | `secure_store_test.dart`, the auth tests |
-| The Supabase session is persisted through the secure store, not through the package's `shared_preferences` default | `core/auth/supabase/secure_storage_local_storage.dart` | the generated-project source check |
+| A Supabase Auth session is persisted through the secure store, not through the package's `shared_preferences` default; data-only projects persist no auth session | `core/auth/supabase/secure_storage_local_storage.dart`, `core/supabase/supabase_initializer.dart` | generated-project source checks |
 | Concurrent expired-token requests cause exactly one refresh | `core/auth/token_refresh_coordinator.dart` | the refresh concurrency test |
 | A failed refresh signs the user out instead of retrying | `core/auth/token_refresh_coordinator.dart` | the refresh failure test |
 | A provider exception never escapes an adapter | `core/auth/*/*_auth_port_impl.dart` | the contract suite |
@@ -26,13 +26,15 @@ to the controls the template ships and the steps that verify them.
 | Android permissions are limited to those declared by selected modules and their documented plugin requirements | the module manifests | generated release-manifest inspection |
 | A network client declares the `INTERNET` permission, and a project without one declares none | `manifests/modules/networking.yaml`, `manifests/modules/auth-*.yaml` | the generated manifest, the merged-manifest inspection |
 | No provider SDK, no telemetry, no analytics in the default presets | the module manifests | the absence tests in the generator |
-| A provider configuration placeholder is inert and fails fast | `core/auth/firebase/firebase_auth_port_impl.dart`, `core/auth/supabase/supabase_config.dart` | the start-up configuration check |
+| Provider configuration placeholders are inert and fail fast through their shared initializers | `firebase_options.dart`, `core/firebase/firebase_initializer.dart`, `core/supabase/supabase_config.dart`, `core/supabase/supabase_initializer.dart` | generated-project initialization checks |
 | Committed secrets fail CI | `.github/workflows/ci.yml` (`secret-scan`) | the gate self-test |
 | Known-vulnerable dependencies fail CI | `.github/workflows/ci.yml` (`dependency-audit`) | the scan output |
 | Every locked dependency's licence is inventoried | `THIRD-PARTY-NOTICES.md` | `license-inventory` job |
 | Preferences are documented and tested as non-sensitive storage | `core/preferences` | preference contract tests and generated-project review |
 | Offline queued writes are replayed only by explicit refresh | `offline_notes/data/offline_note_repository.dart` | offline repository and networking retry tests |
 | Checkout sends only product IDs and quantities; the local total is not authoritative | `features/commerce/domain/checkout.dart` | checkout contract and widget tests |
+| Firestore failures expose only typed categories, not provider text or document contents | `core/firestore/firestore_document_client.dart`, `core/firestore/firestore_data_error.dart` | generated fake-backed Firestore tests |
+| Supabase data failures expose only typed categories, not provider text or row contents | `core/supabase_data/supabase_data_client.dart`, `core/supabase_data/supabase_data_error.dart` | generated fake-backed Supabase data tests |
 | The local database is unencrypted and excludes secret/payment storage | `core/database`, module guide | migration tests and generated dependency/security review |
 | WorkManager task inputs are restricted to serializable values and must not contain secrets | `core/background_work` | generated task-contract tests |
 | Local notification taps accept only known internal route paths; permission is requested only by an explicit call | `core/notifications` | route tests, service tests, and generated release-manifest check |
@@ -45,6 +47,11 @@ otherwise.
 
 - **Authorization, rate limiting, MFA policy, and session revocation are server
   responsibilities.** A client-side check is a convenience, never a security boundary.
+- **Firestore authorization is not supplied by the template.** Configure and test Firebase
+  Security Rules for every collection; fake-backed client tests do not verify deployed rules.
+- **Supabase authorization is not supplied by the template.** Enable and test row-level
+  security policies and least-privilege grants for every table; client-side filters and
+  fake-backed tests do not verify deployed policies.
 - **No secret is ever shipped in the bundle.** The template carries no credential, no
   signing material, and no service-account key. Production values are injected through a
   protected environment or secret store outside the repository.

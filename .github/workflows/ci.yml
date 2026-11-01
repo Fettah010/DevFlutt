@@ -117,50 +117,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: 3.47.7
           cache: true
-
-      - name: Install Android NDK
-        shell: bash
-        run: |
-          set -euo pipefail
-          NDK_VERSION=28.2.13676358
-          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-          if [[ -z "$SDK_ROOT" ]]; then
-            echo "Android SDK root is not configured." >&2
-            exit 1
-          fi
-          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-          if [[ ! -x "$SDKMANAGER" ]]; then
-            echo "Android SDK Manager was not found at $SDKMANAGER." >&2
-            exit 1
-          fi
-          NDK_DIR="$SDK_ROOT/ndk/$NDK_VERSION"
-          for attempt in 1 2 3; do
-            if "$SDKMANAGER" --install "ndk;$NDK_VERSION"; then
-              break
-            fi
-            if [[ "$attempt" -eq 3 ]]; then
-              echo "Failed to install Android NDK $NDK_VERSION after $attempt attempts." >&2
-              exit 1
-            fi
-            echo "NDK installation attempt $attempt failed; retrying after a short delay." >&2
-            sleep "$((attempt * 15))"
-          done
-          if ! grep -Fxq "Pkg.Revision = $NDK_VERSION" "$NDK_DIR/source.properties"; then
-            echo "Installed Android NDK does not match expected version $NDK_VERSION." >&2
-            exit 1
-          fi
 
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
@@ -213,6 +175,63 @@ jobs:
           flutter test --reporter=json > test-events.json
           dart "$GITHUB_WORKSPACE/tool/verify/generated_project_matrix.dart" \
             --check-test-results test-events.json
+
+      - name: Prepare Gradle dependency-cache fingerprint
+        working-directory: /tmp/generated-${{ matrix.name }}
+        env:
+          CASE_NAME: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          CACHE_KEY_DIR="$GITHUB_WORKSPACE/build/gradle-cache-inputs"
+          mkdir -p "$CACHE_KEY_DIR"
+          {
+            printf 'generated-case=%s\n' "$CASE_NAME"
+            sha256sum pubspec.lock
+            find android -type f \
+              \( -name '*.gradle' -o -name '*.gradle.kts' \
+                -o -name 'gradle.properties' -o -name 'gradle-wrapper.properties' \) \
+              -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum
+          } > "$CACHE_KEY_DIR/$CASE_NAME.txt"
+
+      - name: Set up JDK 17 and cache Gradle dependencies
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: build/gradle-cache-inputs/${{ matrix.name }}.txt
+
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          NDK_VERSION=28.2.13676358
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$SDK_ROOT" ]]; then
+            echo "Android SDK root is not configured." >&2
+            exit 1
+          fi
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            echo "Android SDK Manager was not found at $SDKMANAGER." >&2
+            exit 1
+          fi
+          NDK_DIR="$SDK_ROOT/ndk/$NDK_VERSION"
+          for attempt in 1 2 3; do
+            if "$SDKMANAGER" --install "ndk;$NDK_VERSION"; then
+              break
+            fi
+            if [[ "$attempt" -eq 3 ]]; then
+              echo "Failed to install Android NDK $NDK_VERSION after $attempt attempts." >&2
+              exit 1
+            fi
+            echo "NDK installation attempt $attempt failed; retrying after a short delay." >&2
+            sleep "$((attempt * 15))"
+          done
+          if ! grep -Fxq "Pkg.Revision = $NDK_VERSION" "$NDK_DIR/source.properties"; then
+            echo "Installed Android NDK does not match expected version $NDK_VERSION." >&2
+            exit 1
+          fi
 
       - name: Build debug APK
         working-directory: /tmp/generated-${{ matrix.name }}
@@ -430,6 +449,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

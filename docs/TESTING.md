@@ -217,6 +217,12 @@ credentials or personal data.
 CI run IDs and logs are the authoritative verification record. Local runs are
 evidence only when the same command and toolchain are used.
 
+CI caches Gradle dependencies and wrapper distributions to reduce repeated downloads.
+Generated-project cache keys include that project's resolved `pubspec.lock` and Android
+Gradle configuration. The generated project remains in a temporary directory outside the
+repository; cache hits do not skip dependency resolution, tests, APK builds, or release
+manifest checks. Cache misses affect speed only.
+
 ## Notes
 
 - Android release builds use the debug signing configuration so no real signing

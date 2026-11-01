@@ -117,7 +117,9 @@ Each run force-stops the app and records Android's `ActivityTaskManager`
 `Displayed` first-frame time (TTID), `am start -W` timings, total PSS from
 `dumpsys meminfo`, and available frame/jank counts from `dumpsys gfxinfo`.
 Raw command output and a JSON summary are saved under
-`build/patrol-logs/device-performance/`. Process-cold starts are not device-cold
+`build/patrol-logs/device-performance/`. After saving the measurements, the probe
+force-stops the app and records whether cleanup succeeded, so the final sample
+does not leave the app foregrounded. Process-cold starts are not device-cold
 starts. The blank app has no animated or scrolling workload, so launch-only
 frame statistics are descriptive and are not a representative animation-jank
 benchmark. Missing frame data is reported as unavailable, not zero. Android's

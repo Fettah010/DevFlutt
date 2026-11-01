@@ -355,6 +355,7 @@ Future<_ProbeResult> _measure(_Options options) async {
       'available': hasFrameSamples,
       'sampleNote': !hasFrameSamples ? 'No frame samples were reported.' : 'Descriptive only; frame samples cover app launch, not an animated or scrolling workload.',
     },
+    'cleanup': {'appForceStoppedAfterMeasurement': false},
     'raw': {'launchOutputs': rawLaunchOutput, 'meminfo': memoryOutput, 'gfxinfo': frameOutput},
     'limitations': [
       'Force-stop starts are process-cold, not device-cold.',
@@ -364,6 +365,18 @@ Future<_ProbeResult> _measure(_Options options) async {
       'No install, update, uninstall, device-setting change, or UI tap was performed.',
     ],
   };
+  await outputFile.writeAsString(const JsonEncoder.withIndent('  ').convert(document));
+  try {
+    await _adb(device, ['shell', 'am', 'force-stop', packageName]);
+  } on _ProbeFailure catch (error) {
+    document['cleanup'] = {'appForceStoppedAfterMeasurement': false, 'error': error.message};
+    await outputFile.writeAsString(const JsonEncoder.withIndent('  ').convert(document));
+    throw _ProbeFailure(
+      'Measurements were saved to ${outputFile.path}, but the app could not be stopped: '
+      '${error.message}',
+    );
+  }
+  document['cleanup'] = {'appForceStoppedAfterMeasurement': true};
   await outputFile.writeAsString(const JsonEncoder.withIndent('  ').convert(document));
   final frameSummary = availableFrameStats == null
       ? 'frame/jank data unavailable (not zero)'

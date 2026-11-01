@@ -914,6 +914,8 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 
 ## `v0.8.0` — Android platform services: notifications, background work and updates
 
+**Status: Complete** (2026-11-01). PR #9 merged and pre-release `v0.8.0` published at `13290beede42a3419dab00c3f8002bad7bc1afad`; see the release plan/report. Owner-confirmed device and Play checks are identified as attestations in the report.
+
 **Outcome:** the template offers carefully bounded Android features with native behavior surfaced clearly to Flutter code.
 
 ### Implement
@@ -935,6 +937,8 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 - iOS generation rejects Android-only modules or provides a documented platform-specific substitute; it never silently generates broken native code.
 
 ## `v0.9.0` — Localization, accessibility, motion and polished UI states
+
+**Status: Complete** (2026-11-01). PR #10 merged and pre-release `v0.9.0` published at `1b1a81d8b3e7d72dac98cd2355a0fb973d73f869`; see the release plan/report. The manual Android accessibility review is identified as an owner attestation in the report.
 
 **Outcome:** generated apps start with a consistent, adaptable user experience without turning the blank preset into a showcase application.
 

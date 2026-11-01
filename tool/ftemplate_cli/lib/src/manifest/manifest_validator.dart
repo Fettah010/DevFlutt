@@ -83,6 +83,7 @@ class ManifestValidator {
     _checkDuplicates(map, 'configKeys', errors);
     _checkDuplicates(map, 'outputs', errors);
     _checkDuplicates(map, 'capabilities', errors);
+    _checkDependencies(map, 'pubDependencies', errors);
     _checkDependencies(map, 'devDependencies', errors);
 
     _checkCapabilities(map, errors);
@@ -99,8 +100,21 @@ class ManifestValidator {
     }
     for (var index = 0; index < value.length; index++) {
       final entry = value[index];
-      if (entry is! YamlMap || entry['name'] is! String || entry['version'] is! String) {
-        errors.add('$field entries must be mappings with string name and version.');
+      if (entry is! YamlMap || entry['name'] is! String) {
+        errors.add('$field entries must be mappings with a string name.');
+        continue;
+      }
+      final source = entry['source'];
+      if (source == null || source == 'hosted') {
+        if (entry['version'] is! String || entry.containsKey('sdk')) {
+          errors.add('$field hosted entries require a string version and must not declare sdk.');
+        }
+      } else if (source == 'sdk') {
+        if (entry['sdk'] is! String || entry['version'] != null) {
+          errors.add('$field SDK entries require a string sdk and must not declare version.');
+        }
+      } else {
+        errors.add('$field source must be "hosted" or "sdk".');
       }
     }
   }

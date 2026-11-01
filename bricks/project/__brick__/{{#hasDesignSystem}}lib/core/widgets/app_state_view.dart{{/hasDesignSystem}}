@@ -74,6 +74,7 @@ class AppErrorView extends StatelessWidget {
     required this.onRetry,
     this.title = 'Something went wrong',
     this.message = 'The request could not be completed.',
+    this.retryLabel = 'Try again',
   });
 
   /// Called when the retry button is pressed.
@@ -84,6 +85,9 @@ class AppErrorView extends StatelessWidget {
 
   /// The supporting text of the error state.
   final String message;
+
+  /// Localized action label for retry.
+  final String retryLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +110,7 @@ class AppErrorView extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(message, style: theme.textTheme.bodyMedium),
             const SizedBox(height: AppSpacing.md),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+            OutlinedButton(onPressed: onRetry, child: Text(retryLabel)),
           ],
         ),
       ),

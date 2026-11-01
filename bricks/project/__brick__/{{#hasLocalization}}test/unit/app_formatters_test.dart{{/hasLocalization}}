@@ -1,0 +1,36 @@
+import 'package:{{projectName}}/core/localization/app_formatters.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  setUpAll(AppFormatters.initialize);
+
+  group('AppFormatters', () {
+    test('formats numbers and currency using the requested locale', () {
+      final englishNumber = AppFormatters.number(1234.5, locale: 'en_US');
+      final arabicNumber = AppFormatters.number(1234.5, locale: 'ar_EG');
+      final englishCurrency = AppFormatters.currency(
+        1234.5,
+        locale: 'en_US',
+        currencyCode: 'USD',
+      );
+      final arabicCurrency = AppFormatters.currency(
+        1234.5,
+        locale: 'ar_EG',
+        currencyCode: 'EGP',
+      );
+
+      expect(englishNumber, contains(','));
+      expect(arabicNumber, isNot(englishNumber));
+      expect(englishCurrency, contains(r'$'));
+      expect(arabicCurrency, isNot(englishCurrency));
+    });
+
+    test('formats dates with locale-specific conventions', () {
+      final date = DateTime(2026, 10, 30);
+
+      expect(AppFormatters.date(date, locale: 'en_US'), 'Oct 30, 2026');
+      expect(AppFormatters.date(date, locale: 'en_GB'), '30 Oct 2026');
+      expect(AppFormatters.date(date, locale: 'ar_EG'), isNot('Oct 30, 2026'));
+    });
+  });
+}

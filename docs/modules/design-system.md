@@ -5,9 +5,11 @@ Reusable core widgets built on the Material 3 theme and the shared design tokens
 ## Capabilities
 
 - `AppPrimaryButton` and `AppSecondaryButton` for actions.
+- `AppPrimaryButton` supports an optional `FocusNode` for explicit focus handling.
 - `AppTextField` for labelled text input.
 - `AppCard` for grouped content.
-- `AppMessage` for inline status messages with four severities.
+- `AppMessage` for inline status messages with four severities; an offline banner,
+  direction-aware list row, confirmation dialog, and keyboard-aware bottom sheet.
 - `AppLoadingView`, `AppEmptyView`, and `AppErrorView` for the three asynchronous states.
 
 ## Requires
@@ -25,6 +27,8 @@ introduce a second theme source.
 - A widget in this module has one job. Compose rather than add options.
 - Every widget exposes a `key` parameter and a `const` constructor.
 - Colours come from `Theme.of(context)`, never from a hard-coded literal.
+- Prefer semantic labels and framework focus traversal; test representative controls at
+  Android tap-target size and with the Flutter label and contrast guidelines.
 
 ## Removal
 
@@ -32,4 +36,6 @@ Not applicable (modules are generation-time selections).
 
 ## Tests
 
-- `test/widget/app_widgets_test.dart` — buttons, text field, card, message, and state views.
+- `test/widget/app_widgets_test.dart` — component behavior, semantics, Android tap targets,
+  labels, text contrast, and keyboard focus order. These automated checks do not replace
+  TalkBack and device review; see `docs/ACCESSIBILITY_CHECKLIST.md`.

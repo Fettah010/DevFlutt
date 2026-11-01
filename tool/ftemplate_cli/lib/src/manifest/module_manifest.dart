@@ -1,19 +1,60 @@
 import 'package:yaml/yaml.dart';
 
+/// The source from which a generated project resolves a dependency.
+enum PubDependencySource { hosted, sdk }
+
 /// A single pub dependency contributed by a module.
 class PubDependency {
-  const PubDependency({required this.name, required this.version});
+  const PubDependency._({required this.name, required this.source, this.version, this.sdk});
+
+  const PubDependency.hosted({required String name, required String version})
+    : this._(name: name, source: PubDependencySource.hosted, version: version);
+
+  const PubDependency.sdk({required String name, required String sdk})
+    : this._(name: name, source: PubDependencySource.sdk, sdk: sdk);
 
   final String name;
-  final String version;
+  final PubDependencySource source;
+  final String? version;
+  final String? sdk;
 
-  factory PubDependency.fromYaml(YamlMap map) => PubDependency(
-    name: _string(map['name'], 'pubDependencies.name'),
-    version: _string(map['version'], 'pubDependencies.version'),
-  );
+  factory PubDependency.fromYaml(YamlMap map) {
+    final name = _string(map['name'], 'pubDependencies.name');
+    final source = map['source'];
+    if (source == null || source == 'hosted') {
+      return PubDependency.hosted(
+        name: name,
+        version: _string(map['version'], 'pubDependencies.version'),
+      );
+    }
+    if (source == 'sdk') {
+      return PubDependency.sdk(name: name, sdk: _string(map['sdk'], 'pubDependencies.sdk'));
+    }
+    throw FormatException('Unsupported dependency source "$source".');
+  }
+
+  /// Renders one correctly indented entry for the generated pubspec template.
+  String toPubspecEntry() => switch (source) {
+    PubDependencySource.hosted => '$name: $version',
+    PubDependencySource.sdk => '$name:\n    sdk: $sdk',
+  };
 
   @override
-  String toString() => '$name: $version';
+  String toString() => switch (source) {
+    PubDependencySource.hosted => '$name: $version',
+    PubDependencySource.sdk => '$name (SDK: $sdk)',
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PubDependency &&
+      other.name == name &&
+      other.source == source &&
+      other.version == version &&
+      other.sdk == sdk;
+
+  @override
+  int get hashCode => Object.hash(name, source, version, sdk);
 }
 
 /// Privacy declarations for a module.

@@ -25,6 +25,10 @@ outputs:
   - lib/core/widgets/app_card.dart
   - lib/core/widgets/app_message.dart
   - lib/core/widgets/app_state_view.dart
+  - lib/core/widgets/app_offline_banner.dart
+  - lib/core/widgets/app_list_item.dart
+  - lib/core/widgets/app_confirmation_dialog.dart
+  - lib/core/widgets/app_bottom_sheet.dart
 requiredSetup: []
 tests:
   unit: true

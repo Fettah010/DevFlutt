@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 /// The primary action button of the application.
 class AppPrimaryButton extends StatelessWidget {
-  const AppPrimaryButton({super.key, required this.label, required this.onPressed});
+  const AppPrimaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.focusNode,
+  });
 
   /// The text shown inside the button.
   final String label;
@@ -10,9 +15,16 @@ class AppPrimaryButton extends StatelessWidget {
   /// Called when the button is pressed. A null value disables the button.
   final VoidCallback? onPressed;
 
+  /// Optional focus node for keyboard and assistive-technology focus control.
+  final FocusNode? focusNode;
+
   @override
   Widget build(BuildContext context) {
-    return FilledButton(onPressed: onPressed, child: Text(label));
+    return FilledButton(
+      focusNode: focusNode,
+      onPressed: onPressed,
+      child: Text(label),
+    );
   }
 }
 

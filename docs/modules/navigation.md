@@ -14,6 +14,8 @@ Declarative routing with go_router and deep-link support.
 - Initial location `/` rendering the home screen.
 - Cold-start deep-link and unknown-route handling: the unknown route renders
   `NotFoundPage`.
+- A short fade route transition with shared duration/curve tokens; `MediaQuery.disableAnimations`
+  selects an immediate `NoTransitionPage`.
 
 ## Requires
 
@@ -48,6 +50,7 @@ Not applicable (modules are generation-time selections).
 - Unknown routes fall back to the not-found screen.
 - The redirect hook is applied to a location.
 - Every declared route is an absolute path.
+- Route navigation is tested with animations enabled and disabled.
 - When an authentication adapter is selected: an unauthenticated user is sent to the login
   location, the intended destination is preserved, the login location is not redirected
   again, and a signed-in user is let through.

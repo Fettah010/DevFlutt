@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 
 {{#hasFeatureExample}}import '../features/counter/presentation/counter_page.dart';
 {{/hasFeatureExample}}{{#hasShowcase}}import '../features/showcase/presentation/showcase_page.dart';
@@ -11,6 +12,25 @@ import '../features/commerce/data/database_cart_store.dart';
 import 'app_routes.dart';
 import 'not_found_page.dart';
 import 'route_guard.dart';
+import '../core/theme/app_tokens.dart';
+
+Page<void> _routePage(BuildContext context, GoRouterState state, Widget child) {
+  if (MediaQuery.disableAnimationsOf(context)) {
+    return NoTransitionPage<void>(key: state.pageKey, child: child);
+  }
+
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: AppDurations.normal,
+    reverseTransitionDuration: AppDurations.fast,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: AppCurves.standard),
+      child: child,
+    ),
+  );
+}
 
 /// Builds the application router.
 ///
@@ -24,27 +44,35 @@ GoRouter buildAppRouter({RouteRedirect redirect = routeGuard}) {
     routes: [
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
+        pageBuilder: (context, state) =>
+            _routePage(context, state, const HomePage()),
       ),
 {{#hasFeatureExample}}      GoRoute(
         path: AppRoutes.counter,
-        builder: (context, state) => const CounterPage(),
+        pageBuilder: (context, state) =>
+            _routePage(context, state, const CounterPage()),
       ),
 {{/hasFeatureExample}}{{#hasShowcase}}      GoRoute(
         path: AppRoutes.showcase,
-        builder: (context, state) => const ShowcasePage(),
+        pageBuilder: (context, state) =>
+            _routePage(context, state, const ShowcasePage()),
       ),
 {{/hasShowcase}}{{#hasOfflineData}}      GoRoute(
         path: AppRoutes.offlineNotes,
-        builder: (context, state) => OfflineNotesPage(),
+        pageBuilder: (context, state) =>
+            _routePage(context, state, OfflineNotesPage()),
       ),
 {{/hasOfflineData}}{{#hasCommerce}}      GoRoute(
         path: AppRoutes.commerce,
-        builder: (context, state) => {{#hasCommercePersistence}}CommercePage(
+        pageBuilder: (context, state) => _routePage(context, state, {{#hasCommercePersistence}}CommercePage(
           cartStore: DatabaseCartStore(AppDatabase.defaults()),
-        ){{/hasCommercePersistence}}{{^hasCommercePersistence}}CommercePage(){{/hasCommercePersistence}},
+        ){{/hasCommercePersistence}}{{^hasCommercePersistence}}CommercePage(){{/hasCommercePersistence}}),
       ),
 {{/hasCommerce}}    ],
-    errorBuilder: (context, state) => NotFoundPage(location: state.uri.toString()),
+    errorPageBuilder: (context, state) => _routePage(
+      context,
+      state,
+      NotFoundPage(location: state.uri.toString()),
+    ),
   );
 }

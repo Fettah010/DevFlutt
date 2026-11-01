@@ -56,6 +56,7 @@ The licence of each package is detected from the `LICENSE` file of the resolved 
 | `http_multi_server` | 3.2.3 | transitive | BSD-3-Clause |
 | `http_parser` | 4.1.2 | transitive | BSD-3-Clause |
 | `in_app_update` | 5.0.0 | direct | MIT |
+| `intl` | 0.20.3 | direct | BSD-3-Clause |
 | `io` | 1.1.0 | transitive | BSD-3-Clause |
 | `jni` | 1.1.0 | transitive | BSD-3-Clause |
 | `jni_flutter` | 1.0.4+1 | transitive | BSD-3-Clause |

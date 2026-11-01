@@ -21,6 +21,8 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: ShowcasePage()));
       await tester.pump();
 
+      await tester.ensureVisible(find.text('Primary action'));
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(find.text('Primary action'));
       await tester.pump();
 

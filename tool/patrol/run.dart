@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'install_approval_watcher.dart';
 import 'test_summary.dart';
 
 const _defaultTimeout = Duration(minutes: 20);
@@ -55,6 +56,13 @@ Future<void> main(List<String> arguments) async {
       throw _RunnerFailure('`patrol doctor` failed with exit code $doctor.');
     }
 
+    final installWatcher = await DeviceInstallApprovalWatcher.start(
+      deviceId: deviceId,
+      log: log,
+      logDirectory: logDirectory,
+      captureScreens: options.captureInstallScreens,
+    );
+    _PatrolAppLauncher? appLauncher;
     final patrolArgs = <String>[
       '--verbose',
       'test',
@@ -66,9 +74,20 @@ Future<void> main(List<String> arguments) async {
       '--record-video',
       '--video-output-dir',
       'patrol_test/videos',
+      if (options.keepInstalled) '--no-uninstall',
       ..._targetsForSuite(options.suite),
     ];
-    final patrolResult = await _runForOutput(patrol, patrolArgs, log, timeout: options.testTimeout);
+    late final ProcessResult patrolResult;
+    try {
+      appLauncher = await _PatrolAppLauncher.start(deviceId, log);
+      patrolResult = await _runForOutput(patrol, patrolArgs, log, timeout: options.testTimeout);
+    } finally {
+      await appLauncher?.stop();
+      await installWatcher.stop();
+    }
+    if (appLauncher.error != null) {
+      throw _RunnerFailure('Could not foreground the Patrol app: ${appLauncher.error}');
+    }
     final summary = PatrolTestSummary.parse('${patrolResult.stdout}\n${patrolResult.stderr}');
     log.writeln(
       'Patrol summary: total=${summary.total} successful=${summary.successful} '
@@ -126,6 +145,8 @@ class _Options {
     this.apiLevel = _defaultEmulatorApiLevel,
     this.installEmulatorImage = false,
     this.keepEmulator = false,
+    this.keepInstalled = false,
+    this.captureInstallScreens = false,
     this.help = false,
   });
 
@@ -137,6 +158,8 @@ class _Options {
   final int apiLevel;
   final bool installEmulatorImage;
   final bool keepEmulator;
+  final bool keepInstalled;
+  final bool captureInstallScreens;
   final bool help;
 
   _Options copyWith({String? emulator}) => _Options(
@@ -148,6 +171,8 @@ class _Options {
     apiLevel: apiLevel,
     installEmulatorImage: installEmulatorImage,
     keepEmulator: keepEmulator,
+    keepInstalled: keepInstalled,
+    captureInstallScreens: captureInstallScreens,
     help: help,
   );
 }
@@ -156,6 +181,130 @@ class _RunnerFailure implements Exception {
   const _RunnerFailure(this.message);
 
   final String message;
+}
+
+class _PatrolAppLauncher {
+  _PatrolAppLauncher(this.deviceId, this.log, this._logcat);
+
+  static const _readinessWait = 'Waiting for PatrolAppService to report its readiness';
+
+  final String deviceId;
+  final StringBuffer log;
+  final Process _logcat;
+  StreamSubscription<String>? _stdoutSubscription;
+  StreamSubscription<String>? _stderrSubscription;
+  Future<void>? _launchInProgress;
+  String? error;
+  bool _stopping = false;
+
+  static Future<_PatrolAppLauncher> start(String deviceId, StringBuffer log) async {
+    final startedAt = DateTime.now().toUtc().toIso8601String();
+    log.writeln('[$startedAt] Watching Patrol instrumentation readiness on $deviceId.');
+    late final Process process;
+    try {
+      process = await Process.start('adb', [
+        '-s',
+        deviceId,
+        'logcat',
+        '-T',
+        '1',
+        '-v',
+        'brief',
+        '-s',
+        'PatrolServer:I',
+      ]);
+    } on ProcessException catch (error) {
+      throw _RunnerFailure('Could not start the Patrol readiness logcat watcher: ${error.message}');
+    }
+
+    final launcher = _PatrolAppLauncher(deviceId, log, process);
+    launcher._stdoutSubscription = process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(launcher._onLogLine);
+    launcher._stderrSubscription = process.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) => log.writeln('Patrol readiness logcat: $line'));
+    return launcher;
+  }
+
+  void _onLogLine(String line) {
+    if (_stopping || !line.contains(_readinessWait) || _launchInProgress != null) return;
+
+    log.writeln('Patrol is waiting for its app service; foregrounding the installed app.');
+    final launch = _foregroundInstalledApp();
+    _launchInProgress = launch;
+    launch.whenComplete(() {
+      if (identical(_launchInProgress, launch)) _launchInProgress = null;
+    });
+  }
+
+  Future<void> _foregroundInstalledApp() async {
+    try {
+      final instrumentation = await _runForOutput(
+        'adb',
+        ['-s', deviceId, 'shell', 'pm', 'list', 'instrumentation'],
+        log,
+        timeout: const Duration(seconds: 15),
+      );
+      if (instrumentation.exitCode != 0) {
+        throw _RunnerFailure(
+          '`adb shell pm list instrumentation` failed with exit code ${instrumentation.exitCode}.',
+        );
+      }
+
+      final target = RegExp(
+        r'instrumentation:\S*/pl\.leancode\.patrol\.PatrolJUnitRunner\s+\(target=([^)]+)\)',
+      ).firstMatch('${instrumentation.stdout}')?.group(1);
+      if (target == null) {
+        throw const _RunnerFailure('Could not find PatrolJUnitRunner target package on device.');
+      }
+
+      final resolved = await _runForOutput(
+        'adb',
+        ['-s', deviceId, 'shell', 'cmd', 'package', 'resolve-activity', '--brief', target],
+        log,
+        timeout: const Duration(seconds: 15),
+      );
+      if (resolved.exitCode != 0) {
+        throw _RunnerFailure(
+          '`adb shell cmd package resolve-activity` failed with exit code ${resolved.exitCode}.',
+        );
+      }
+
+      final component = '${resolved.stdout}'
+          .split('\n')
+          .map((line) => line.trim())
+          .lastWhere((line) => line.contains('/'), orElse: () => '');
+      if (component.isEmpty || component.startsWith('No activity')) {
+        throw _RunnerFailure('Could not resolve a launchable activity for `$target`.');
+      }
+
+      final started = await _runForOutput(
+        'adb',
+        ['-s', deviceId, 'shell', 'am', 'start', '-n', component],
+        log,
+        timeout: const Duration(seconds: 15),
+      );
+      if (started.exitCode != 0 || '${started.stdout}${started.stderr}'.contains('Error:')) {
+        throw _RunnerFailure('Could not start Patrol activity `$component`.');
+      }
+      log.writeln('Foregrounded Patrol activity $component.');
+    } catch (failure) {
+      error ??= '$failure';
+      log.writeln('Patrol app foreground attempt failed: $failure');
+    }
+  }
+
+  Future<void> stop() async {
+    _stopping = true;
+    _logcat.kill();
+    await _logcat.exitCode;
+    await _stdoutSubscription?.cancel();
+    await _stderrSubscription?.cancel();
+    await _launchInProgress;
+  }
 }
 
 _Options _parseArguments(List<String> arguments) {
@@ -167,6 +316,8 @@ _Options _parseArguments(List<String> arguments) {
   var apiLevel = _defaultEmulatorApiLevel;
   var installEmulatorImage = false;
   var keepEmulator = false;
+  var keepInstalled = false;
+  var captureInstallScreens = false;
   var help = false;
 
   for (var index = 0; index < arguments.length; index++) {
@@ -196,6 +347,10 @@ _Options _parseArguments(List<String> arguments) {
         installEmulatorImage = true;
       case '--keep-emulator':
         keepEmulator = true;
+      case '--keep-installed':
+        keepInstalled = true;
+      case '--capture-install-screens':
+        captureInstallScreens = true;
       case '--help':
       case '-h':
         help = true;
@@ -240,6 +395,8 @@ _Options _parseArguments(List<String> arguments) {
     apiLevel: apiLevel,
     installEmulatorImage: installEmulatorImage,
     keepEmulator: keepEmulator,
+    keepInstalled: keepInstalled,
+    captureInstallScreens: captureInstallScreens,
     help: help,
   );
 }
@@ -684,6 +841,8 @@ Usage: dart run tool/patrol/run.dart [options]
   --emulator-api <level>           Android API level, 33+ (default: 36)
   --install-emulator-image         Explicitly download a missing system image
   --keep-emulator                 Leave a runner-launched emulator running after tests
+  --keep-installed                Keep Patrol's app and test APKs installed after the run
+  --capture-install-screens       Save a screenshot when the Android installer is foregrounded
   --timeout-seconds <seconds>     Patrol test timeout, 30..7200 (default: 1200)
   --help                          Show this help
 

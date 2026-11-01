@@ -18,6 +18,20 @@ exit code; a non-zero exit means the check failed.
 The wrapper prints each command, writes per-command logs to
 `build/verify-logs/`, and exits non-zero if any check fails.
 
+On Windows, install the same pinned security-scanner versions used in CI before
+running the complete local gate:
+
+```powershell
+.\tool\setup\install-security-tools.ps1
+.\tool\verify\verify.ps1
+```
+
+The installer verifies the official Windows x64 release asset SHA-256 values
+before installation and adds the per-user tool directory to `PATH`. Scanner
+logs and JSON reports are written under `build/verify-logs/`; Gitleaks scans
+repository history and the current working tree, and OSV-Scanner audits the
+three committed lockfiles.
+
 ## Individual commands
 
 | Check | Command |
@@ -37,8 +51,9 @@ The wrapper prints each command, writes per-command logs to
 | Patrol Android regression tests | `dart run tool/patrol/run.dart --suite regression` |
 | Third-party notices | `dart run tool/ftemplate_cli/tool/license_inventory.dart --check` |
 | Optional module dependency graph | `cd tool/module_dependency_audit && flutter pub get` |
-| Secret scan (needs `gitleaks`) | `gitleaks git --redact --verbose .` |
-| Dependency audit (needs `osv-scanner`) | `osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock --lockfile=tool/module_dependency_audit/pubspec.lock` |
+| Secret scan history | `gitleaks git --redact --verbose .` |
+| Secret scan working tree | `gitleaks dir --redact --verbose .` |
+| Dependency audit | `osv-scanner scan source --lockfile pubspec.lock --lockfile tool/ftemplate_cli/pubspec.lock --lockfile tool/module_dependency_audit/pubspec.lock --format json` |
 
 The format check scopes to `lib` and `test`. The repository also holds the Mason brick
 templates, whose content is not parseable Dart until it is rendered, so formatting the
@@ -87,6 +102,24 @@ IDs, offline behavior, and local-wins conflict policy; widget tests cover refres
 The commerce tests check money arithmetic, checkout request fields, and failure/success UI.
 These are generated-project widget tests; Patrol still targets the reference app.
 
+The v0.8 `background-work` selection adds fake-backed tests for task constraints,
+retry/backoff mapping, supported persisted input values, cancellation, and callback
+success/retry behavior. A generated `background-work` project has been resolved,
+formatted, analyzed, tested, and built with the `dev` debug flavor. The generated
+`local-notifications` project tests explicit permission handling, disabled-send behavior,
+and validated warm/cold-start route hand-off. The `app-updates` tests cover Play outcomes,
+flexible-install progress, the app-specific HTTPS fallback, and launch failures. All three
+projects have been resolved, formatted, analyzed, tested, and built locally in debug and
+release. Their release permissions were inspected locally, and CI verifies conditional
+permissions plus WorkManager component presence/absence. A generated composite Android
+integration test exercises app bootstrap, WorkManager schedule/cancel, notification display
+with permission denied/granted, and the typed Play update availability response. It runs
+through `flutter drive --no-dds`; the integration-test scaffolding is opt-in and the debug
+manifest alone declares `INTERNET` for the VM service. The local API 36 Google APIs emulator
+passed both permission cases, while the Play update check returned a typed failure because
+this image has no usable Play Store update backend. API 33+ tap/lifecycle coverage,
+physical-device evidence, and Play internal-track testing remain separate gates.
+
 `tool/module_dependency_audit` locks the union of optional generated-module runtime and
 development dependencies. The dependency and license gates include that lockfile, so optional
 Drift and preferences packages are covered even though they do not appear in the root app's
@@ -120,8 +153,9 @@ filtered Patrol, Flutter, and Android runtime logcat. Videos and failure screens
 `patrol_test/` and uploaded by the Patrol CI workflow.
 
 See [Patrol UI testing](testing/UI_TESTING_PLAN_PATROL.md) for the current suite,
-emulator setup, diagnostics, and coverage limits. UI test fixtures must not
-contain production credentials or personal data.
+agent-facing emulator preparation, generated service integration-test commands,
+diagnostics, and coverage limits. UI test fixtures must not contain production
+credentials or personal data.
 
 ## CI evidence
 
@@ -135,12 +169,17 @@ evidence only when the same command and toolchain are used.
   publishing.
 - The release manifest requests `INTERNET` only when the generated selection includes a
   network client. CI fails if that match is wrong.
+- The v0.8 generated-project matrix also checks that `POST_NOTIFICATIONS` is present only
+  for `local-notifications`; that module's release build includes core-library desugaring.
 - The Flutter and Dart SDKs are not required to build the generator; only the generator
   package's own toolchain is needed for `tool/ftemplate_cli`. Its lockfile is committed so
   generator tests, license inventory, and dependency audit use the same package graph locally
   and in CI.
 - The `secret-scan` and `dependency-audit` jobs download a pinned binary and verify its
-  published SHA-256 checksum before running it. The local wrapper skips them when the
-  tool is not installed, and says so.
+  published SHA-256 checksum before running it. The local gate requires both scanners,
+  writes separate history/working-tree secret reports and an OSV JSON report under
+  `build/verify-logs/`, and fails with setup instructions if a scanner is missing.
+- On Windows, `.\tool\setup\install-security-tools.ps1` installs the same pinned scanner
+  versions as CI after verifying their official Windows x64 release asset SHA-256 values.
 - The secret scan is proven to fail: a canary credential on a throwaway branch turns the
   job red. A gate that was never seen failing is unproven.

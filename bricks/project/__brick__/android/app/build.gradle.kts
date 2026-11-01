@@ -9,6 +9,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+{{#hasLocalNotifications}}        isCoreLibraryDesugaringEnabled = true
+{{/hasLocalNotifications}}
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -46,6 +48,11 @@ android {
     }
 }
 
+{{#hasLocalNotifications}}dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+{{/hasLocalNotifications}}
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17

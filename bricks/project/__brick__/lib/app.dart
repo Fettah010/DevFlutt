@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+{{#hasGoRouter}}import 'package:go_router/go_router.dart';
+{{/hasGoRouter}}
 
 {{#hasGoRouter}}import 'app/app_router.dart';
 {{/hasGoRouter}}{{#hasServices}}import 'app/app_services.dart';
@@ -8,7 +10,12 @@ import 'core/theme/app_theme.dart';
 {{/hasGoRouter}}
 /// Root widget for the generated application.
 class DevFluttApp extends StatelessWidget {
-{{#hasGoRouter}}  DevFluttApp({super.key, required this.config{{#hasServices}}, this.services{{/hasServices}}});
+{{#hasGoRouter}}  DevFluttApp({
+    super.key,
+    required this.config{{#hasServices}},
+    this.services{{/hasServices}},
+    GoRouter? router,
+  }) : _router = router ?? buildAppRouter();
 {{/hasGoRouter}}{{^hasGoRouter}}  const DevFluttApp({super.key, required this.config{{#hasServices}}, this.services{{/hasServices}}});
 {{/hasGoRouter}}
   /// The application configuration.
@@ -17,7 +24,7 @@ class DevFluttApp extends StatelessWidget {
   /// The services composed at startup. Null when no service module is selected.
   final AppServices? services;
 {{/hasServices}}{{#hasGoRouter}}
-  late final _router = buildAppRouter();
+  final GoRouter _router;
 {{/hasGoRouter}}
   @override
   Widget build(BuildContext context) {

@@ -1,0 +1,143 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:{{projectName}}/core/background_work/background_task.dart';
+import 'package:{{projectName}}/core/background_work/task_callback_dispatcher.dart';
+import 'package:{{projectName}}/core/background_work/workmanager_task_scheduler.dart';
+
+void main() {
+  late WorkmanagerPlatform originalPlatform;
+  late _FakeWorkmanagerPlatform fakePlatform;
+  const scheduler = WorkmanagerTaskScheduler();
+
+  setUp(() {
+    Workmanager();
+    originalPlatform = WorkmanagerPlatform.instance;
+    fakePlatform = _FakeWorkmanagerPlatform();
+    WorkmanagerPlatform.instance = fakePlatform;
+  });
+
+  tearDown(() {
+    WorkmanagerPlatform.instance = originalPlatform;
+  });
+
+  test('maps task data, constraints, retry policy and delay to Workmanager', () async {
+    final task = BackgroundTask(
+      uniqueName: 'notes-refresh',
+      taskName: sampleBackgroundTaskName,
+      inputData: const <String, dynamic>{'noteId': 'note-1'},
+      initialDelay: const Duration(minutes: 2),
+      constraints: const BackgroundTaskConstraints(
+        network: BackgroundNetworkRequirement.unmetered,
+        requiresBatteryNotLow: true,
+        requiresCharging: true,
+        requiresStorageNotLow: true,
+      ),
+      retryPolicy: BackgroundRetryPolicy.linear,
+      backoffDelay: const Duration(seconds: 20),
+    );
+
+    await scheduler.scheduleOneOff(task);
+
+    expect(fakePlatform.uniqueName, 'notes-refresh');
+    expect(fakePlatform.taskName, sampleBackgroundTaskName);
+    expect(fakePlatform.inputData, <String, dynamic>{'noteId': 'note-1'});
+    expect(fakePlatform.initialDelay, const Duration(minutes: 2));
+    expect(fakePlatform.constraints?.networkType, NetworkType.unmetered);
+    expect(fakePlatform.constraints?.requiresBatteryNotLow, isTrue);
+    expect(fakePlatform.constraints?.requiresCharging, isTrue);
+    expect(fakePlatform.constraints?.requiresStorageNotLow, isTrue);
+    expect(fakePlatform.backoffPolicy, BackoffPolicy.linear);
+    expect(fakePlatform.backoffPolicyDelay, const Duration(seconds: 20));
+  });
+
+  test('rejects invalid names, delays and persisted input values', () {
+    expect(
+      () => scheduler.scheduleOneOff(BackgroundTask(uniqueName: ' ', taskName: 'task')),
+      throwsArgumentError,
+    );
+    expect(
+      () => scheduler.scheduleOneOff(
+        BackgroundTask(
+          uniqueName: 'task',
+          taskName: 'task',
+          initialDelay: const Duration(seconds: -1),
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => scheduler.scheduleOneOff(
+        BackgroundTask(
+          uniqueName: 'task',
+          taskName: 'task',
+          backoffDelay: const Duration(seconds: 9),
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => scheduler.scheduleOneOff(
+        BackgroundTask(
+          uniqueName: 'task',
+          taskName: 'task',
+          inputData: <String, dynamic>{'unsupported': <String, Object?>{'secret': 'value'}},
+        ),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('forwards cancellation by unique name', () async {
+    await scheduler.cancel('notes-refresh');
+
+    expect(fakePlatform.cancelledUniqueName, 'notes-refresh');
+  });
+
+  test('maps task success and retry outcomes deterministically', () async {
+    expect(
+      await executeBackgroundTask(sampleBackgroundTaskName, const <String, dynamic>{}),
+      isTrue,
+    );
+    expect(await executeBackgroundTask('unknown.task', null), isFalse);
+  });
+}
+
+class _FakeWorkmanagerPlatform extends WorkmanagerPlatform {
+  String? uniqueName;
+  String? taskName;
+  Map<String, dynamic>? inputData;
+  Duration? initialDelay;
+  Constraints? constraints;
+  BackoffPolicy? backoffPolicy;
+  Duration? backoffPolicyDelay;
+  String? cancelledUniqueName;
+
+  @override
+  Future<void> registerOneOffTask(
+    String uniqueName,
+    String taskName, {
+    Map<String, dynamic>? inputData,
+    Duration? initialDelay,
+    Constraints? constraints,
+    ExistingWorkPolicy? existingWorkPolicy,
+    BackoffPolicy? backoffPolicy,
+    Duration? backoffPolicyDelay,
+    String? tag,
+    OutOfQuotaPolicy? outOfQuotaPolicy,
+    ForegroundServiceConfig? foregroundServiceConfig,
+    bool expedited = false,
+  }) async {
+    this.uniqueName = uniqueName;
+    this.taskName = taskName;
+    this.inputData = inputData;
+    this.initialDelay = initialDelay;
+    this.constraints = constraints;
+    this.backoffPolicy = backoffPolicy;
+    this.backoffPolicyDelay = backoffPolicyDelay;
+  }
+
+  @override
+  Future<void> cancelByUniqueName(String uniqueName) async {
+    cancelledUniqueName = uniqueName;
+  }
+}

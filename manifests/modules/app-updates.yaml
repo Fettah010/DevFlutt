@@ -1,0 +1,34 @@
+id: app-updates
+version: 1
+category: platform
+summary: Android Play in-app update adapter with a Google Play Store fallback.
+requires:
+  - architecture-core
+conflictsWith: []
+platforms:
+  - android
+pubDependencies:
+  - name: in_app_update
+    version: ^5.0.0
+  - name: url_launcher
+    version: ^6.3.3
+nativeChanges:
+  android:
+    - Android Play in-app update integration is contributed by the selected Flutter plugin.
+  ios: []
+permissions: []
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+outputs:
+  - lib/core/app_updates/app_update_client.dart
+  - lib/core/app_updates/play_app_update_client.dart
+  - test/unit/app_update_client_test.dart
+requiredSetup:
+  - In-app updates require installation through Google Play; test using an internal track.
+  - Unsupported and unavailable states must offer a Google Play Store listing fallback.
+tests:
+  unit: true
+  widget: false
+  integration: Play internal-test track

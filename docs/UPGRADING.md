@@ -68,6 +68,36 @@ apply what you want.
 
 ## Release notes for upgrading
 
+### To v0.8.0
+
+**What changed**
+
+- New opt-in Android-only modules: `background-work`, `local-notifications`, and
+  `app-updates`. No preset changes; projects that do not select them remain unaffected.
+- `local-notifications` adds the `POST_NOTIFICATIONS` permission and Android core-library
+  desugaring only when selected. The service does not request permission on startup.
+- WorkManager scheduling is best-effort and exposes success/retry only. Task input is
+  persisted and must not contain credentials or sensitive user data.
+- Play in-app updates require distribution through Google Play. The module provides an
+  app-specific HTTPS Store listing fallback; it does not provide production-track or
+  Play Console configuration.
+- Android-only module selections are refused for unsupported target platforms.
+
+**How to upgrade**
+
+1. Compare against the new template as described above; generated projects are not updated
+   automatically.
+2. To add notifications, regenerate with `--module local-notifications` and copy its
+   dependencies, generated Android changes, service files, and tests. The module brings
+   `navigation` as a prerequisite. Request permission after a user action and handle denial.
+3. To add background work, regenerate with `--module background-work`, register app-owned
+   task logic in the top-level callback dispatcher, and pass only small serializable,
+   non-sensitive input values.
+4. To add app updates, regenerate with `--module app-updates`, supply the generated
+   application ID to `PlayAppUpdateClient`, and test the flow using a build installed from a
+   Google Play internal-testing track. Observe `installStatus` for flexible download
+   progress and call `completeFlexibleUpdate()` after the status becomes `downloaded`.
+
 ### To v0.5.0
 
 **What changed**

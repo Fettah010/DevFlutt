@@ -76,15 +76,31 @@ class GenerationEngine {
       'hasOfflineData': moduleIds.contains('offline-data'),
       'hasCommerce': moduleIds.contains('commerce'),
       'hasCommercePersistence': moduleIds.contains('commerce-persistence'),
+      'hasHomeNavigationLinks':
+          moduleIds.contains('feature-example') ||
+          moduleIds.contains('offline-data') ||
+          moduleIds.contains('commerce'),
       'hasDiagnostics': moduleIds.contains('diagnostics'),
       'hasAuthCore': moduleIds.contains('auth-core'),
       'hasAuthRest': moduleIds.contains('auth-rest'),
       'hasAuthFirebase': moduleIds.contains('auth-firebase'),
       'hasAuthSupabase': moduleIds.contains('auth-supabase'),
+      'hasBackgroundWork': moduleIds.contains('background-work'),
+      'hasLocalNotifications': moduleIds.contains('local-notifications'),
+      'hasAppUpdates': moduleIds.contains('app-updates'),
+      'hasPlatformServices': const <String>{
+        'background-work',
+        'local-notifications',
+        'app-updates',
+      }.any(moduleIds.contains),
       'hasAuth': _authAdapterModuleIds.any(moduleIds.contains),
       'hasAuthRouter':
           _authAdapterModuleIds.any(moduleIds.contains) && moduleIds.contains('navigation'),
       'hasNetworkPermission': plan.permissions.contains('android.permission.INTERNET'),
+      'hasNotificationPermission': plan.permissions.contains(
+        'android.permission.POST_NOTIFICATIONS',
+      ),
+      'hasVibratePermission': plan.permissions.contains('android.permission.VIBRATE'),
       'hasServices': _serviceModuleIds.any(moduleIds.contains),
       'extraDependencies': plan.dependencies
           .map((dependency) => '${dependency.name}: ${dependency.version}')

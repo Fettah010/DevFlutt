@@ -45,12 +45,12 @@ run_check_in() {
   fi
 }
 
-run_optional_check() {
+run_required_security_check() {
   local name="$1"
-  local skip_reason="$2"
-  shift 2
+  shift
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "==> $name: SKIP ($skip_reason)"
+    echo "==> $name: FAIL ($1 is required; install the pinned release described in .github/workflows/ci.yml)"
+    FAILED=$((FAILED + 1))
     return
   fi
   run_check "$name" "$@"
@@ -72,11 +72,14 @@ run_check_in module_dependency_audit_pub_get "$MODULE_DEPENDENCY_AUDIT_DIR" flut
 
 run_check license_inventory dart run tool/ftemplate_cli/tool/license_inventory.dart --check
 
-run_optional_check secret_scan "gitleaks is not installed; CI performs this check" \
-  gitleaks git --redact --verbose --report-format json --report-path "$LOG_DIR/gitleaks.json" .
-run_optional_check dependency_audit "osv-scanner is not installed; CI performs this check" \
-  osv-scanner scan --lockfile=pubspec.lock --lockfile=tool/ftemplate_cli/pubspec.lock \
-    --lockfile=tool/module_dependency_audit/pubspec.lock --format=json
+run_required_security_check secret_scan_history \
+  gitleaks git --redact --verbose --report-format json --report-path "$LOG_DIR/gitleaks-history.json" .
+run_required_security_check secret_scan_worktree \
+  gitleaks dir --redact --verbose --report-format json --report-path "$LOG_DIR/gitleaks-worktree.json" .
+run_required_security_check dependency_audit \
+  osv-scanner scan source --lockfile pubspec.lock --lockfile tool/ftemplate_cli/pubspec.lock \
+    --lockfile tool/module_dependency_audit/pubspec.lock --format json \
+    --output-file "$LOG_DIR/osv-scanner.json"
 
 echo "==> release_permissions"
 RELEASE_APK="$PROJECT_ROOT/build/app/outputs/flutter-apk/app-prod-release.apk"

@@ -10,6 +10,8 @@ class GenerationPlan {
     this.devDependencies = const <PubDependency>[],
     required this.permissions,
     required this.configKeys,
+    this.androidNativeChanges = const <String>[],
+    this.iosNativeChanges = const <String>[],
   });
 
   /// The project specification the plan was derived from.
@@ -29,6 +31,12 @@ class GenerationPlan {
 
   /// The union of configuration keys across the resolved modules.
   final List<String> configKeys;
+
+  /// The union of Android native changes contributed by the resolved modules.
+  final List<String> androidNativeChanges;
+
+  /// The union of iOS native changes contributed by the resolved modules.
+  final List<String> iosNativeChanges;
 
   /// Whether the plan is empty (blank preset with no additions).
   bool get isEmpty => modules.isEmpty;

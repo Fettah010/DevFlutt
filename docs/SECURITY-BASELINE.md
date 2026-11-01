@@ -23,7 +23,7 @@ to the controls the template ships and the steps that verify them.
 | A provider exception never escapes an adapter | `core/auth/*/*_auth_port_impl.dart` | the contract suite |
 | A session is never partly applied from a value that cannot be read | `core/auth/rest/rest_session_codec.dart` | `rest_auth_contract_test.dart` |
 | Encrypted values are never restored without their Keystore key | `android/app/src/main/res/xml/backup_rules.xml` | merged-manifest inspection |
-| The generated project adds no Android permission of its own | the module manifests | merged-manifest inspection |
+| Android permissions are limited to those declared by selected modules and their documented plugin requirements | the module manifests | generated release-manifest inspection |
 | A network client declares the `INTERNET` permission, and a project without one declares none | `manifests/modules/networking.yaml`, `manifests/modules/auth-*.yaml` | the generated manifest, the merged-manifest inspection |
 | No provider SDK, no telemetry, no analytics in the default presets | the module manifests | the absence tests in the generator |
 | A provider configuration placeholder is inert and fails fast | `core/auth/firebase/firebase_auth_port_impl.dart`, `core/auth/supabase/supabase_config.dart` | the start-up configuration check |
@@ -34,6 +34,9 @@ to the controls the template ships and the steps that verify them.
 | Offline queued writes are replayed only by explicit refresh | `offline_notes/data/offline_note_repository.dart` | offline repository and networking retry tests |
 | Checkout sends only product IDs and quantities; the local total is not authoritative | `features/commerce/domain/checkout.dart` | checkout contract and widget tests |
 | The local database is unencrypted and excludes secret/payment storage | `core/database`, module guide | migration tests and generated dependency/security review |
+| WorkManager task inputs are restricted to serializable values and must not contain secrets | `core/background_work` | generated task-contract tests |
+| Local notification taps accept only known internal route paths; permission is requested only by an explicit call | `core/notifications` | route tests, service tests, and generated release-manifest check |
+| Play update fallback is an HTTPS listing for the generated application ID; platform errors are not reported as success | `core/app_updates` | fake-backed update and launch tests |
 
 ## What the template does not do
 
@@ -60,11 +63,19 @@ otherwise.
   does not. Adding one is a separate, reviewed module that states the data it collects.
 - **iOS is unverified.** No macOS host or runner is available, so the iOS build of the new
   modules has not been observed.
-- **No real-device run.** The functional evidence is from an emulator or a build host, which
-  is proxy evidence for device-specific behaviour.
+- **No device run.** Functional evidence is from fake-backed tests and Android builds; no
+  emulator or physical device was available for v0.8 lifecycle verification.
 - **Offline synchronization is a sample policy, not a backend guarantee.** Refresh is
   explicit, pending edits win same-record conflicts, and a stable operation ID is reused;
   no background worker, cross-device merge, or server consistency guarantee is provided.
+- **WorkManager is best-effort, not exact-time execution.** Its callback can report success
+  or request retry, but cannot distinguish a terminal task failure. Task input is persisted
+  by Android and must not contain secrets or private user content.
+- **Local notifications do not include push delivery.** Permission denial is safe, but a
+  notification payload is only a navigation hint; it never grants authorization.
+- **Play update behavior is not verified by fake-backed tests.** Availability and update-flow
+  behavior require installation from Google Play, and the internal-track test remains an
+  owner action.
 - **The Drift database is not encrypted.** Do not store secrets, credentials, or payment data
   in local database rows. Use `secure-storage` for credentials.
 - **Commerce is not payment processing.** The sample has no payment SDK and its catalog
@@ -78,6 +89,7 @@ Untrusted inputs the template does handle:
 - response bodies, which are decoded by a caller-supplied function and reported as
   `ApiMalformedError` when they do not match;
 - unknown route locations, which resolve to the not-found screen;
+- notification tap payloads, which are constrained to known internal route paths;
 - log field names and values, which are redacted before a sink sees them;
 - provider configuration files, which are checked for the placeholder values before the
   provider is used;

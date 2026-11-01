@@ -1,0 +1,39 @@
+id: local-notifications
+version: 1
+category: platform
+summary: Android local notification channels, contextual permission flow, and safe tap routing.
+requires:
+  - architecture-core
+  - navigation
+conflictsWith: []
+platforms:
+  - android
+pubDependencies:
+  - name: flutter_local_notifications
+    version: ^22.3.3
+nativeChanges:
+  android:
+    - "android/app/src/main/AndroidManifest.xml: declare POST_NOTIFICATIONS and VIBRATE for the selected module."
+    - "android/app/build.gradle.kts: enable core library desugaring for the selected plugin."
+  ios: []
+permissions:
+  - android.permission.POST_NOTIFICATIONS
+  - android.permission.VIBRATE
+configKeys: []
+privacy:
+  network: false
+  telemetry: false
+outputs:
+  - lib/core/notifications/local_notification_service.dart
+  - lib/core/notifications/notification_route_handler.dart
+  - test/unit/local_notification_service_test.dart
+  - test/widget/notification_route_handler_test.dart
+requiredSetup:
+  - Create notification channels before posting notifications.
+  - Request notification permission only after a user action; handle denial without blocking the app.
+  - Notification taps accept validated internal routes only.
+  - Push messaging is a separate provider integration and is not included.
+tests:
+  unit: true
+  widget: true
+  integration: API 33+ emulator permission and tap smoke

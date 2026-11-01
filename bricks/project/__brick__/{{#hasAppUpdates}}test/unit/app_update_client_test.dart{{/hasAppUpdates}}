@@ -1,0 +1,132 @@
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/core/app_updates/app_update_client.dart';
+import 'package:{{projectName}}/core/app_updates/play_app_update_client.dart';
+
+void main() {
+  late _FakeAppUpdateGateway gateway;
+  late PlayAppUpdateClient client;
+
+  setUp(() {
+    gateway = _FakeAppUpdateGateway();
+    client = PlayAppUpdateClient(applicationId: 'com.example.app', gateway: gateway);
+  });
+
+  test('maps Play availability to available, unavailable and unsupported', () async {
+    expect((await client.checkForUpdate()).status, AppUpdateStatus.available);
+
+    gateway.availability = PlayUpdateAvailability.unavailable;
+    expect((await client.checkForUpdate()).status, AppUpdateStatus.unavailable);
+
+    gateway.availability = PlayUpdateAvailability.unsupported;
+    expect((await client.checkForUpdate()).status, AppUpdateStatus.unsupported);
+  });
+
+  test('maps immediate and flexible update results', () async {
+    expect((await client.performImmediateUpdate()).status, AppUpdateStatus.completed);
+    expect((await client.startFlexibleUpdate()).status, AppUpdateStatus.downloadStarted);
+    expect((await client.completeFlexibleUpdate()).status, AppUpdateStatus.completed);
+
+    gateway.flowResult = PlayUpdateFlowResult.canceled;
+    expect((await client.performImmediateUpdate()).status, AppUpdateStatus.canceled);
+
+    gateway.flowResult = PlayUpdateFlowResult.failed;
+    final failed = await client.startFlexibleUpdate();
+    expect(failed.status, AppUpdateStatus.failed);
+    expect(failed.errorCode, 'in_app_update_failed');
+  });
+
+  test('exposes flexible update installation progress', () async {
+    gateway.installStatuses = <AppUpdateInstallStatus>[
+      AppUpdateInstallStatus.downloading,
+      AppUpdateInstallStatus.downloaded,
+      AppUpdateInstallStatus.installed,
+    ];
+
+    expect(await client.installStatus.toList(), gateway.installStatuses);
+  });
+
+  test('does not start an update when Play reports no available update', () async {
+    gateway.availability = PlayUpdateAvailability.unavailable;
+
+    expect((await client.performImmediateUpdate()).status, AppUpdateStatus.unavailable);
+    expect(gateway.immediateCalls, 0);
+  });
+
+  test('surfaces platform failures and marks missing plugin support', () async {
+    gateway.availabilityError = PlatformException(code: 'API_ERROR');
+    final failed = await client.checkForUpdate();
+    expect(failed.status, AppUpdateStatus.failed);
+    expect(failed.errorCode, 'API_ERROR');
+
+    gateway.availabilityError = MissingPluginException();
+    final unsupported = await client.checkForUpdate();
+    expect(unsupported.status, AppUpdateStatus.unsupported);
+    expect(unsupported.errorCode, 'plugin_unavailable');
+  });
+
+  test('opens the app-specific Play listing and surfaces launch failures', () async {
+    expect((await client.openStoreFallback()).status, AppUpdateStatus.storeOpened);
+    expect(
+      gateway.storeUri.toString(),
+      'https://play.google.com/store/apps/details?id=com.example.app',
+    );
+
+    gateway.storeLaunchResult = false;
+    final failed = await client.openStoreFallback();
+    expect(failed.status, AppUpdateStatus.failed);
+    expect(failed.errorCode, 'store_launch_failed');
+
+    gateway.storeLaunchError = PlatformException(code: 'NO_HANDLER');
+    final launchError = await client.openStoreFallback();
+    expect(launchError.status, AppUpdateStatus.failed);
+    expect(launchError.errorCode, 'NO_HANDLER');
+  });
+
+  test('rejects invalid application IDs before constructing the store URL', () {
+    expect(
+      () => PlayAppUpdateClient(applicationId: 'https://example.com'),
+      throwsArgumentError,
+    );
+  });
+}
+
+class _FakeAppUpdateGateway implements AppUpdateGateway {
+  PlayUpdateAvailability availability = PlayUpdateAvailability.available;
+  PlayUpdateFlowResult flowResult = PlayUpdateFlowResult.completed;
+  Object? availabilityError;
+  Object? storeLaunchError;
+  bool storeLaunchResult = true;
+  int immediateCalls = 0;
+  Uri? storeUri;
+  List<AppUpdateInstallStatus> installStatuses = <AppUpdateInstallStatus>[];
+
+  @override
+  Future<PlayUpdateAvailability> checkAvailability() async {
+    if (availabilityError case final error?) throw error;
+    return availability;
+  }
+
+  @override
+  Future<void> completeFlexibleUpdate() async {}
+
+  @override
+  Stream<AppUpdateInstallStatus> get installStatus =>
+      Stream<AppUpdateInstallStatus>.fromIterable(installStatuses);
+
+  @override
+  Future<PlayUpdateFlowResult> performImmediateUpdate() async {
+    immediateCalls += 1;
+    return flowResult;
+  }
+
+  @override
+  Future<PlayUpdateFlowResult> startFlexibleUpdate() async => flowResult;
+
+  @override
+  Future<bool> openStoreListing(Uri uri) async {
+    storeUri = uri;
+    if (storeLaunchError case final error?) throw error;
+    return storeLaunchResult;
+  }
+}

@@ -7,6 +7,10 @@ environment:
   sdk: ^3.9.0
 
 dependencies:
+  workmanager: ^0.10.10
+  flutter_local_notifications: ^22.3.3
+  in_app_update: ^5.0.0
+  url_launcher: ^6.3.3
   shared_preferences: ^2.5.6
   drift: ^2.35.3
   drift_flutter: ^0.3.1

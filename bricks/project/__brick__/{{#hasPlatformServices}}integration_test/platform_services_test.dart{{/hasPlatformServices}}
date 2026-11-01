@@ -1,0 +1,100 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:{{projectName}}/bootstrap/bootstrap.dart';
+{{#hasBackgroundWork}}
+import 'package:{{projectName}}/core/background_work/background_task.dart';
+import 'package:{{projectName}}/core/background_work/task_callback_dispatcher.dart';
+import 'package:{{projectName}}/core/background_work/workmanager_task_scheduler.dart';
+{{/hasBackgroundWork}}
+{{#hasLocalNotifications}}
+import 'package:{{projectName}}/app/app_routes.dart';
+import 'package:{{projectName}}/core/notifications/local_notification_service.dart';
+{{/hasLocalNotifications}}
+{{#hasAppUpdates}}
+import 'package:{{projectName}}/core/app_updates/app_update_client.dart';
+import 'package:{{projectName}}/core/app_updates/play_app_update_client.dart';
+{{/hasAppUpdates}}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('selected Android platform services initialize natively', (
+    tester,
+  ) async {
+    debugPrint('Starting generated app bootstrap.');
+    await bootstrap();
+    debugPrint('Generated app bootstrap completed.');
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+{{#hasBackgroundWork}}    debugPrint('Scheduling and cancelling WorkManager smoke task.');
+    const scheduler = WorkmanagerTaskScheduler();
+    const taskName = 'devflutt.platform-services-smoke';
+    await scheduler.scheduleOneOff(
+      BackgroundTask(uniqueName: taskName, taskName: sampleBackgroundTaskName),
+    );
+    await scheduler.cancel(taskName);
+    debugPrint('WorkManager smoke task completed.');
+{{/hasBackgroundWork}}{{#hasLocalNotifications}}    debugPrint('Showing test notification.');
+    final notificationShown = await LocalNotificationService().show(
+      id: 740801,
+      title: 'Warm notification tap test',
+      body: 'Tap this notification to verify warm-start routing.',
+      route: {{#hasFeatureExample}}AppRoutes.counter{{/hasFeatureExample}}{{^hasFeatureExample}}AppRoutes.home{{/hasFeatureExample}},
+    );
+    expect(
+      notificationShown,
+      const bool.fromEnvironment('DEVFLUTT_EXPECT_NOTIFICATIONS_GRANTED'),
+    );
+    debugPrint('Notification permission path completed.');
+{{#hasFeatureExample}}    if (const bool.fromEnvironment('DEVFLUTT_EXPECT_NOTIFICATION_TAP')) {
+      expect(notificationShown, isTrue);
+      debugPrint('WARM_NOTIFICATION_TAP_READY');
+      var counterRouteOpened = false;
+      for (var attempt = 0; attempt < 45; attempt += 1) {
+        await Future<void>.delayed(const Duration(seconds: 1));
+        await tester.pumpAndSettle();
+        if (find.text('Counter').evaluate().isNotEmpty) {
+          counterRouteOpened = true;
+          break;
+        }
+      }
+      expect(
+        counterRouteOpened,
+        isTrue,
+        reason: 'The warm-start notification did not open the counter route.',
+      );
+      debugPrint('Warm notification tap routed to the counter.');
+
+      final coldNotificationShown = await LocalNotificationService().show(
+        id: 740802,
+        title: 'Cold notification tap test',
+        body: 'Tap this notification to verify cold-start routing.',
+        route: AppRoutes.counter,
+      );
+      expect(coldNotificationShown, isTrue);
+      debugPrint('COLD_NOTIFICATION_TAP_READY');
+    }
+{{/hasFeatureExample}}{{^hasFeatureExample}}    if (const bool.fromEnvironment('DEVFLUTT_EXPECT_NOTIFICATION_TAP')) {
+      fail('Notification tap verification requires the feature-example module.');
+    }
+{{/hasFeatureExample}}
+{{/hasLocalNotifications}}{{#hasAppUpdates}}    debugPrint('Checking Play update availability.');
+    final updateOutcome = await PlayAppUpdateClient(
+      applicationId: '{{applicationId}}',
+    ).checkForUpdate();
+    expect(
+      updateOutcome.status,
+      isIn(<AppUpdateStatus>[
+        AppUpdateStatus.available,
+        AppUpdateStatus.unavailable,
+        AppUpdateStatus.unsupported,
+        AppUpdateStatus.failed,
+      ]),
+    );
+    debugPrint(
+      'Play update availability check completed: ${updateOutcome.status}.',
+    );
+{{/hasAppUpdates}}  });
+}

@@ -1,0 +1,41 @@
+enum BackgroundNetworkRequirement { none, connected, unmetered }
+
+enum BackgroundRetryPolicy { exponential, linear }
+
+enum BackgroundTaskResult { success, retry }
+
+class BackgroundTaskConstraints {
+  const BackgroundTaskConstraints({
+    this.network = BackgroundNetworkRequirement.none,
+    this.requiresBatteryNotLow = false,
+    this.requiresCharging = false,
+    this.requiresDeviceIdle = false,
+    this.requiresStorageNotLow = false,
+  });
+
+  final BackgroundNetworkRequirement network;
+  final bool requiresBatteryNotLow;
+  final bool requiresCharging;
+  final bool requiresDeviceIdle;
+  final bool requiresStorageNotLow;
+}
+
+class BackgroundTask {
+  BackgroundTask({
+    required this.uniqueName,
+    required this.taskName,
+    Map<String, dynamic> inputData = const <String, dynamic>{},
+    this.initialDelay = Duration.zero,
+    this.constraints = const BackgroundTaskConstraints(),
+    this.retryPolicy = BackgroundRetryPolicy.exponential,
+    this.backoffDelay = const Duration(seconds: 30),
+  }) : inputData = Map<String, dynamic>.unmodifiable(inputData);
+
+  final String uniqueName;
+  final String taskName;
+  final Map<String, dynamic> inputData;
+  final Duration initialDelay;
+  final BackgroundTaskConstraints constraints;
+  final BackgroundRetryPolicy retryPolicy;
+  final Duration backoffDelay;
+}

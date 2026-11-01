@@ -27,6 +27,9 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `offline-data` | feature | `navigation`, `networking`, `local-database` | — | Local-first notes sample, explicit refresh, pending operation IDs, conflict demonstration |
 | `commerce` | feature | `navigation` | — | Demo catalog/cart and server-authoritative checkout contract; in-memory by default |
 | `commerce-persistence` | persistence | `commerce`, `local-database` | — | Drift-backed cart store with close lifecycle |
+| `background-work` | platform | `architecture-core` | — | Android WorkManager adapter with named tasks, constraints, and retry backoff |
+| `local-notifications` | platform | `architecture-core`, `navigation` | — | Android local notification channels, explicit permission requests, and validated route hand-off |
+| `app-updates` | platform | `architecture-core` | — | Android Play in-app update adapter and store-listing fallback |
 
 ## Presets
 
@@ -109,3 +112,14 @@ displays the adapter's quote.
 See [preferences](modules/preferences.md), [local database](modules/local-database.md),
 [offline data](modules/offline-data.md), and [commerce](modules/commerce.md) for boundaries,
 privacy limits, and tests.
+
+## Android platform services
+
+The v0.8 platform modules are Android-only and remain opt-in. `background-work` exposes
+WorkManager's best-effort scheduling and retry semantics; `local-notifications` requests
+notification permission only after a user action and validates tap routes; `app-updates`
+uses the Play update flow with a store-listing fallback. These modules do not add push
+messaging or iOS substitutes.
+
+See [background work](modules/background-work.md), [local notifications](modules/local-notifications.md),
+and [app updates](modules/app-updates.md) for their setup and limitations.

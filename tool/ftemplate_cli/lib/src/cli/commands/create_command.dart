@@ -122,6 +122,12 @@ class CreateCommand extends FtemplateCommand {
       if (plan.permissions.isNotEmpty) {
         emit('Permissions: ${plan.permissions.join(', ')}');
       }
+      if (plan.androidNativeChanges.isNotEmpty) {
+        emit('Android native changes: ${plan.androidNativeChanges.join('; ')}');
+      }
+      if (plan.iosNativeChanges.isNotEmpty) {
+        emit('iOS native changes: ${plan.iosNativeChanges.join('; ')}');
+      }
       if (plan.configKeys.isNotEmpty) {
         emit('Config keys: ${plan.configKeys.join(', ')}');
       }

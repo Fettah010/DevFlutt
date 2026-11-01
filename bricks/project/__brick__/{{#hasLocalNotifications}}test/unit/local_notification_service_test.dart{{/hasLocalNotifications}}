@@ -1,0 +1,100 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:{{projectName}}/core/notifications/local_notification_service.dart';
+
+void main() {
+  late _FakeLocalNotificationGateway gateway;
+  late LocalNotificationService service;
+
+  setUp(() {
+    gateway = _FakeLocalNotificationGateway();
+    service = LocalNotificationService(gateway: gateway);
+  });
+
+  test('initializes the channel and dispatches cold and warm taps without prompting', () async {
+    gateway.launchPayload = '/';
+    final taps = <String?>[];
+
+    await service.initialize(onTap: taps.add);
+    gateway.onTap?.call('/warm');
+
+    expect(gateway.events, <String>['initialize', 'channel', 'launch']);
+    expect(taps, <String?>['/', '/warm']);
+    expect(gateway.permissionRequests, 0);
+  });
+
+  test('reports permission denial and skips notification delivery safely', () async {
+    gateway.notificationsEnabled = false;
+    gateway.permissionResult = false;
+    await service.initialize(onTap: (_) {});
+
+    expect(await service.requestPermission(), NotificationPermissionStatus.denied);
+    expect(gateway.permissionRequests, 1);
+    expect(await service.show(id: 1, title: 'Update', body: 'Ready'), isFalse);
+    expect(gateway.shownNotifications, isEmpty);
+  });
+
+  test('uses already-granted permission without prompting', () async {
+    gateway.notificationsEnabled = true;
+    await service.initialize(onTap: (_) {});
+
+    expect(await service.requestPermission(), NotificationPermissionStatus.granted);
+    expect(gateway.permissionRequests, 0);
+  });
+
+  test('validates notification content and requires initialization', () async {
+    expect(
+      () => service.show(id: 1, title: 'Title', body: 'Body'),
+      throwsStateError,
+    );
+
+    await service.initialize(onTap: (_) {});
+    await expectLater(
+      service.show(id: 1, title: ' ', body: 'Body'),
+      throwsArgumentError,
+    );
+  });
+}
+
+class _FakeLocalNotificationGateway implements LocalNotificationGateway {
+  final events = <String>[];
+  final shownNotifications = <({int id, String title, String body, String? route})>[];
+  void Function(String?)? onTap;
+  String? launchPayload;
+  bool? notificationsEnabled;
+  bool? permissionResult;
+  var permissionRequests = 0;
+
+  @override
+  Future<bool?> areNotificationsEnabled() async => notificationsEnabled;
+
+  @override
+  Future<void> createChannel() async => events.add('channel');
+
+  @override
+  Future<String?> getLaunchPayload() async {
+    events.add('launch');
+    return launchPayload;
+  }
+
+  @override
+  Future<void> initialize(void Function(String?) onTap) async {
+    events.add('initialize');
+    this.onTap = onTap;
+  }
+
+  @override
+  Future<bool?> requestNotificationsPermission() async {
+    permissionRequests += 1;
+    return permissionResult;
+  }
+
+  @override
+  Future<void> show({
+    required int id,
+    required String title,
+    required String body,
+    String? route,
+  }) async {
+    shownNotifications.add((id: id, title: title, body: body, route: route));
+  }
+}

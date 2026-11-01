@@ -140,9 +140,14 @@ jobs:
             echo "Android SDK root is not configured." >&2
             exit 1
           fi
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            echo "Android SDK Manager was not found at $SDKMANAGER." >&2
+            exit 1
+          fi
           NDK_DIR="$SDK_ROOT/ndk/$NDK_VERSION"
           for attempt in 1 2 3; do
-            if sdkmanager --install "ndk;$NDK_VERSION"; then
+            if "$SDKMANAGER" --install "ndk;$NDK_VERSION"; then
               break
             fi
             if [[ "$attempt" -eq 3 ]]; then

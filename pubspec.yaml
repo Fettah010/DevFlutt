@@ -1,6 +1,6 @@
 name: devflutt
 description: A blank-first Flutter Android app template.
-version: 0.1.0+1
+version: 0.9.1+1
 publish_to: none
 
 environment:

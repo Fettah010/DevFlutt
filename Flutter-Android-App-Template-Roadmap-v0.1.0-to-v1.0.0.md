@@ -961,6 +961,11 @@ No authentication, provider SDK, HTTP stack, cart, local database, analytics, ba
 
 ## `v0.9.1` — Data backends and stable presets
 
+**Status: Complete** (2026-11-02). PR #12 merged and pre-release `v0.9.1` published at
+`3110cbc8e27b90f0c02673f2d4096cfeebee46c1`; see the release plan/report. Main CI passed all
+32 jobs. The merge-triggered Patrol rerun exhausted runner disk space; the identical
+source tree passed Patrol on the PR head. The next milestone is v0.10.0.
+
 **Outcome:** developers can explicitly select a data service independently from authentication,
 and the generator ships the complete named preset set before the v0.10 feature freeze.
 

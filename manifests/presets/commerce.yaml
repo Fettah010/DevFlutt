@@ -1,0 +1,16 @@
+id: commerce
+version: 1
+summary: A networked application foundation with a catalog, cart, and locally persisted cart data.
+modules:
+  - architecture-core
+  - state-riverpod
+  - navigation
+  - design-system
+  - feature-example
+  - logging
+  - diagnostics
+  - networking
+  - secure-storage
+  - commerce
+  - commerce-persistence
+  - local-database

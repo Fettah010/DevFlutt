@@ -1,0 +1,61 @@
+import 'supabase_data_port.dart';
+import 'supabase_port_exception.dart';
+
+/// An in-memory Supabase data port for application tests and examples.
+final class FakeSupabaseDataPort implements SupabaseDataPort {
+  FakeSupabaseDataPort({Map<String, List<Object?>>? rowsByTable})
+    : rowsByTable = rowsByTable ?? <String, List<Object?>>{};
+
+  /// Raw rows indexed by table name.
+  final Map<String, List<Object?>> rowsByTable;
+
+  /// An optional error returned by every operation.
+  SupabasePortException? failure;
+
+  @override
+  Future<Object?> selectRows({
+    required String table,
+    required Map<String, Object> filters,
+    required int limit,
+  }) async {
+    _throwIfFailed();
+    final rows = rowsByTable[table] ?? <Object?>[];
+    final selected = rows.where((row) {
+      if (row is! Map) {
+        return filters.isEmpty;
+      }
+      return filters.entries.every((filter) => row[filter.key] == filter.value);
+    }).take(limit);
+    return selected
+        .map((row) => row is Map ? Map<Object?, Object?>.from(row) : row)
+        .toList();
+  }
+
+  @override
+  Future<void> insertRow({
+    required String table,
+    required Map<String, Object?> values,
+  }) async {
+    _throwIfFailed();
+    rowsByTable.putIfAbsent(table, () => <Object?>[]).add(Map<String, Object?>.of(values));
+  }
+
+  @override
+  Future<void> deleteRows({
+    required String table,
+    required Map<String, Object> filters,
+  }) async {
+    _throwIfFailed();
+    rowsByTable[table]?.removeWhere(
+      (row) =>
+          row is Map && filters.entries.every((filter) => row[filter.key] == filter.value),
+    );
+  }
+
+  void _throwIfFailed() {
+    final error = failure;
+    if (error != null) {
+      throw error;
+    }
+  }
+}

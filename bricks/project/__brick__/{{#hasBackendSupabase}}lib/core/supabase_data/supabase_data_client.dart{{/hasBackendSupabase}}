@@ -1,0 +1,104 @@
+import 'supabase_data_error.dart';
+import 'supabase_data_port.dart';
+import 'supabase_data_result.dart';
+import 'supabase_port_exception.dart';
+import 'supabase_table_row.dart';
+
+/// Provider-specific Postgres/PostgREST operations with typed failures.
+final class SupabaseDataClient {
+  const SupabaseDataClient({required this.port});
+
+  /// The provider boundary used by this client.
+  final SupabaseDataPort port;
+
+  /// Reads at most [limit] rows matching the supplied equality [filters].
+  Future<SupabaseDataResult<List<SupabaseTableRow>>> selectRows({
+    required String table,
+    required int limit,
+    Map<String, Object> filters = const <String, Object>{},
+  }) async {
+    if (!_isValidTable(table) || limit <= 0) {
+      return const SupabaseDataFailure<List<SupabaseTableRow>>(
+        SupabaseDataError(SupabaseDataErrorCode.invalidArgument),
+      );
+    }
+
+    try {
+      final raw = await port.selectRows(table: table, filters: filters, limit: limit);
+      if (raw is! List) {
+        return const SupabaseDataFailure<List<SupabaseTableRow>>(
+          SupabaseDataError(SupabaseDataErrorCode.malformedData),
+        );
+      }
+
+      final rows = <SupabaseTableRow>[];
+      for (final row in raw) {
+        if (row is! Map) {
+          return const SupabaseDataFailure<List<SupabaseTableRow>>(
+            SupabaseDataError(SupabaseDataErrorCode.malformedData),
+          );
+        }
+        final fields = <String, Object?>{};
+        for (final entry in row.entries) {
+          if (entry.key is! String) {
+            return const SupabaseDataFailure<List<SupabaseTableRow>>(
+              SupabaseDataError(SupabaseDataErrorCode.malformedData),
+            );
+          }
+          fields[entry.key as String] = entry.value;
+        }
+        rows.add(SupabaseTableRow(fields: fields));
+      }
+      return SupabaseDataSuccess<List<SupabaseTableRow>>(rows);
+    } on SupabasePortException catch (error) {
+      return SupabaseDataFailure<List<SupabaseTableRow>>(_mapError(error.code));
+    }
+  }
+
+  /// Inserts one row.
+  Future<SupabaseDataResult<void>> insertRow({
+    required String table,
+    required Map<String, Object?> values,
+  }) async {
+    if (!_isValidTable(table) || values.isEmpty) {
+      return const SupabaseDataFailure<void>(
+        SupabaseDataError(SupabaseDataErrorCode.invalidArgument),
+      );
+    }
+    try {
+      await port.insertRow(table: table, values: values);
+      return const SupabaseDataSuccess<void>(null);
+    } on SupabasePortException catch (error) {
+      return SupabaseDataFailure<void>(_mapError(error.code));
+    }
+  }
+
+  /// Deletes matching rows. An empty filter is rejected to prevent a table-wide delete.
+  Future<SupabaseDataResult<void>> deleteRows({
+    required String table,
+    required Map<String, Object> filters,
+  }) async {
+    if (!_isValidTable(table) || filters.isEmpty) {
+      return const SupabaseDataFailure<void>(
+        SupabaseDataError(SupabaseDataErrorCode.invalidArgument),
+      );
+    }
+    try {
+      await port.deleteRows(table: table, filters: filters);
+      return const SupabaseDataSuccess<void>(null);
+    } on SupabasePortException catch (error) {
+      return SupabaseDataFailure<void>(_mapError(error.code));
+    }
+  }
+
+  bool _isValidTable(String table) => table.trim().isNotEmpty;
+
+  SupabaseDataError _mapError(String code) => SupabaseDataError(
+    switch (code) {
+      '42501' => SupabaseDataErrorCode.permissionDenied,
+      '28000' || '28P01' || 'PGRST301' => SupabaseDataErrorCode.unauthenticated,
+      _ when code.startsWith('08') => SupabaseDataErrorCode.unavailable,
+      _ => SupabaseDataErrorCode.unknown,
+    },
+  );
+}

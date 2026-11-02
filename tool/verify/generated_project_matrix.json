@@ -1,0 +1,29 @@
+{
+  "cases": [
+    { "name": "blank", "preset": "blank", "auth": "none", "backend": "none", "modules": [], "expects_network": false, "expects_notifications": false },
+    { "name": "core", "preset": "core", "auth": "none", "backend": "none", "modules": [], "expects_network": false, "expects_notifications": false },
+    { "name": "demo", "preset": "demo", "auth": "none", "backend": "none", "modules": [], "expects_network": false, "expects_notifications": false },
+    { "name": "demo-localization", "preset": "demo", "auth": "none", "backend": "none", "modules": ["localization"], "expects_network": false, "expects_notifications": false },
+    { "name": "recommended", "preset": "recommended", "auth": "none", "backend": "none", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "commerce-module", "preset": "blank", "auth": "none", "backend": "none", "modules": ["commerce"], "expects_network": false, "expects_notifications": false },
+    { "name": "commerce-preset", "preset": "commerce", "auth": "none", "backend": "none", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "full-preset", "preset": "full", "auth": "none", "backend": "none", "modules": [], "expects_network": true, "expects_notifications": true },
+    { "name": "auth-rest", "preset": "core", "auth": "rest", "backend": "none", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "auth-firebase", "preset": "core", "auth": "firebase", "backend": "none", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "auth-supabase", "preset": "core", "auth": "supabase", "backend": "none", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "backend-rest", "preset": "blank", "auth": "none", "backend": "rest", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "backend-firestore", "preset": "blank", "auth": "none", "backend": "firebase", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "backend-supabase", "preset": "blank", "auth": "none", "backend": "supabase", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "firebase-auth-firestore", "preset": "core", "auth": "firebase", "backend": "firebase", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "supabase-auth-data", "preset": "core", "auth": "supabase", "backend": "supabase", "modules": [], "expects_network": true, "expects_notifications": false },
+    { "name": "full-maximum", "preset": "full", "auth": "firebase", "backend": "firebase", "modules": [], "expects_network": true, "expects_notifications": true },
+    { "name": "preferences", "preset": "blank", "auth": "none", "backend": "none", "modules": ["preferences"], "expects_network": false, "expects_notifications": false },
+    { "name": "local-database", "preset": "blank", "auth": "none", "backend": "none", "modules": ["local-database"], "expects_network": false, "expects_notifications": false },
+    { "name": "offline-data", "preset": "blank", "auth": "none", "backend": "none", "modules": ["offline-data"], "expects_network": true, "expects_notifications": false },
+    { "name": "commerce-persistence", "preset": "blank", "auth": "none", "backend": "none", "modules": ["commerce-persistence"], "expects_network": false, "expects_notifications": false },
+    { "name": "background-work", "preset": "blank", "auth": "none", "backend": "none", "modules": ["background-work"], "expects_network": false, "expects_notifications": false },
+    { "name": "local-notifications", "preset": "blank", "auth": "none", "backend": "none", "modules": ["local-notifications"], "expects_network": false, "expects_notifications": true },
+    { "name": "app-updates", "preset": "blank", "auth": "none", "backend": "none", "modules": ["app-updates"], "expects_network": false, "expects_notifications": false },
+    { "name": "background-work-notifications", "preset": "blank", "auth": "none", "backend": "none", "modules": ["background-work", "local-notifications"], "expects_network": false, "expects_notifications": true }
+  ]
+}

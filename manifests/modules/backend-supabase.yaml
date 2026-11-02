@@ -1,0 +1,37 @@
+id: backend-supabase
+version: 1
+category: backend
+summary: Provider-specific Supabase Postgres/PostgREST client with typed errors and fake-backed tests.
+requires:
+  - supabase-core
+conflictsWith:
+  - backend-firestore
+platforms:
+  - android
+pubDependencies: []
+nativeChanges:
+  android: []
+  ios: []
+permissions:
+  - android.permission.INTERNET
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+outputs:
+  - lib/core/supabase_data/supabase_data_error.dart
+  - lib/core/supabase_data/supabase_data_result.dart
+  - lib/core/supabase_data/supabase_table_row.dart
+  - lib/core/supabase_data/supabase_data_port.dart
+  - lib/core/supabase_data/supabase_port_exception.dart
+  - lib/core/supabase_data/supabase_data_client.dart
+  - lib/core/supabase_data/supabase_data_port_impl.dart
+  - lib/core/supabase_data/fake_supabase_data_port.dart
+requiredSetup:
+  - Configure the project URL and publishable key in lib/core/supabase/supabase_config.dart.
+  - Enable and test Postgres row-level security policies and grants for every exposed table.
+  - Supabase Auth is an independent choice; this data module does not select or persist auth.
+tests:
+  unit: true
+  widget: false
+  integration: none

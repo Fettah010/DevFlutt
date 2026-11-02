@@ -1,0 +1,24 @@
+id: full
+version: 1
+summary: All compatible non-provider modules for Android, without selecting an auth or data provider.
+modules:
+  - architecture-core
+  - state-riverpod
+  - navigation
+  - design-system
+  - feature-example
+  - showcase
+  - logging
+  - networking
+  - secure-storage
+  - diagnostics
+  - auth-core
+  - preferences
+  - local-database
+  - offline-data
+  - commerce
+  - commerce-persistence
+  - background-work
+  - local-notifications
+  - app-updates
+  - localization

@@ -6,3 +6,6 @@ equatable: MIT
 patrol: Apache-2.0
 patrol_finders: Apache-2.0
 patrol_log: Apache-2.0
+# app_links 7.2.2 omits LICENSE from its archive; the exact-version pub.dev licence page
+# identifies Apache-2.0: https://pub.dev/packages/app_links/versions/7.2.2/license
+app_links: Apache-2.0

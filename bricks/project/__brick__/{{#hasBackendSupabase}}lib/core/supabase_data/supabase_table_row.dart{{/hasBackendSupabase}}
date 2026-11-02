@@ -1,0 +1,7 @@
+/// A decoded row returned from a Supabase Postgres table.
+final class SupabaseTableRow {
+  const SupabaseTableRow({required this.fields});
+
+  /// The row's decoded fields.
+  final Map<String, Object?> fields;
+}

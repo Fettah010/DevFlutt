@@ -15,6 +15,19 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+{{#hasBackendFirestore}}
+subprojects {
+    if (name == "cloud_firestore") {
+        plugins.withId("com.android.library") {
+            extensions.configure<com.android.build.api.dsl.LibraryExtension> {
+                if (namespace == null) {
+                    namespace = "io.flutter.plugins.firebase.firestore"
+                }
+            }
+        }
+    }
+}
+{{/hasBackendFirestore}}
 subprojects {
     project.evaluationDependsOn(":app")
 }

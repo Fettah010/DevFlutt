@@ -446,6 +446,212 @@ void main() {
       await result.projectDir.delete(recursive: true);
     });
 
+    test('commerce and full presets compose deterministic provider-free modules', () async {
+      final commerce = await generate(
+        spec(name: 'Commerce Preset', org: 'com.example', preset: 'commerce'),
+      );
+      final commerceModules = (commerce.metadata['modules'] as List<dynamic>).cast<String>();
+      expect(
+        commerceModules,
+        containsAll([
+          'diagnostics',
+          'networking',
+          'secure-storage',
+          'local-database',
+          'commerce',
+          'commerce-persistence',
+        ]),
+      );
+      expect(commerceModules, isNot(contains('backend-firestore')));
+      expect(commerceModules, isNot(contains('backend-supabase')));
+      expect(commerceModules, isNot(contains('auth-firebase')));
+      expect(commerceModules, isNot(contains('auth-supabase')));
+      expect(
+        File('${commerce.projectDir.path}/lib/features/commerce/data/database_cart_store.dart')
+            .existsSync(),
+        isTrue,
+      );
+      await commerce.projectDir.delete(recursive: true);
+
+      final full = await generate(spec(name: 'Full Preset', org: 'com.example', preset: 'full'));
+      final fullModules = (full.metadata['modules'] as List<dynamic>).cast<String>();
+      expect(
+        fullModules,
+        containsAll([
+          'architecture-core',
+          'state-riverpod',
+          'navigation',
+          'design-system',
+          'showcase',
+          'logging',
+          'networking',
+          'secure-storage',
+          'diagnostics',
+          'auth-core',
+          'preferences',
+          'local-database',
+          'offline-data',
+          'commerce',
+          'commerce-persistence',
+          'background-work',
+          'local-notifications',
+          'app-updates',
+          'localization',
+        ]),
+      );
+      for (final excludedModule in <String>[
+        'auth-rest',
+        'auth-firebase',
+        'auth-supabase',
+        'firebase-core',
+        'supabase-core',
+        'backend-firestore',
+        'backend-supabase',
+      ]) {
+        expect(fullModules, isNot(contains(excludedModule)));
+      }
+      final fullPubspec = File('${full.projectDir.path}/pubspec.yaml').readAsStringSync();
+      expect(fullPubspec, isNot(contains('firebase_core:')));
+      expect(fullPubspec, isNot(contains('supabase_flutter:')));
+      expect(File('${full.projectDir.path}/lib/firebase_options.dart').existsSync(), isFalse);
+      expect(Directory('${full.projectDir.path}/lib/core/supabase_data').existsSync(), isFalse);
+      await full.projectDir.delete(recursive: true);
+    });
+
+    test(
+      'provider configuration and initialization are shared with the selected auth module',
+      () async {
+        final firebase = await generate(
+          spec(name: 'Firebase App', org: 'com.example', modules: const ['auth-firebase']),
+        );
+        final firebaseModules = (firebase.metadata['modules'] as List<dynamic>).cast<String>();
+        final firebaseBootstrap = File('${firebase.projectDir.path}/lib/bootstrap/bootstrap.dart')
+            .readAsStringSync();
+
+        expect(firebaseModules, contains('firebase-core'));
+        expect(
+          File('${firebase.projectDir.path}/lib/core/firebase/firebase_initializer.dart')
+              .existsSync(),
+          isTrue,
+        );
+        expect(File('${firebase.projectDir.path}/lib/firebase_options.dart').existsSync(), isTrue);
+        expect(firebaseBootstrap, contains('await initializeFirebase();'));
+        expect(firebaseBootstrap, isNot(contains('initializeFirebaseAuth')));
+        expect(firebaseBootstrap, isNot(contains('firebase_auth_port_impl.dart')));
+        await firebase.projectDir.delete(recursive: true);
+
+        final supabase = await generate(
+          spec(name: 'Supabase App', org: 'com.example', modules: const ['auth-supabase']),
+        );
+        final supabaseModules = (supabase.metadata['modules'] as List<dynamic>).cast<String>();
+        final supabaseBootstrap = File('${supabase.projectDir.path}/lib/bootstrap/bootstrap.dart')
+            .readAsStringSync();
+
+        expect(supabaseModules, contains('supabase-core'));
+        expect(
+          File('${supabase.projectDir.path}/lib/core/supabase/supabase_initializer.dart')
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          File('${supabase.projectDir.path}/lib/core/supabase/supabase_config.dart').existsSync(),
+          isTrue,
+        );
+        expect(supabaseBootstrap, contains('initializeSupabaseCore'));
+        expect(supabaseBootstrap, contains('SecureStorageLocalStorage'));
+        expect(supabaseBootstrap, isNot(contains('initializeSupabaseAuth')));
+        await supabase.projectDir.delete(recursive: true);
+      },
+    );
+
+    test(
+      'data-only Supabase initialization disables persistence without swallowing failures',
+      () async {
+        final result = await generate(
+          spec(name: 'Supabase Data App', org: 'com.example', modules: const ['supabase-core']),
+        );
+        final pubspec = File('${result.projectDir.path}/pubspec.yaml').readAsStringSync();
+        final initializer = File(
+          '${result.projectDir.path}/lib/core/supabase/supabase_initializer.dart',
+        ).readAsStringSync();
+
+        expect(pubspec, contains('supabase_flutter: ^2.18.3'));
+        expect(pubspec, isNot(contains('flutter_secure_storage:')));
+        expect(initializer, contains('EmptyLocalStorage'));
+        expect(initializer, isNot(contains('catch')));
+        await result.projectDir.delete(recursive: true);
+      },
+    );
+
+    test('Firestore is selected-only and shares Firebase initialization', () async {
+      final firestore = await generate(
+        spec(name: 'Firestore App', org: 'com.example', modules: const ['backend-firestore']),
+      );
+      final modules = (firestore.metadata['modules'] as List<dynamic>).cast<String>();
+      final pubspec = File('${firestore.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final bootstrap = File('${firestore.projectDir.path}/lib/bootstrap/bootstrap.dart')
+          .readAsStringSync();
+      final services = File('${firestore.projectDir.path}/lib/app/app_services.dart')
+          .readAsStringSync();
+      final androidBuild = File('${firestore.projectDir.path}/android/build.gradle.kts')
+          .readAsStringSync();
+      final backendTests = File(
+        '${firestore.projectDir.path}/test/unit/firestore/firestore_document_client_test.dart',
+      );
+
+      expect(modules, containsAll(['firebase-core', 'backend-firestore']));
+      expect(pubspec, contains('cloud_firestore: ^7.1.0'));
+      expect(bootstrap, contains('await initializeFirebase();'));
+      expect(services, contains('FirestoreDocumentClient'));
+      expect(services, contains('FirebaseFirestoreDocumentPort'));
+      expect(androidBuild, contains('if (name == "cloud_firestore")'));
+      expect(androidBuild, contains('if (namespace == null)'));
+      expect(androidBuild, contains('namespace = "io.flutter.plugins.firebase.firestore"'));
+      expect(backendTests.existsSync(), isTrue);
+      await firestore.projectDir.delete(recursive: true);
+
+      final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+      final blankPubspec = File('${blank.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final blankBuild = File('${blank.projectDir.path}/android/build.gradle.kts')
+          .readAsStringSync();
+      expect(blankPubspec, isNot(contains('cloud_firestore')));
+      expect(blankBuild, isNot(contains('cloud_firestore')));
+      await blank.projectDir.delete(recursive: true);
+    });
+
+    test('Supabase data backend is selected-only and shares Supabase initialization', () async {
+      final supabase = await generate(
+        spec(name: 'Supabase Data App', org: 'com.example', modules: const ['backend-supabase']),
+      );
+      final modules = (supabase.metadata['modules'] as List<dynamic>).cast<String>();
+      final pubspec = File('${supabase.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final bootstrap = File('${supabase.projectDir.path}/lib/bootstrap/bootstrap.dart')
+          .readAsStringSync();
+      final services = File('${supabase.projectDir.path}/lib/app/app_services.dart')
+          .readAsStringSync();
+      final dataTests = File(
+        '${supabase.projectDir.path}/test/unit/supabase_data/supabase_data_client_test.dart',
+      );
+
+      expect(modules, containsAll(['supabase-core', 'backend-supabase']));
+      expect(modules, isNot(contains('auth-supabase')));
+      expect(pubspec, contains('supabase_flutter: ^2.18.3'));
+      expect(bootstrap, contains('await initializeSupabaseCore();'));
+      expect(services, contains('SupabaseDataClient'));
+      expect(services, contains('SupabaseDataPortImpl'));
+      expect(dataTests.existsSync(), isTrue);
+      await supabase.projectDir.delete(recursive: true);
+
+      final blank = await generate(spec(name: 'Blank', org: 'com.example'));
+      final blankPubspec = File('${blank.projectDir.path}/pubspec.yaml').readAsStringSync();
+      final blankServices = File('${blank.projectDir.path}/lib/app/app_services.dart');
+      final blankData = Directory('${blank.projectDir.path}/lib/core/supabase_data');
+      expect(blankPubspec, isNot(contains('supabase_flutter')));
+      expect(blankServices.existsSync(), isFalse);
+      expect(blankData.existsSync(), isFalse);
+      await blank.projectDir.delete(recursive: true);
+    });
+
     test('the blank project contains no optional module files', () async {
       final result = await generate(spec(name: 'Blank', org: 'com.example'));
 

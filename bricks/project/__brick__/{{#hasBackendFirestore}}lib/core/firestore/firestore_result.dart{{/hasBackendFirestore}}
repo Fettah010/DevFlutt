@@ -1,0 +1,37 @@
+import 'firestore_data_error.dart';
+
+/// The typed outcome of a Firestore document operation.
+sealed class FirestoreResult<T> {
+  const FirestoreResult();
+
+  /// Whether the operation succeeded.
+  bool get isSuccess => this is FirestoreSuccess<T>;
+
+  /// The result value when the operation succeeded.
+  T? get valueOrNull => switch (this) {
+    FirestoreSuccess<T>(:final value) => value,
+    FirestoreFailure<T>() => null,
+  };
+
+  /// The safe failure when the operation did not succeed.
+  FirestoreDataError? get errorOrNull => switch (this) {
+    FirestoreSuccess<T>() => null,
+    FirestoreFailure<T>(:final error) => error,
+  };
+}
+
+/// A successful Firestore operation.
+final class FirestoreSuccess<T> extends FirestoreResult<T> {
+  const FirestoreSuccess(this.value);
+
+  /// The operation result.
+  final T value;
+}
+
+/// A failed Firestore operation.
+final class FirestoreFailure<T> extends FirestoreResult<T> {
+  const FirestoreFailure(this.error);
+
+  /// The provider-independent failure.
+  final FirestoreDataError error;
+}

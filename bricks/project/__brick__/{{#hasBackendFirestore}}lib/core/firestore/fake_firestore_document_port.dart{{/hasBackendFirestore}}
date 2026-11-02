@@ -1,0 +1,45 @@
+import 'firestore_document_port.dart';
+import 'firestore_port_exception.dart';
+
+/// An in-memory Firestore port for application tests and examples.
+final class FakeFirestoreDocumentPort implements FirestoreDocumentPort {
+  FakeFirestoreDocumentPort({Map<String, Object?>? documents})
+    : documents = documents ?? <String, Object?>{};
+
+  /// Raw document values indexed by `collection/documentId`.
+  final Map<String, Object?> documents;
+
+  /// An optional error returned by every operation.
+  FirestorePortException? failure;
+
+  @override
+  Future<Object?> getDocument({required String collection, required String documentId}) async {
+    _throwIfFailed();
+    return documents[_key(collection, documentId)];
+  }
+
+  @override
+  Future<void> setDocument({
+    required String collection,
+    required String documentId,
+    required Map<String, Object?> fields,
+  }) async {
+    _throwIfFailed();
+    documents[_key(collection, documentId)] = Map<String, Object?>.of(fields);
+  }
+
+  @override
+  Future<void> deleteDocument({required String collection, required String documentId}) async {
+    _throwIfFailed();
+    documents.remove(_key(collection, documentId));
+  }
+
+  String _key(String collection, String documentId) => '$collection/$documentId';
+
+  void _throwIfFailed() {
+    final error = failure;
+    if (error != null) {
+      throw error;
+    }
+  }
+}

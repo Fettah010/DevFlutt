@@ -28,7 +28,7 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Upload lockfile
         if: always()
@@ -70,7 +70,7 @@ jobs:
 
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
-        run: dart pub get
+        run: dart pub get --enforce-lockfile
 
       - name: Check formatting
         working-directory: tool/ftemplate_cli
@@ -84,125 +84,38 @@ jobs:
         working-directory: tool/ftemplate_cli
         run: dart test
 
-  generated-projects:
-    name: Generated project matrix
+  generated-project-matrix:
+    name: Validate generated-project matrix
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: blank
-            preset: blank
-            auth: none
-            module: ''
-            expects_network: false
-            expects_notifications: false
-          - name: core
-            preset: core
-            auth: none
-            module: ''
-            expects_network: false
-            expects_notifications: false
-          - name: demo
-            preset: demo
-            auth: none
-            module: ''
-            expects_network: false
-            expects_notifications: false
-          - name: demo-localization
-            preset: demo
-            auth: none
-            module: localization
-            expects_network: false
-            expects_notifications: false
-          - name: recommended
-            preset: recommended
-            auth: none
-            module: ''
-            expects_network: true
-            expects_notifications: false
-          - name: auth-rest
-            preset: core
-            auth: rest
-            module: ''
-            expects_network: true
-            expects_notifications: false
-          - name: auth-firebase
-            preset: core
-            auth: firebase
-            module: ''
-            expects_network: true
-            expects_notifications: false
-          - name: auth-supabase
-            preset: core
-            auth: supabase
-            module: ''
-            expects_network: true
-            expects_notifications: false
-          - name: preferences
-            preset: blank
-            auth: none
-            module: preferences
-            expects_network: false
-            expects_notifications: false
-          - name: local-database
-            preset: blank
-            auth: none
-            module: local-database
-            expects_network: false
-            expects_notifications: false
-          - name: offline-data
-            preset: blank
-            auth: none
-            module: offline-data
-            expects_network: true
-            expects_notifications: false
-          - name: commerce
-            preset: blank
-            auth: none
-            module: commerce
-            expects_network: false
-            expects_notifications: false
-          - name: commerce-persistence
-            preset: blank
-            auth: none
-            module: commerce-persistence
-            expects_network: false
-            expects_notifications: false
-          - name: background-work
-            preset: blank
-            auth: none
-            module: background-work
-            expects_network: false
-            expects_notifications: false
-          - name: local-notifications
-            preset: blank
-            auth: none
-            module: local-notifications
-            expects_network: false
-            expects_notifications: true
-          - name: app-updates
-            preset: blank
-            auth: none
-            module: app-updates
-            expects_network: false
-            expects_notifications: false
-          - name: background-work-notifications
-            preset: blank
-            auth: none
-            module: background-work
-            module2: local-notifications
-            expects_network: false
-            expects_notifications: true
+    outputs:
+      include: ${{ steps.emit.outputs.include }}
+      count: ${{ steps.emit.outputs.count }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          distribution: temurin
-          java-version: '17'
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+
+      - name: Validate and enumerate required cases
+        id: emit
+        run: dart tool/verify/generated_project_matrix.dart --github-output "$GITHUB_OUTPUT"
+
+  generated-projects:
+    name: Generated project ${{ matrix.name }}
+    needs: generated-project-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.generated-project-matrix.outputs.include) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -213,24 +126,29 @@ jobs:
 
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
-        run: dart pub get
+        run: dart pub get --enforce-lockfile
 
       - name: Generate ${{ matrix.name }} project
+        env:
+          CASE_NAME: ${{ matrix.name }}
+          PRESET: ${{ matrix.preset }}
+          AUTH: ${{ matrix.auth }}
+          BACKEND: ${{ matrix.backend }}
+          MODULES_JSON: ${{ toJSON(matrix.modules) }}
         run: |
+          set -euo pipefail
           MODULE_ARGS=()
-          if [ -n "${{ matrix.module }}" ]; then
-            MODULE_ARGS+=(--module "${{ matrix.module }}")
-          fi
-          if [ -n "${{ matrix.module2 }}" ]; then
-            MODULE_ARGS+=(--module "${{ matrix.module2 }}")
-          fi
+          while IFS= read -r module; do
+            [[ -z "$module" ]] || MODULE_ARGS+=(--module "$module")
+          done < <(jq -r '.[]' <<< "$MODULES_JSON")
           dart run tool/ftemplate_cli/bin/ftemplate.dart create \
             --name "Generated App" \
             --org com.example \
-            --preset ${{ matrix.preset }} \
-            --auth ${{ matrix.auth }} \
+            --preset "$PRESET" \
+            --auth "$AUTH" \
+            --backend "$BACKEND" \
             "${MODULE_ARGS[@]}" \
-            --output /tmp/generated-${{ matrix.name }} \
+            --output "/tmp/generated-$CASE_NAME" \
             --force
 
       - name: Resolve dependencies
@@ -238,7 +156,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate localization API
-        if: matrix.module == 'localization' || matrix.module2 == 'localization'
+        if: matrix.preset == 'full' || contains(matrix.modules, 'localization')
         working-directory: /tmp/generated-${{ matrix.name }}
         run: flutter gen-l10n
 
@@ -252,7 +170,68 @@ jobs:
 
       - name: Test
         working-directory: /tmp/generated-${{ matrix.name }}
-        run: flutter test
+        run: |
+          set -euo pipefail
+          flutter test --reporter=json > test-events.json
+          dart "$GITHUB_WORKSPACE/tool/verify/generated_project_matrix.dart" \
+            --check-test-results test-events.json
+
+      - name: Prepare Gradle dependency-cache fingerprint
+        working-directory: /tmp/generated-${{ matrix.name }}
+        env:
+          CASE_NAME: ${{ matrix.name }}
+        run: |
+          set -euo pipefail
+          CACHE_KEY_DIR="$GITHUB_WORKSPACE/build/gradle-cache-inputs"
+          mkdir -p "$CACHE_KEY_DIR"
+          {
+            printf 'generated-case=%s\n' "$CASE_NAME"
+            sha256sum pubspec.lock
+            find android -type f \
+              \( -name '*.gradle' -o -name '*.gradle.kts' \
+                -o -name 'gradle.properties' -o -name 'gradle-wrapper.properties' \) \
+              -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum
+          } > "$CACHE_KEY_DIR/$CASE_NAME.txt"
+
+      - name: Set up JDK 17 and cache Gradle dependencies
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: build/gradle-cache-inputs/${{ matrix.name }}.txt
+
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          NDK_VERSION=28.2.13676358
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$SDK_ROOT" ]]; then
+            echo "Android SDK root is not configured." >&2
+            exit 1
+          fi
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            echo "Android SDK Manager was not found at $SDKMANAGER." >&2
+            exit 1
+          fi
+          NDK_DIR="$SDK_ROOT/ndk/$NDK_VERSION"
+          for attempt in 1 2 3; do
+            if "$SDKMANAGER" --install "ndk;$NDK_VERSION"; then
+              break
+            fi
+            if [[ "$attempt" -eq 3 ]]; then
+              echo "Failed to install Android NDK $NDK_VERSION after $attempt attempts." >&2
+              exit 1
+            fi
+            echo "NDK installation attempt $attempt failed; retrying after a short delay." >&2
+            sleep "$((attempt * 15))"
+          done
+          if ! grep -Fxq "Pkg.Revision = $NDK_VERSION" "$NDK_DIR/source.properties"; then
+            echo "Installed Android NDK does not match expected version $NDK_VERSION." >&2
+            exit 1
+          fi
 
       - name: Build debug APK
         working-directory: /tmp/generated-${{ matrix.name }}
@@ -264,7 +243,11 @@ jobs:
 
       - name: Review release manifest permissions and components
         working-directory: /tmp/generated-${{ matrix.name }}
+        env:
+          PRESET: ${{ matrix.preset }}
+          MODULES_JSON: ${{ toJSON(matrix.modules) }}
         run: |
+          set -euo pipefail
           AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2"
           APK=build/app/outputs/flutter-apk/app-prod-release.apk
           if [ ! -f "$APK" ]; then
@@ -305,7 +288,11 @@ jobs:
             echo "The selection does not include local-notifications but requests VIBRATE."
             exit 1
           fi
-          if [ "${{ matrix.module }}" = "background-work" ] || [ "${{ matrix.module2 }}" = "background-work" ]; then
+          HAS_BACKGROUND_WORK=false
+          if [ "$PRESET" = "full" ] || jq -e 'index("background-work") != null' <<< "$MODULES_JSON" >/dev/null; then
+            HAS_BACKGROUND_WORK=true
+          fi
+          if [ "$HAS_BACKGROUND_WORK" = "true" ]; then
             if ! grep -q "androidx.work.impl.background.systemjob.SystemJobService" release-components.log; then
               echo "The background-work selection is missing the WorkManager job service."
               exit 1
@@ -318,6 +305,17 @@ jobs:
             echo "The release manifest includes a WorkManager service without the background-work module."
             exit 1
           fi
+
+      - name: Upload generated project reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: generated-${{ matrix.name }}-reports
+          path: |
+            /tmp/generated-${{ matrix.name }}/test-events.json
+            /tmp/generated-${{ matrix.name }}/release-permissions.log
+            /tmp/generated-${{ matrix.name }}/release-components.log
+          if-no-files-found: ignore
 
   secret-scan:
     name: Secret scan
@@ -374,11 +372,11 @@ jobs:
 
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
-        run: dart pub get
+        run: dart pub get --enforce-lockfile
 
       - name: Resolve optional module dependency audit graph
         working-directory: tool/module_dependency_audit
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Install osv-scanner
         run: |
@@ -426,15 +424,15 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
-        run: dart pub get
+        run: dart pub get --enforce-lockfile
 
       - name: Resolve optional module dependency audit graph
         working-directory: tool/module_dependency_audit
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Check the third-party notices
         run: dart run tool/ftemplate_cli/tool/license_inventory.dart --check
@@ -451,6 +449,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -460,7 +459,7 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Build debug APK
         run: flutter build apk --debug --flavor dev

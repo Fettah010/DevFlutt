@@ -1,0 +1,46 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart' as firebase;
+
+import 'firestore_document_port.dart';
+import 'firestore_port_exception.dart';
+
+/// The Firestore SDK implementation of [FirestoreDocumentPort].
+final class FirebaseFirestoreDocumentPort implements FirestoreDocumentPort {
+  FirebaseFirestoreDocumentPort({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
+
+  @override
+  Future<Object?> getDocument({required String collection, required String documentId}) =>
+      _withProviderError(() async {
+        final snapshot = await _firestore.collection(collection).doc(documentId).get();
+        return snapshot.exists ? snapshot.data() : null;
+      });
+
+  @override
+  Future<void> setDocument({
+    required String collection,
+    required String documentId,
+    required Map<String, Object?> fields,
+  }) => _withProviderError(() async {
+    await _firestore
+        .collection(collection)
+        .doc(documentId)
+        .set(Map<String, dynamic>.from(fields));
+  });
+
+  @override
+  Future<void> deleteDocument({required String collection, required String documentId}) =>
+      _withProviderError(() async {
+        await _firestore.collection(collection).doc(documentId).delete();
+      });
+
+  Future<T> _withProviderError<T>(Future<T> Function() operation) async {
+    try {
+      return await operation();
+    } on firebase.FirebaseException catch (error) {
+      throw FirestorePortException(error.code);
+    }
+  }
+}

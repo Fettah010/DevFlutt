@@ -71,12 +71,68 @@ AVD launched by the runner is shut down when the run ends unless
 stores videos in `patrol_test/videos/` and failure screenshots in
 `patrol_test/screenshots/`.
 
+During the suite, the runner watches for Patrol instrumentation waiting on the
+app service and brings the installed app activity to the foreground. This
+handles OEM builds that leave the launcher visible instead of starting the
+instrumented app. It also watches Android's foreground window for supported
+package-installer activities and prints a prompt when a manual approval is
+waiting. The runner continues when the installer returns a result; it never
+clicks the confirmation or changes device security settings. Pass
+`--capture-install-screens` to save a screenshot only while a recognized
+installer package is foregrounded, under `build/patrol-logs/`.
+
+APK installation itself still requires the device's USB installation
+authorization and any system confirmation; the runner does not bypass those
+controls.
+
+Patrol normally uninstalls its app and test APKs after each run, so MIUI can treat
+the next run as a fresh install and ask for confirmation again. Pass
+`--keep-installed` to retain both APKs between runs; this can reduce repeated
+fresh-install prompts, but MIUI may still require confirmation for a first
+install or an APK update. It leaves debug/test packages installed and does not
+bypass Android or MIUI installation controls.
+
+## Physical-device performance measurements
+
+For release measurements on a physical device, install the exact single-APK
+artifact through the normal device flow, approving any MIUI prompt manually.
+Then use the probe below for repeated measurements without reinstalling:
+
+```powershell
+dart run tool/patrol/device_performance_probe.dart `
+  --device 1b14fd280207 `
+  --package com.example.devflutt_physical_performance `
+  --apk "<path to the exact installed APK>" `
+  --label recommended
+```
+
+The probe first pulls the installed base APK and verifies it is byte-identical
+to the supplied artifact. If the app is missing, installed from split APKs, or
+does not match, it stops before measuring and never installs, updates, or
+uninstalls anything. This means MIUI's one-time/manual approval remains
+necessary for each artifact that must be installed or updated; the probe avoids
+repeating that gate for multiple measurements of the same installed APK.
+
+Each run force-stops the app and records Android's `ActivityTaskManager`
+`Displayed` first-frame time (TTID), `am start -W` timings, total PSS from
+`dumpsys meminfo`, and available frame/jank counts from `dumpsys gfxinfo`.
+Raw command output and a JSON summary are saved under
+`build/patrol-logs/device-performance/`. After saving the measurements, the probe
+force-stops the app and records whether cleanup succeeded, so the final sample
+does not leave the app foregrounded. Process-cold starts are not device-cold
+starts. The blank app has no animated or scrolling workload, so launch-only
+frame statistics are descriptive and are not a representative animation-jank
+benchmark. Missing frame data is reported as unavailable, not zero. Android's
+[startup guidance](https://developer.android.com/topic/performance/issues/launch-time)
+defines TTID, and the [`dumpsys` reference](https://developer.android.com/tools/dumpsys)
+documents app frame and memory diagnostics.
+
 ## Current test coverage
 
 | Suite | Coverage |
 |---|---|
 | `smoke` | Launch the actual `DevFluttApp`; check home title, description, subtitle, and Flutter logo semantics. |
-| `regression` | Return to the same home screen after Android background/resume; verify the app follows system light/dark mode; launch and render the blank home screen with Wi-Fi disabled. |
+| `regression` | Return to the same home screen after Android background/resume; verify the app theme matches the device brightness reported by Android; launch and render the blank home screen with Wi-Fi disabled. |
 
 The generated v0.8 platform-service selection also has a native integration
 smoke test. It initializes the app, schedules and cancels a WorkManager task,
@@ -134,9 +190,12 @@ avoids relying on DDS when an agent host cannot establish its local service.
 
 The home screen has no buttons, permission requests, authenticated flows, or
 network-backed states. Tests for those behaviors belong with the app feature that
-adds them. The Wi-Fi test verifies launch and rendering with Wi-Fi disabled; it
-does not claim to test an offline data layer. Every test restores changed device
-settings, and Android's test orchestrator clears app data between tests.
+adds them. The theme test observes the device's current platform brightness rather
+than trying to change Android's system setting; OEM builds may ignore shell-based
+night-mode changes. Widget tests control platform brightness and verify both themes
+and runtime updates. The Wi-Fi test verifies launch and rendering with Wi-Fi disabled;
+it does not claim to test an offline data layer. The Wi-Fi test restores its changed
+device setting, and Android's test orchestrator clears app data between tests.
 
 ## CI and diagnostics
 

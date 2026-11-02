@@ -20,8 +20,12 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `diagnostics` | diagnostics | `architecture-core`, `logging` | - | `ErrorReporter` interface and a local, in-memory adapter |
 | `auth-core` | auth | `architecture-core`, `logging`, `secure-storage` | - | `AuthAdapter`, `AuthSession`, `AuthState`, `AuthError`, the capability descriptor, the session store, the token-refresh coordinator, the router redirect |
 | `auth-rest` | auth | `auth-core`, `networking` | `auth-firebase`, `auth-supabase` | A custom REST/JWT adapter with configurable endpoints and payload shapes |
-| `auth-firebase` | auth | `auth-core` | `auth-rest`, `auth-supabase` | `firebase_auth`, `firebase_core`, an inert `firebase_options.dart` |
-| `auth-supabase` | auth | `auth-core` | `auth-rest`, `auth-firebase` | `supabase_flutter`, a secure-storage-backed session |
+| `firebase-core` | provider-core | `architecture-core` | — | Shared `firebase_core` dependency, inert `firebase_options.dart`, and one-time Firebase initialization |
+| `supabase-core` | provider-core | `architecture-core` | — | Shared `supabase_flutter` dependency, project config, and one-time Supabase initialization |
+| `auth-firebase` | auth | `auth-core`, `firebase-core` | `auth-rest`, `auth-supabase` | `firebase_auth` adapter; Firebase config and initialization are supplied by `firebase-core` |
+| `auth-supabase` | auth | `auth-core`, `supabase-core` | `auth-rest`, `auth-firebase` | Supabase Auth adapter with a secure-storage-backed session |
+| `backend-firestore` | backend | `firebase-core` | — | Android Firestore document client, typed provider errors, and fake port |
+| `backend-supabase` | backend | `supabase-core` | — | Android Postgres/PostgREST table client, typed provider errors, and fake port |
 | `preferences` | persistence | `architecture-core` | — | Non-sensitive `SharedPreferencesAsync` adapter and memory fake |
 | `local-database` | persistence | `architecture-core` | — | Drift/SQLite schema, v1→v2 migration, generated source, and in-memory tests |
 | `offline-data` | feature | `navigation`, `networking`, `local-database` | — | Local-first notes sample, explicit refresh, pending operation IDs, conflict demonstration |
@@ -40,6 +44,8 @@ manifest under `manifests/modules/`, a set of brick templates, and a README unde
 | `core` | `architecture-core`, `state-riverpod`, `navigation`, `design-system`, `feature-example`, `logging` |
 | `demo` | `core` plus `showcase` |
 | `recommended` | `core` plus `diagnostics`, `networking`, `secure-storage` |
+| `commerce` | `recommended` plus `commerce`, `commerce-persistence`, `local-database` |
+| `full` | All compatible non-provider modules for Android, including the provider-neutral `auth-core`; no auth or data provider |
 
 `architecture-core` is the base scaffold of every generated project, so `blank` is the
 architecture without any optional module. `core` is the recommended starting point for a
@@ -51,6 +57,34 @@ foundation: the core architecture plus the HTTP, diagnostic, and secure-storage 
 scaffold and the application-lifecycle hooks join that preset in their own milestones
 (v0.9.0 and v0.8.0). The preset file is the explicit, versioned module list, so what the
 preset contains is never a hidden bundle.
+
+`commerce` adds the demo catalog/cart and Drift-backed local cart persistence to
+`recommended`; the cart remains display data and does not make checkout authoritative.
+`full` is Android-only because it includes Android platform services. It combines all
+compatible non-provider modules, including the provider-neutral auth contract, but does not
+select an authentication adapter, provider core, or remote data backend. Choose providers
+explicitly with `--auth` and `--backend`.
+
+## Backend selection
+
+Select data access independently from authentication with `--backend`:
+
+```bash
+ftemplate create --name MyApp --org com.example --preset blank --backend supabase
+```
+
+`--backend` accepts `none`, `rest`, `firebase`, or `supabase`. `rest` selects the existing
+`networking` module, `firebase` selects Firestore, and `supabase` selects Postgres/PostgREST.
+The default is `none`. Firebase Firestore and Supabase Postgres cannot be selected together.
+Direct `--module` selections remain available; the generated summary reports a directly
+selected provider data module.
+
+`firebase-core` and `supabase-core` are shared setup modules pulled in by their matching auth
+or data adapters. They own one-time SDK initialization and configuration; they do not imply
+that adjacent provider services are selected. See the [Firebase core guide](modules/firebase-core.md)
+and [Supabase core guide](modules/supabase-core.md).
+
+## Authentication selection
 
 No preset selects an authentication provider. The road map says the provider "is chosen
 explicitly rather than guessed", so a project asks for one with `--auth`:

@@ -1,0 +1,108 @@
+import 'firestore_data_error.dart';
+import 'firestore_document.dart';
+import 'firestore_document_port.dart';
+import 'firestore_port_exception.dart';
+import 'firestore_result.dart';
+
+/// Provider-specific Firestore document operations with typed failures.
+final class FirestoreDocumentClient {
+  const FirestoreDocumentClient({required this.port});
+
+  /// The provider boundary used by this client.
+  final FirestoreDocumentPort port;
+
+  /// Reads a document, returning a successful null value when it does not exist.
+  Future<FirestoreResult<FirestoreDocument?>> getDocument({
+    required String collection,
+    required String documentId,
+  }) async {
+    if (!_isValidAddress(collection, documentId)) {
+      return const FirestoreFailure<FirestoreDocument?>(
+        FirestoreDataError(FirestoreDataErrorCode.invalidArgument),
+      );
+    }
+
+    try {
+      final raw = await port.getDocument(collection: collection, documentId: documentId);
+      if (raw == null) {
+        return const FirestoreSuccess<FirestoreDocument?>(null);
+      }
+      if (raw is! Map) {
+        return const FirestoreFailure<FirestoreDocument?>(
+          FirestoreDataError(FirestoreDataErrorCode.malformedData),
+        );
+      }
+
+      final fields = <String, Object?>{};
+      for (final entry in raw.entries) {
+        if (entry.key is! String) {
+          return const FirestoreFailure<FirestoreDocument?>(
+            FirestoreDataError(FirestoreDataErrorCode.malformedData),
+          );
+        }
+        fields[entry.key as String] = entry.value;
+      }
+      return FirestoreSuccess<FirestoreDocument?>(
+        FirestoreDocument(id: documentId, fields: fields),
+      );
+    } on FirestorePortException catch (error) {
+      return FirestoreFailure<FirestoreDocument?>(_mapError(error.code));
+    }
+  }
+
+  /// Replaces every field in a document.
+  Future<FirestoreResult<void>> setDocument({
+    required String collection,
+    required String documentId,
+    required Map<String, Object?> fields,
+  }) async {
+    if (!_isValidAddress(collection, documentId)) {
+      return const FirestoreFailure<void>(
+        FirestoreDataError(FirestoreDataErrorCode.invalidArgument),
+      );
+    }
+    try {
+      await port.setDocument(
+        collection: collection,
+        documentId: documentId,
+        fields: fields,
+      );
+      return const FirestoreSuccess<void>(null);
+    } on FirestorePortException catch (error) {
+      return FirestoreFailure<void>(_mapError(error.code));
+    }
+  }
+
+  /// Deletes a document.
+  Future<FirestoreResult<void>> deleteDocument({
+    required String collection,
+    required String documentId,
+  }) async {
+    if (!_isValidAddress(collection, documentId)) {
+      return const FirestoreFailure<void>(
+        FirestoreDataError(FirestoreDataErrorCode.invalidArgument),
+      );
+    }
+    try {
+      await port.deleteDocument(collection: collection, documentId: documentId);
+      return const FirestoreSuccess<void>(null);
+    } on FirestorePortException catch (error) {
+      return FirestoreFailure<void>(_mapError(error.code));
+    }
+  }
+
+  bool _isValidAddress(String collection, String documentId) =>
+      collection.trim().isNotEmpty && documentId.trim().isNotEmpty;
+
+  FirestoreDataError _mapError(String code) => FirestoreDataError(
+    switch (code) {
+      'permission-denied' => FirestoreDataErrorCode.permissionDenied,
+      'unauthenticated' => FirestoreDataErrorCode.unauthenticated,
+      'unavailable' => FirestoreDataErrorCode.unavailable,
+      'deadline-exceeded' => FirestoreDataErrorCode.deadlineExceeded,
+      'not-found' => FirestoreDataErrorCode.notFound,
+      'invalid-argument' => FirestoreDataErrorCode.invalidArgument,
+      _ => FirestoreDataErrorCode.unknown,
+    },
+  );
+}

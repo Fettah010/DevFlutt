@@ -10,8 +10,8 @@ The authentication adapter for Firebase Authentication.
 - `FirebaseAuthPortImpl` - the real port. It is the only file in the module that imports
   `firebase_auth`.
 - `FakeFirebaseAuthPort` - a deterministic test double that never touches Firebase.
-- `initializeFirebaseAuth` - prepares Firebase at start-up.
-- `lib/firebase_options.dart` - the configuration file, shipped as an inert placeholder.
+- `firebase-core` owns the inert `lib/firebase_options.dart` placeholder and initializes the
+  Firebase SDK once for all selected Firebase modules.
 
 ## Setup
 
@@ -26,10 +26,10 @@ The authentication adapter for Firebase Authentication.
 
    The command writes the real `lib/firebase_options.dart` and registers the app.
 
-Until that command has been run, the shipped placeholder is in place and the application
-refuses to start with a message that names the command. The placeholder values are
-deliberately not shaped like real credentials, so a secret scanner cannot mistake them
-for one.
+Until that command has been run, the shipped placeholder is in place and the shared
+`firebase-core` initializer refuses to start with a message that names the command. The
+placeholder values are deliberately not shaped like real credentials, so a secret scanner
+cannot mistake them for one.
 
 The Flutter path needs **no** `google-services.json` and **no**
 `com.google.gms.google-services` Gradle plugin. Those belong to the native Android SDK.
@@ -40,7 +40,7 @@ The Flutter path needs **no** `google-services.json` and **no**
 - Firebase Authentication requires Android API 24 or newer. The template's minimum SDK is
   already 24, so there is no margin: a future increase of the template's floor is not
   needed for Firebase.
-- `firebase_auth` 7.0.0 and `firebase_core` 5.0.0 still apply the Kotlin Gradle Plugin.
+- `firebase_auth` 7.0.0 and `firebase_core` 5.1.0 still apply the Kotlin Gradle Plugin.
   Flutter 3.47 warns that future Flutter versions will refuse plugins that apply it. The
   build succeeds on the pinned toolchain. When the plugin migrates, the warning goes away.
 
@@ -66,11 +66,14 @@ scheme is the application's choice, and the module documents what to configure.
 ## Requires
 
 - `auth-core` - which brings `architecture-core`, `logging`, and `secure-storage`
+- `firebase-core` - owns Firebase configuration and one-time SDK initialization
 
 ## Setup
 
-The module adds no permission and no configuration key. Run `flutterfire configure`, then
-build the adapter in `buildAppServices` in `lib/app/app_services.dart`.
+Run `flutterfire configure` once for the generated project. The shared Firebase initializer
+is called from `lib/bootstrap/bootstrap.dart`; the authentication adapter is composed in
+`buildAppServices` in `lib/app/app_services.dart`. If a Firebase data module is selected,
+it reuses the same configuration and initialization.
 
 Firebase owns the password policy, multi-factor authentication, account recovery, and
 session revocation. The client does not implement them and must not imply them.
@@ -87,9 +90,9 @@ session revocation. The client does not implement them and must not imply them.
 
 ## Removal behaviour
 
-Remove the module. The `firebase_auth` and `firebase_core` dependencies and the
-configuration file go with it. The `secure-storage` module stays, because other modules
-select it too.
+Remove `auth-firebase`. The `firebase_auth` dependency and authentication files go with it.
+`firebase-core` and `lib/firebase_options.dart` remain only when another Firebase module
+requires them. The `secure-storage` module stays when another selected module requires it.
 
 ## Test plan
 

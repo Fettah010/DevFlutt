@@ -49,22 +49,21 @@ Depends on: a contract change, which is a public-surface change.
 Risk: medium. Multi-factor authentication has a recovery path and a re-enrolment flow, and
 the contract has to model them or the feature will be pushed into feature code.
 
-## The data-backend adapters
+## Firebase and Supabase services beyond the first data adapters
 
-Problem: there is no `--backend` option, so an application cannot select Firestore,
-Postgres, Storage, Realtime, or Edge Functions.
-Evidence: the road map §6.3 lists the backend choices, and requires the generator to
-represent the auth decision and the backend decision separately instead of using one
-overloaded `backend` flag. The `v0.5.0` Implement list contains no data-backend adapter.
-ADR-006 reserves the `--backend` name for the milestone that adds them, and the
-`v0.10.0` maximum-capability composition depends on it.
-Value: a networked application can use a hosted data service.
-Likely milestone: unscheduled; it must land before the v0.10.0 hardening milestone.
-Depends on: a per-service selection, so the whole Firebase surface is not selected by
-one package.
-Risk: medium. A data backend brings its own permissions, its own security rules, and its
-own cost model, and the template must not imply that a client-side rule is a server-side
-one.
+Problem: the first data-backend milestone does not implement Firebase Storage/Realtime/
+Analytics or Supabase Storage/Realtime/Edge Functions/Analytics.
+Evidence: the v0.9.1 scope implements Firebase Firestore and Supabase Postgres/PostgREST
+only, each as an explicit capability; it adds no universal backend abstraction and does
+not select adjacent provider services implicitly.
+Value: applications that need an additional provider service can add it through a
+separately tested, capability-specific module.
+Likely milestone: after v1.0.0, only when a concrete use case and package/toolchain
+compatibility are demonstrated.
+Depends on: provider-specific package and license review, secure configuration, explicit
+compatibility contracts, and server-side security documentation.
+Risk: medium. Every additional service brings its own permissions, security rules,
+authorization boundary, pricing, and live-provider test requirements.
 
 ## The response cache and the token-storage policy
 
@@ -81,12 +80,12 @@ Risk: low.
 
 ## The exhaustive module-combination matrix
 
-Problem: the built matrix covers the four presets, the three authentication presets, and
-the five v0.7 persistence/commerce compositions individually. It does not cover every
-combination of the modules that can coexist.
-Evidence: the road map §9.4 requires the pairwise set and the maximum-capability
-composition at the hardening milestone, and the `v0.10.0` milestone completes the
-compatibility matrix.
+Problem: the generated-project matrix covers the six named presets, each backend selection,
+matching auth/data pairs, and the maximum-capability Android composition, plus the previously
+selected standalone module cases. It does not cover every compatible combination.
+Evidence: `tool/verify/generated_project_matrix.json` enumerates the required CI cases.
+The roadmap §9.4 schedules the exhaustive pairwise set and historical-compatibility
+regressions for the hardening milestone.
 Value: a reviewer knows exactly which combinations are proven and which are not.
 Likely milestone: v0.10.0.
 Depends on: nothing.

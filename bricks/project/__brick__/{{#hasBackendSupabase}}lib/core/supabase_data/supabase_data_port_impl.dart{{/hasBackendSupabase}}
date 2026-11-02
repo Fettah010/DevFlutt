@@ -1,0 +1,45 @@
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+
+import 'supabase_data_port.dart';
+import 'supabase_port_exception.dart';
+
+/// The Supabase SDK implementation of [SupabaseDataPort].
+final class SupabaseDataPortImpl implements SupabaseDataPort {
+  SupabaseDataPortImpl({supabase.SupabaseClient? client})
+    : _client = client ?? supabase.Supabase.instance.client;
+
+  final supabase.SupabaseClient _client;
+
+  @override
+  Future<Object?> selectRows({
+    required String table,
+    required Map<String, Object> filters,
+    required int limit,
+  }) => _withProviderError(() async {
+    return await _client.from(table).select().match(filters).limit(limit);
+  });
+
+  @override
+  Future<void> insertRow({
+    required String table,
+    required Map<String, Object?> values,
+  }) => _withProviderError(() async {
+    await _client.from(table).insert(Map<String, dynamic>.from(values));
+  });
+
+  @override
+  Future<void> deleteRows({
+    required String table,
+    required Map<String, Object> filters,
+  }) => _withProviderError(() async {
+    await _client.from(table).delete().match(filters);
+  });
+
+  Future<T> _withProviderError<T>(Future<T> Function() operation) async {
+    try {
+      return await operation();
+    } on supabase.PostgrestException catch (error) {
+      throw SupabasePortException(error.code ?? '');
+    }
+  }
+}

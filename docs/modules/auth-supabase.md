@@ -4,8 +4,6 @@ The authentication adapter for Supabase Auth.
 
 ## Capabilities
 
-- `SupabaseConfig` - the project URL and the publishable key, and
-  `defaultSupabaseConfig`, the placeholder a new project starts with.
 - `SupabaseAuthPort` - the provider boundary. The adapter depends on it, never on the
   Supabase SDK.
 - `SupabaseAuthAdapter` - the provider-neutral behaviour over the port.
@@ -13,21 +11,23 @@ The authentication adapter for Supabase Auth.
   `supabase_flutter`.
 - `FakeSupabaseAuthPort` - a deterministic test double that never touches Supabase.
 - `SecureStorageLocalStorage` - keeps the session in the secure store.
-- `initializeSupabaseAuth` - prepares Supabase at start-up.
+- `supabase-core` owns `SupabaseConfig`, the inert project configuration, and the shared
+  Supabase client initializer.
 
 ## Setup
 
 1. Create a Supabase project.
 2. In the generated project, replace the values in
-   `lib/core/auth/supabase/supabase_config.dart` with the project URL and the publishable
+   `lib/core/supabase/supabase_config.dart` with the project URL and the publishable
    key from the project's API settings.
 
 The publishable key is a **public** identifier, not a secret: it is the key every Supabase
 client ships with. The service-role key is a secret and must never appear in an
-application. The shipped placeholder is inert, and the application refuses to start with a
-message that names the file to edit.
+application. The shipped placeholder is inert, and the shared `supabase-core` initializer refuses to
+start with a message that names the file to edit.
 
-The module adds no permission and no configuration key.
+The adapter adds no auth-specific configuration; `supabase-core` owns the provider
+configuration. The selected Supabase modules declare the `INTERNET` permission they need.
 
 ## Session persistence
 
@@ -36,10 +36,12 @@ session carries the access token **and** the refresh token, so writing it to an
 unencrypted preferences file would leave a long-lived credential on the device in the
 clear, and Android's Auto Backup would include that file.
 
-This module therefore supplies its own `LocalStorage`, backed by the template's secure
-store, through the package's documented `FlutterAuthClientOptions(localStorage:)` hook. The
-package's `shared_preferences` default is not used, and the Android backup rules that the
-`secure-storage` module generates keep the session out of backups.
+When `auth-supabase` is selected, startup supplies its own `LocalStorage`, backed by the
+template's secure store, through the package's documented
+`FlutterAuthClientOptions(localStorage:)` hook. The package's `shared_preferences` default
+is not used, and the Android backup rules that the `secure-storage` module generates keep
+the session out of backups. A data-only Supabase project instead uses `EmptyLocalStorage`,
+so it does not persist an unused auth session.
 
 `supabase_flutter` still brings `shared_preferences` as a transitive dependency. That is a
 consequence of the package's structure, not a choice, and it is recorded here rather than
@@ -66,10 +68,13 @@ choice, and the module documents what to configure.
 ## Requires
 
 - `auth-core` - which brings `architecture-core`, `logging`, and `secure-storage`
+- `supabase-core` - owns the project config and initializes the shared Supabase client
 
 ## Setup
 
-Fill in `defaultSupabaseConfig`, then build the adapter in `buildAppServices` in
+Fill in the shared config at `lib/core/supabase/supabase_config.dart`. Startup calls
+`initializeSupabaseCore` from `lib/bootstrap/bootstrap.dart`; it supplies secure storage
+when Supabase Auth is selected. The adapter is composed in `buildAppServices` in
 `lib/app/app_services.dart`.
 
 Supabase owns the password policy, multi-factor authentication, account recovery, and
@@ -87,8 +92,10 @@ session revocation. The client does not implement them and must not imply them.
 
 ## Removal behaviour
 
-Remove the module. The `supabase_flutter` dependency goes with it. The `secure-storage`
-module stays, because other modules select it too.
+Remove `auth-supabase`. The auth adapter and secure-storage session implementation go with
+it. `supabase-core` and its `supabase_flutter` dependency remain only when another Supabase
+module requires them. The `secure-storage` module stays when another selected module
+requires it.
 
 ## Test plan
 

@@ -22,10 +22,11 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -35,11 +36,11 @@ jobs:
           cache: true
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Resolve generator dependencies
         working-directory: tool/ftemplate_cli
-        run: dart pub get
+        run: dart pub get --enforce-lockfile
 
       - name: Install pinned Patrol CLI
         run: dart pub global activate patrol_cli 4.8.0

@@ -61,19 +61,19 @@ function Resolve-SecurityTool {
     return $null
 }
 
-Invoke-Check -Name 'pub_get' -Command 'flutter' -Arguments @('pub', 'get')
+Invoke-Check -Name 'pub_get' -Command 'flutter' -Arguments @('pub', 'get', '--enforce-lockfile')
 Invoke-Check -Name 'format' -Command 'dart' -Arguments @('format', '--output=none', '--set-exit-if-changed', 'lib', 'test')
 Invoke-Check -Name 'analyze' -Command 'flutter' -Arguments @('analyze', '--fatal-infos')
 Invoke-Check -Name 'test' -Command 'flutter' -Arguments @('test')
 Invoke-Check -Name 'apk_debug' -Command 'flutter' -Arguments @('build', 'apk', '--debug', '--flavor', 'dev')
 Invoke-Check -Name 'apk_release' -Command 'flutter' -Arguments @('build', 'apk', '--release', '--flavor', 'prod')
 
-Invoke-Check -Name 'generator_pub_get' -Command 'dart' -Arguments @('pub', 'get') -WorkingDirectory $GeneratorDir
+Invoke-Check -Name 'generator_pub_get' -Command 'dart' -Arguments @('pub', 'get', '--enforce-lockfile') -WorkingDirectory $GeneratorDir
 Invoke-Check -Name 'generator_format' -Command 'dart' -Arguments @('format', '--output=none', '--set-exit-if-changed', '.') -WorkingDirectory $GeneratorDir
 Invoke-Check -Name 'generator_analyze' -Command 'dart' -Arguments @('analyze', '--fatal-infos') -WorkingDirectory $GeneratorDir
 Invoke-Check -Name 'generator_test' -Command 'dart' -Arguments @('test') -WorkingDirectory $GeneratorDir
 
-Invoke-Check -Name 'module_dependency_audit_pub_get' -Command 'flutter' -Arguments @('pub', 'get') -WorkingDirectory $ModuleDependencyAuditDir
+Invoke-Check -Name 'module_dependency_audit_pub_get' -Command 'flutter' -Arguments @('pub', 'get', '--enforce-lockfile') -WorkingDirectory $ModuleDependencyAuditDir
 
 Invoke-Check -Name 'license_inventory' -Command 'dart' -Arguments @('run', 'tool/ftemplate_cli/tool/license_inventory.dart', '--check')
 

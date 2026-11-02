@@ -1,0 +1,27 @@
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+
+import 'supabase_config.dart';
+
+/// Initializes the shared Supabase client.
+///
+/// Data-only projects use non-persistent auth storage. Supabase Auth passes
+/// the secure-store-backed implementation when that adapter is selected.
+Future<void> initializeSupabaseCore({
+  SupabaseConfig config = defaultSupabaseConfig,
+  supabase.LocalStorage? localStorage,
+}) async {
+  if (!config.isConfigured) {
+    throw StateError(
+      'Supabase is not configured. Replace the values in '
+      'lib/core/supabase/supabase_config.dart with the project URL and '
+      'the publishable key from your Supabase project settings.',
+    );
+  }
+  await supabase.Supabase.initialize(
+    url: config.url,
+    publishableKey: config.publishableKey,
+    authOptions: supabase.FlutterAuthClientOptions(
+      localStorage: localStorage ?? supabase.EmptyLocalStorage(),
+    ),
+  );
+}

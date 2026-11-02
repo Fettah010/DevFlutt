@@ -1,0 +1,39 @@
+id: backend-firestore
+version: 1
+category: backend
+summary: Provider-specific Firestore document client with typed errors and fake-backed tests.
+requires:
+  - firebase-core
+conflictsWith:
+  - backend-supabase
+platforms:
+  - android
+pubDependencies:
+  - name: cloud_firestore
+    version: ^7.1.0
+nativeChanges:
+  android: []
+  ios: []
+permissions:
+  - android.permission.INTERNET
+configKeys: []
+privacy:
+  network: true
+  telemetry: false
+outputs:
+  - lib/core/firestore/firestore_data_error.dart
+  - lib/core/firestore/firestore_document.dart
+  - lib/core/firestore/firestore_result.dart
+  - lib/core/firestore/firestore_document_port.dart
+  - lib/core/firestore/firestore_port_exception.dart
+  - lib/core/firestore/firebase_firestore_document_port.dart
+  - lib/core/firestore/firestore_document_client.dart
+  - lib/core/firestore/fake_firestore_document_port.dart
+requiredSetup:
+  - Run flutterfire configure; firebase-core owns the shared Firebase configuration and startup.
+  - Configure and test Firebase Firestore security rules for the application's data model.
+  - The generated Android root build supplies the missing cloud_firestore namespace on AGP 9.1.0.
+tests:
+  unit: true
+  widget: false
+  integration: none
